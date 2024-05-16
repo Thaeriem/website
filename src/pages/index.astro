@@ -3,8 +3,48 @@
 <html lang="en">
   <head>
     <title>My Homepage</title>
+    <style>
+      body {
+        background-color: grey;
+        cursor: none; /* Hide the default cursor */
+      }
+
+      .custom-cursor {
+        position: absolute;
+        width: 20px;
+        height: 20px;
+        background-color: red;
+        border-radius: 50%;
+        pointer-events: none;
+        transition: transform 0.1s ease;
+        transform: translate(-50%, -50%);
+        z-index: 9999; /* Ensure the cursor is on top */
+      }
+    </style>
   </head>
   <body>
     <h1>Welcome to my website!</h1>
+
+    <script>
+      document.addEventListener('DOMContentLoaded', () => {
+        // Create the custom cursor element
+        const cursor = document.createElement('div');
+        cursor.classList.add('custom-cursor');
+        document.body.appendChild(cursor);
+
+        // Function to update cursor position
+        const updateCursorPosition = (e) => {
+          cursor.style.left = `${e.clientX}px`;
+          cursor.style.top = `${e.clientY}px`;
+        };
+
+        // Event listener for mouse movement
+        document.addEventListener('mousemove', updateCursorPosition);
+
+        // Event listeners to show/hide cursor when entering/leaving the window
+        document.addEventListener('mouseenter', () => cursor.style.display = 'block');
+        document.addEventListener('mouseleave', () => cursor.style.display = 'none');
+      });
+    </script>
   </body>
 </html>
