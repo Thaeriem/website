@@ -1,50 +1,58 @@
 ---
+import Layout from '../layouts/Layout.astro'
+// import '@fontsource/jetbrains-mono'
+import '../global.scss'
+
+const GH = 'https://github.com/Thaeriem'
 ---
-<html lang="en">
-  <head>
-    <title>My Homepage</title>
-    <style>
-      body {
-        background-color: grey;
-        cursor: none; /* Hide the default cursor */
+
+<Layout title="Home">
+  <h1>HELLO</h1>
+  <div class="cursor-ball" id="cur-b"></div>
+  <div class="cursor-outline" id="cur-o"></div>
+	
+</Layout> 
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM fully loaded and parsed');
+    let cursorBall = document.getElementById('cur-b');
+    let cursorOutline = document.getElementById('cur-o');
+
+
+    document.addEventListener('mousemove', (e) => {
+      if (cursorBall) {
+        cursorBall.style.top = `${e.pageY}px`;
+        cursorBall.style.left = `${e.pageX}px`;
       }
 
-      .custom-cursor {
-        position: absolute;
-        width: 20px;
-        height: 20px;
-        background-color: red;
-        border-radius: 50%;
-        pointer-events: none;
-        transition: transform 0.1s ease;
-        transform: translate(-50%, -50%);
-        z-index: 9999; /* Ensure the cursor is on top */
+      if (cursorOutline) {
+        cursorOutline.style.top = `${e.pageY}px`;
+        cursorOutline.style.left = `${e.pageX}px`;
       }
-    </style>
-  </head>
-  <body>
-    <h1>Welcome to my website!</h1>
+    });
+   // Ensure the cursor elements are hidden when the mouse leaves the window
+   document.addEventListener('mouseleave', () => {
+      if (cursorBall) cursorBall.style.display = 'none';
+      if (cursorOutline) cursorOutline.style.display = 'none';
+    });
 
-    <script>
-      document.addEventListener('DOMContentLoaded', () => {
-        // Create the custom cursor element
-        const cursor = document.createElement('div');
-        cursor.classList.add('custom-cursor');
-        document.body.appendChild(cursor);
+    // Ensure the cursor elements are shown when the mouse enters the window
+    document.addEventListener('mouseenter', () => {
+      if (cursorBall) cursorBall.style.display = 'block';
+      if (cursorOutline) cursorOutline.style.display = 'block';
+    });
+    document.addEventListener("mousedown", (e) => {
+      if (e.button === 0 && cursorOutline) {
+        cursorOutline.classList.add("cursor-mousedown");
+      }
+    });
 
-        // Function to update cursor position
-        const updateCursorPosition = (e) => {
-          cursor.style.left = `${e.clientX}px`;
-          cursor.style.top = `${e.clientY}px`;
-        };
+    document.addEventListener("mouseup", () => {
+      if (cursorOutline) cursorOutline.classList.remove("cursor-mousedown");
+    });
+  });
+</script>
 
-        // Event listener for mouse movement
-        document.addEventListener('mousemove', updateCursorPosition);
-
-        // Event listeners to show/hide cursor when entering/leaving the window
-        document.addEventListener('mouseenter', () => cursor.style.display = 'block');
-        document.addEventListener('mouseleave', () => cursor.style.display = 'none');
-      });
-    </script>
-  </body>
-</html>
+<style lang="scss">
+</style>
