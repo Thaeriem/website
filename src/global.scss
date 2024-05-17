@@ -1,10 +1,10 @@
 
 
 
-body {
-    background-color: grey;
-    cursor: none; /* Hide the default cursor */
-  }
+html, body {
+	height: 100%;
+	cursor: none;
+}
   .cursor-ball {
     width: 8px;
     height: 8px;
