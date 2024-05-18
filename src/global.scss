@@ -26,8 +26,9 @@ html, body {
     transform: translate(-50%, -50%)
   }
   .cursor-mousedown {
-    width: 1.5rem;
-    height: 1.5rem;
+    width: 4rem;
+    height: 4rem;
+    opacity: 0.5;
     border: 2px solid #000;
     background-color: #8454f4;
     transition: all 0.5s ease;
