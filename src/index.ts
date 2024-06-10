@@ -33,7 +33,7 @@ let velocity = new THREE.Vector3();
 let y_rotation: number = 0;
 let globalGroup = new THREE.Group();
 let moveUp: boolean, moveDown: boolean, moveLeft: boolean, moveRight: boolean, rotateLeft: boolean, rotateRight: boolean;
-let geometry: THREE.PlaneGeometry, mesh: THREE.Mesh,outlineGeometry: THREE.PlaneGeometry, outline: THREE.Mesh
+let geometry: THREE.PlaneGeometry, mesh: THREE.Mesh,outlineGeometry: THREE.PlaneGeometry, outline: THREE.Mesh, clouds: THREE.Mesh[]
 const noise = SimplexNoise.createNoise2D();
 const colorStart = new THREE.Color("#046997"), colorEnd = new THREE.Color("#30b1ce");
 
@@ -91,7 +91,6 @@ function init() {
     {
         const gltfLoader = new GLTFLoader();
         gltfLoader.load(gltfModelURL, (gltf) => {
-            console.log('Model loaded', gltf);
             gltfModel = gltf.scene;
             gltfModel.traverse((child) => {
                 if (child instanceof THREE.Mesh) {
@@ -143,6 +142,62 @@ function init() {
 
         // Adjust the vertices with noise
         updateVertices();
+    }
+    {
+        clouds = [];
+        let chosenX:number[] = [], chosenZ:number[] = [];
+        let material = new THREE.MeshBasicMaterial({ 
+            color: 0x00ff00,
+            transparent: true,
+            opacity: 0.5
+        });
+        for (let i = 0; i < 20; i++) {
+            let sphere = new THREE.SphereGeometry(5, 32, 32);
+            let cloud = new THREE.Mesh(sphere, material);
+            cloud.rotation.x = -Math.PI / 2;
+
+            const check_x = (attempt: number) => {
+                let flag = true;
+                for (let i = 0; i < chosenX.length; i++) {
+                    const val = chosenX[i];
+                    if (Math.abs(attempt - val) < 10) {
+                        flag = false;
+                    }
+                }
+                return flag;
+            }
+            const check_z = (attempt: number) => {
+                let flag = true;
+                for (let i = 0; i < chosenZ.length; i++) {
+                    const val = chosenZ[i];
+                    if (Math.abs(attempt - val) < 10) {
+                        flag = false;
+                    }
+                }
+                return flag;
+            }
+
+            let tmp_x = Math.random() * 300, tmp_z = Math.random() * 52.5 - 7.5;
+            while(!check_x(tmp_x)) {
+                console.log("HELLO")
+                tmp_x = Math.random() * 300;
+            }
+            if(!check_z(tmp_z)) {
+                tmp_z = Math.random() * 52.5 - 7.5;
+            }
+            console.log(chosenX);
+            // console.log(chosenZ);
+            console.log(tmp_x, tmp_z);
+            chosenX.push(tmp_x);
+            chosenZ.push(tmp_z);
+            cloud.position.set(
+                tmp_x,
+                20,
+                tmp_z
+            )
+            globalGroup.add(cloud);
+            clouds.push(cloud);
+        }
     }
     
 
@@ -270,6 +325,7 @@ function animate() {
     time = performance.now();
     const delta = ( time - prevTime ) / 1000;
 
+    // player controls
     const new_zoom = normalizeZoom(camera.zoom, 0, 0.97);
 1
 	velocity.z -= velocity.z * 30.0 * (1.1-new_zoom) * delta;
@@ -291,6 +347,20 @@ function animate() {
     if ( rotateLeft ) y_rotation += 1.0 * delta;
     if ( rotateRight ) y_rotation -= 1.0 * delta;
     globalGroup.rotateY(y_rotation);
+
+    // object controls
+    let cloud_change = delta * 10;
+    clouds.forEach(cloud => {
+        // cloud.position.y = -100;
+        cloud.position.z += cloud_change;
+        if (cloud.position.z > 120) {
+            cloud.position.z = -120;
+        }
+
+    })
+
+
+
 
     // let mat = ( crystalMesh.material as THREE.MeshPhongMaterial )
     // mat.emissiveIntensity = Math.sin( t * 3 ) * .5 + .5
