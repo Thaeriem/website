@@ -17,23 +17,31 @@ import { stopGoEased } from "./math"
 
 import warningStipesURL from "./assets/warningStripes.png"
 import crateURL from "./assets/TileCrate.png"
-import gltfModelURL from "./assets/island.glb"
+import islandModelURL from "./assets/island.glb"
+import cloudModelURL from "./assets/cloud.glb"
 
 let camera: THREE.OrthographicCamera, scene: THREE.Scene, renderer: THREE.WebGLRenderer, composer: EffectComposer
 const cameraBounds = {
     minX: -270,
-    maxX: -120,
-    minZ: -60,
+    maxX: -140,
+    minZ: -50,
     maxZ: 45
 };
 let controls: MapControls
-let gltfModel: THREE.Object3D
+let islandModel: THREE.Object3D, cloudModel: THREE.Object3D
 let prevTime = performance.now(), time = performance.now();
 let velocity = new THREE.Vector3();
 let y_rotation: number = 0;
 let globalGroup = new THREE.Group();
 let moveUp: boolean, moveDown: boolean, moveLeft: boolean, moveRight: boolean, rotateLeft: boolean, rotateRight: boolean;
-let geometry: THREE.PlaneGeometry, mesh: THREE.Mesh,outlineGeometry: THREE.PlaneGeometry, outline: THREE.Mesh, clouds: THREE.Mesh[]
+let geometry: THREE.PlaneGeometry, mesh: THREE.Mesh,
+    outlineGeometry: THREE.PlaneGeometry, 
+    outline: THREE.Mesh,
+    cloudAmt: number,
+    cloudPos: THREE.Vector3[], 
+    cloudMesh: THREE.InstancedMesh,
+    cloudMat: THREE.Material,
+    boatSphere: THREE.Mesh
 const noise = SimplexNoise.createNoise2D();
 const colorStart = new THREE.Color("#046997"), colorEnd = new THREE.Color("#30b1ce");
 
@@ -55,7 +63,6 @@ function init() {
     scene = new THREE.Scene()
     scene.background = new THREE.Color( 0x151729 )
     scene.add(globalGroup);
-    // scene.background = new THREE.Color( 0xffffff )
 
     // Renderer
     renderer = new THREE.WebGLRenderer( { antialias: false } )
@@ -76,12 +83,18 @@ function init() {
     controls.target.set( 0, 0, 0 )
     controls.maxZoom = 1
     controls.minZoom = 0.03
-    controls.zoomSpeed = 0.7
+    controls.zoomSpeed = 1.5
+    controls.mouseButtons = {
+        LEFT: THREE.MOUSE.DOLLY,
+        MIDDLE: THREE.MOUSE.DOLLY,
+        RIGHT: THREE.MOUSE.DOLLY
+    }
     controls.update()
     controls.minPolarAngle = controls.getPolarAngle() - Math.PI
     controls.maxPolarAngle = controls.getPolarAngle() + (Math.PI / 24)
 
     const texLoader = new THREE.TextureLoader()
+    const gltfLoader = new GLTFLoader()
     const tex_checker = pixelTex( texLoader.load( "https://threejsfundamentals.org/threejs/resources/images/checker.png" ) )
     const tex_checker2 = pixelTex( texLoader.load( "https://threejsfundamentals.org/threejs/resources/images/checker.png" ) )
     // const tex_water = pixelTex(texLoader.load());
@@ -89,10 +102,9 @@ function init() {
     tex_checker2.repeat.set( 1.5, 1.5 )
 
     {
-        const gltfLoader = new GLTFLoader();
-        gltfLoader.load(gltfModelURL, (gltf) => {
-            gltfModel = gltf.scene;
-            gltfModel.traverse((child) => {
+        gltfLoader.load(islandModelURL, (gltf) => {
+            islandModel = gltf.scene;
+            islandModel.traverse((child) => {
                 if (child instanceof THREE.Mesh) {
                     child.castShadow = true;
                     child.receiveShadow = true;
@@ -100,9 +112,9 @@ function init() {
                 child.frustumCulled = false;
             });
 
-            gltfModel.scale.set(1, 1, 1); // Set appropriate scale
-            gltfModel.position.set(0, 0, 0); // Set appropriate position
-            globalGroup.add(gltfModel);
+            islandModel.scale.set(1, 1, 1); // Set appropriate scale
+            islandModel.position.set(0, 0, 0); // Set appropriate position
+            globalGroup.add(islandModel);
         }, undefined, (error) => {
             console.error('An error happened while loading the glb model', error);
         });
@@ -112,8 +124,8 @@ function init() {
      {
         const width = 400;
         const height = 400;
-        const segmentsX = width / 12;
-        const segmentsY = height / 12;
+        const segmentsX = Math.floor(width / 12);
+        const segmentsY = Math.floor(height / 12);
         geometry = outlineGeometry = new THREE.PlaneGeometry(width, height, segmentsX, segmentsY);
     
         // Create the material for the plane
@@ -141,65 +153,56 @@ function init() {
         globalGroup.add(outline);
 
         // Adjust the vertices with noise
-        updateVertices();
+        updateOcean();
     }
     {
-        clouds = [];
-        let chosenX:number[] = [], chosenZ:number[] = [];
-        let material = new THREE.MeshBasicMaterial({ 
+        gltfLoader.load(cloudModelURL, (gltf) => {
+            cloudModel = gltf.scene;
+            cloudModel.traverse((child) => {
+                if (child instanceof THREE.Mesh) {
+                    child.castShadow = true;
+                    child.receiveShadow = true;
+                }
+                child.frustumCulled = false;
+            });
+            cloudAmt = 10
+            cloudPos = []
+            // Create InstancedMesh
+            const cloud = cloudModel.getObjectByName('Cloud') as THREE.Mesh
+            cloudMat = cloud.material as THREE.Material
+            cloudMat.transparent = true;
+            cloudMat.opacity = 0.65
+            cloudMesh = new THREE.InstancedMesh(cloud.geometry, cloud.material, cloudAmt);
+            cloudMesh.instanceMatrix.needsUpdate = true;
+            cloudMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+            let matrix = new THREE.Matrix4();
+            for (let i = 0; i < cloudAmt; i++) {
+                let tmp_x = Math.floor(Math.random() * 400), tmp_y = Math.floor(Math.random() * 50-25);
+                let position = new THREE.Vector3(tmp_x, tmp_y, 10);
+                cloudPos.push(position);
+                matrix.setPosition(position);
+                cloudMesh.setMatrixAt(i, matrix);
+            }
+            cloudMesh.rotation.x = -Math.PI / 2;
+            cloudMesh.rotation.z = 15*Math.PI/11;
+            globalGroup.add(cloudMesh);
+
+        }, undefined, (error) => {
+            console.error('An error happened while loading the glb model', error);
+        });
+    }
+    {
+        // i position 559, 569, 595, 596
+        const sphereGeometry = new THREE.SphereGeometry(5, 32, 32);
+        const sphereMaterial = new THREE.MeshBasicMaterial({
             color: 0x00ff00,
             transparent: true,
-            opacity: 0.5
+            opacity: 0.8
         });
-        for (let i = 0; i < 20; i++) {
-            let sphere = new THREE.SphereGeometry(5, 32, 32);
-            let cloud = new THREE.Mesh(sphere, material);
-            cloud.rotation.x = -Math.PI / 2;
-
-            const check_x = (attempt: number) => {
-                let flag = true;
-                for (let i = 0; i < chosenX.length; i++) {
-                    const val = chosenX[i];
-                    if (Math.abs(attempt - val) < 10) {
-                        flag = false;
-                    }
-                }
-                return flag;
-            }
-            const check_z = (attempt: number) => {
-                let flag = true;
-                for (let i = 0; i < chosenZ.length; i++) {
-                    const val = chosenZ[i];
-                    if (Math.abs(attempt - val) < 10) {
-                        flag = false;
-                    }
-                }
-                return flag;
-            }
-
-            let tmp_x = Math.random() * 300, tmp_z = Math.random() * 52.5 - 7.5;
-            while(!check_x(tmp_x)) {
-                console.log("HELLO")
-                tmp_x = Math.random() * 300;
-            }
-            if(!check_z(tmp_z)) {
-                tmp_z = Math.random() * 52.5 - 7.5;
-            }
-            console.log(chosenX);
-            // console.log(chosenZ);
-            console.log(tmp_x, tmp_z);
-            chosenX.push(tmp_x);
-            chosenZ.push(tmp_z);
-            cloud.position.set(
-                tmp_x,
-                20,
-                tmp_z
-            )
-            globalGroup.add(cloud);
-            clouds.push(cloud);
-        }
+        boatSphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
+        boatSphere.position.set(0, 0, 0); // Initial position
+        globalGroup.add(boatSphere);
     }
-    
 
     // Lights
     // Ambient light for general illumination
@@ -207,25 +210,15 @@ function init() {
         globalGroup.add(new THREE.AmbientLight(0x2d3645, 8));
 
         // Directional light for strong, directional lighting
-        let directionalLight = new THREE.DirectionalLight(0xfffc9c, 0.5);
+        let directionalLight = new THREE.DirectionalLight(0xff6900, 4.5);
         directionalLight.position.set(100, 100, 100);
         directionalLight.castShadow = true;
         directionalLight.shadow.mapSize.set(4000, 4000);
         globalGroup.add(directionalLight);
     }
-
-    // Spotlight for focused lighting on a specific target
-    // let spotLight = new THREE.SpotLight(0xff8800, 1, 10, Math.PI / 16, 0.02, 2);
-    // spotLight.position.set(2, 2, 0);
-    // let target = new THREE.Object3D();
-    // scene.add(target);
-    // target.position.set(0, 0, 0);
-    // spotLight.target = target;
-    // spotLight.castShadow = true;
-    // scene.add(spotLight);
 }
 
-function updateVertices() {
+function updateOcean() {
     const time = Date.now() * 0.0001;
     const scale = 0.1;
     const amplitude = 0.4;
@@ -240,11 +233,41 @@ function updateVertices() {
         
         const zNormalized = (z + 0.2) / 0.4;
 
-        const color = new THREE.Color().lerpColors(colorStart, colorEnd, zNormalized);
+        let color = new THREE.Color().lerpColors(colorStart, colorEnd, zNormalized);
         colors.push(color.r, color.g, color.b)
     }
     positionAttribute.needsUpdate = true;
     outlineGeometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+}
+function updateClouds(delta: any) {
+    if (cloudMesh) {
+        if (camera.zoom > 0.15) {
+            if (camera.zoom > 0.28) cloudMesh.visible = false
+            cloudMat.opacity = 0.2;
+        }
+        else {
+            if (!cloudMesh.visible) cloudMesh.visible = true
+            cloudMat.opacity = 0.65
+        }
+        for (let i = 0; i < cloudAmt; i++) {
+            let position = cloudPos[i];
+
+            position.x += delta * 10;
+            if (position.x > 200) {
+                position.x -= 400;
+            }
+            
+            let matrix = new THREE.Matrix4().setPosition(position);
+            cloudMesh.setMatrixAt(i, matrix);
+        }
+
+        if (cloudMesh.visible) cloudMesh.instanceMatrix.needsUpdate = true;
+    }
+}
+function updateBoat() {
+    // const pos = geometry.attributes.position
+    // const z1 = pos.getZ(550), z2 = pos.getZ(550), z3 = pos.getZ(550)
+    // console.log(x,y,z)
 }
 
 function onKeyDown (event: any) {
@@ -255,6 +278,8 @@ function onKeyDown (event: any) {
             camera.position.set(-200, 80, -8);
             controls.target.set(0,0,0);
             velocity.set(0,0,0);
+            globalGroup.rotation.set(0,0,0)
+            y_rotation = 0
             break;
         case 'KeyW':
         case 'ArrowUp':
@@ -319,6 +344,7 @@ function normalizeZoom(zoom: any, low: any, high: any) {
 }
 
 function animate() {
+    
     requestAnimationFrame( animate )
     let t = performance.now() / 1000
 
@@ -326,7 +352,7 @@ function animate() {
     const delta = ( time - prevTime ) / 1000;
 
     // player controls
-    const new_zoom = normalizeZoom(camera.zoom, 0, 0.97);
+    const new_zoom = normalizeZoom(camera.zoom, 0, 0.90);
 1
 	velocity.z -= velocity.z * 30.0 * (1.1-new_zoom) * delta;
     velocity.x -= velocity.x * 30.0 * (1.1-new_zoom) * delta;
@@ -349,17 +375,9 @@ function animate() {
     globalGroup.rotateY(y_rotation);
 
     // object controls
-    let cloud_change = delta * 10;
-    clouds.forEach(cloud => {
-        // cloud.position.y = -100;
-        cloud.position.z += cloud_change;
-        if (cloud.position.z > 120) {
-            cloud.position.z = -120;
-        }
-
-    })
-
-
+    updateClouds(delta);
+    updateBoat();
+    updateOcean();
 
 
     // let mat = ( crystalMesh.material as THREE.MeshPhongMaterial )
@@ -372,7 +390,6 @@ function animate() {
     //     mech.rotation.y = Math.floor( t * 8 ) * Math.PI / 32
     // console.log(camera.position)
     controls.update();
-    updateVertices();
     composer.render();
 
     prevTime = time;
