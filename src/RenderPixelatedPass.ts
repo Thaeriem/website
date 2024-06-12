@@ -20,7 +20,7 @@ export default class RenderPixelatedPass extends Pass {
         this.camera = camera
 
         this.rgbRenderTarget = pixelRenderTarget( resolution, THREE.RGBAFormat, true )
-        this.normalRenderTarget = pixelRenderTarget( resolution, THREE.RGBFormat, false )
+        this.normalRenderTarget = pixelRenderTarget( resolution, THREE.RGBAFormat, false )
 
         this.normalMaterial = new THREE.MeshNormalMaterial()
     }

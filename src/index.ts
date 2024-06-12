@@ -1,9 +1,8 @@
 import * as THREE from "three"
-import { GreaterEqualDepth, Vector2 } from "three"
+import { Vector2 } from "three"
 import * as SimplexNoise from 'simplex-noise';
 
 import { MapControls } from "three/examples/jsm/controls/OrbitControls"
-import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer'
@@ -15,10 +14,9 @@ import PixelatePass from "./PixelatePass"
 
 import { stopGoEased } from "./math"
 
-import warningStipesURL from "./assets/warningStripes.png"
-import crateURL from "./assets/TileCrate.png"
 import islandModelURL from "./assets/island.glb"
 import cloudModelURL from "./assets/cloud.glb"
+import boatModelURL from "./assets/boat.glb"
 
 let camera: THREE.OrthographicCamera, scene: THREE.Scene, renderer: THREE.WebGLRenderer, composer: EffectComposer
 const cameraBounds = {
@@ -28,22 +26,36 @@ const cameraBounds = {
     maxZ: 45
 };
 let controls: MapControls
-let islandModel: THREE.Object3D, cloudModel: THREE.Object3D
-let prevTime = performance.now(), time = performance.now();
+let islandModel: THREE.Object3D, 
+    cloudModel: THREE.Object3D, 
+    boatModel: THREE.Object3D
+let prevTime = performance.now(), 
+    time = performance.now();
 let velocity = new THREE.Vector3();
 let y_rotation: number = 0;
 let globalGroup = new THREE.Group();
-let moveUp: boolean, moveDown: boolean, moveLeft: boolean, moveRight: boolean, rotateLeft: boolean, rotateRight: boolean;
-let geometry: THREE.PlaneGeometry, mesh: THREE.Mesh,
+let moveUp: boolean = false, 
+    moveDown: boolean = false, 
+    moveLeft: boolean = false, 
+    moveRight: boolean = false, 
+    rotateLeft: boolean = false, 
+    rotateRight: boolean = false;
+let geometry: THREE.PlaneGeometry, 
+    mesh: THREE.Mesh,
     outlineGeometry: THREE.PlaneGeometry, 
     outline: THREE.Mesh,
     cloudAmt: number,
-    cloudPos: THREE.Vector3[], 
+    cloudPos: THREE.Vector3[] = [], 
     cloudMesh: THREE.InstancedMesh,
     cloudMat: THREE.Material,
-    boatSphere: THREE.Mesh
+    boatMat: THREE.Material,
+    boatMesh: THREE.Mesh,
+    boatP: THREE.Plane
+const boatv0 = new THREE.Vector3(0, 0, 0), boatv1 = new THREE.Vector3(0, 0, 0), boatv2 = new THREE.Vector3(0, 0, 0);
+const boatInd: number[] = [560, 561, 595]
 const noise = SimplexNoise.createNoise2D();
-const colorStart = new THREE.Color("#046997"), colorEnd = new THREE.Color("#30b1ce");
+const colorStart = new THREE.Color("#046997"), 
+      colorEnd = new THREE.Color("#30b1ce");
 
 init()
 animate()
@@ -70,6 +82,7 @@ function init() {
     renderer.toneMappingExposure = .75
     renderer.shadowMap.enabled = true
     renderer.setSize( screenResolution.x, screenResolution.y )
+    // renderer.debug.checkShaderErrors = false;
     document.body.appendChild( renderer.domElement )
 
     composer = new EffectComposer( renderer )
@@ -79,7 +92,7 @@ function init() {
     composer.addPass( bloomPass )
 
     controls = new MapControls( camera, renderer.domElement )
-    controls.enablePan = false
+    controls.enablePan = false //
     controls.target.set( 0, 0, 0 )
     controls.maxZoom = 1
     controls.minZoom = 0.03
@@ -87,19 +100,14 @@ function init() {
     controls.mouseButtons = {
         LEFT: THREE.MOUSE.DOLLY,
         MIDDLE: THREE.MOUSE.DOLLY,
-        RIGHT: THREE.MOUSE.DOLLY
+        RIGHT: THREE.MOUSE.ROTATE //
     }
     controls.update()
-    controls.minPolarAngle = controls.getPolarAngle() - Math.PI
-    controls.maxPolarAngle = controls.getPolarAngle() + (Math.PI / 24)
+    // controls.minPolarAngle = controls.getPolarAngle() - Math.PI
+    // controls.maxPolarAngle = controls.getPolarAngle() + (Math.PI / 24)
 
     const texLoader = new THREE.TextureLoader()
     const gltfLoader = new GLTFLoader()
-    const tex_checker = pixelTex( texLoader.load( "https://threejsfundamentals.org/threejs/resources/images/checker.png" ) )
-    const tex_checker2 = pixelTex( texLoader.load( "https://threejsfundamentals.org/threejs/resources/images/checker.png" ) )
-    // const tex_water = pixelTex(texLoader.load());
-    tex_checker.repeat.set( 3, 3 )
-    tex_checker2.repeat.set( 1.5, 1.5 )
 
     {
         gltfLoader.load(islandModelURL, (gltf) => {
@@ -111,9 +119,8 @@ function init() {
                 }
                 child.frustumCulled = false;
             });
-
-            islandModel.scale.set(1, 1, 1); // Set appropriate scale
-            islandModel.position.set(0, 0, 0); // Set appropriate position
+            islandModel.scale.set(1, 1, 1);
+            islandModel.position.set(0, 0, 0); 
             globalGroup.add(islandModel);
         }, undefined, (error) => {
             console.error('An error happened while loading the glb model', error);
@@ -122,10 +129,7 @@ function init() {
 
      // Geometry setup
      {
-        const width = 400;
-        const height = 400;
-        const segmentsX = Math.floor(width / 12);
-        const segmentsY = Math.floor(height / 12);
+        const width = 400, height = 400, segmentsX = Math.floor(width / 12), segmentsY = Math.floor(height / 12);
         geometry = outlineGeometry = new THREE.PlaneGeometry(width, height, segmentsX, segmentsY);
     
         // Create the material for the plane
@@ -155,6 +159,7 @@ function init() {
         // Adjust the vertices with noise
         updateOcean();
     }
+
     {
         gltfLoader.load(cloudModelURL, (gltf) => {
             cloudModel = gltf.scene;
@@ -166,7 +171,6 @@ function init() {
                 child.frustumCulled = false;
             });
             cloudAmt = 10
-            cloudPos = []
             // Create InstancedMesh
             const cloud = cloudModel.getObjectByName('Cloud') as THREE.Mesh
             cloudMat = cloud.material as THREE.Material
@@ -191,17 +195,31 @@ function init() {
             console.error('An error happened while loading the glb model', error);
         });
     }
+
     {
-        // i position 559, 569, 595, 596
-        const sphereGeometry = new THREE.SphereGeometry(5, 32, 32);
-        const sphereMaterial = new THREE.MeshBasicMaterial({
-            color: 0x00ff00,
-            transparent: true,
-            opacity: 0.8
+        gltfLoader.load(boatModelURL, (gltf) => {
+            boatModel = gltf.scene;
+            boatModel.traverse((child) => {
+                if (child instanceof THREE.Mesh) {
+                    child.castShadow = true;
+                    child.receiveShadow = true;
+                }
+                child.frustumCulled = false;
+            });
+            const boat = boatModel.getObjectByName('Boat') as THREE.Mesh
+            boatMat = boat.material as THREE.Material
+            boatMesh = new THREE.Mesh(boat.geometry, boat.material);
+            boatMesh.scale.set(0.5,0.5,0.5);
+            boatMesh.position.set(2,0,3.5);
+            boatMesh.rotation.set(0,-1,0)
+            globalGroup.add(boatMesh);
+            const pos = geometry.attributes.position
+            boatv0.add(new THREE.Vector3(pos.getX(boatInd[0]), pos.getZ(boatInd[0]), pos.getY(boatInd[0])))
+            boatv1.add(new THREE.Vector3(pos.getX(boatInd[1]), pos.getZ(boatInd[1]), pos.getY(boatInd[1])))
+            boatv2.add(new THREE.Vector3(pos.getX(boatInd[2]), pos.getZ(boatInd[2]), pos.getY(boatInd[2])))
+            boatP = createPlane(boatv0, boatv1, boatv2);
         });
-        boatSphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
-        boatSphere.position.set(0, 0, 0); // Initial position
-        globalGroup.add(boatSphere);
+    
     }
 
     // Lights
@@ -238,8 +256,9 @@ function updateOcean() {
     }
     positionAttribute.needsUpdate = true;
     outlineGeometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+
 }
-function updateClouds(delta: any) {
+function updateClouds(delta: number) {
     if (cloudMesh) {
         if (camera.zoom > 0.15) {
             if (camera.zoom > 0.28) cloudMesh.visible = false
@@ -264,10 +283,50 @@ function updateClouds(delta: any) {
         if (cloudMesh.visible) cloudMesh.instanceMatrix.needsUpdate = true;
     }
 }
-function updateBoat() {
-    // const pos = geometry.attributes.position
-    // const z1 = pos.getZ(550), z2 = pos.getZ(550), z3 = pos.getZ(550)
-    // console.log(x,y,z)
+
+function projPlane(point: THREE.Vector3, plane: THREE.Plane) {
+    const projectedPoint = new THREE.Vector3();
+    plane.projectPoint(point, projectedPoint);
+    return projectedPoint;
+}
+function updateBoatPos(plane: THREE.Plane) {
+    const boatPosition = boatMesh.position.clone();
+    const projectedPoint = projPlane(boatPosition, plane);
+    boatMesh.position.copy(projectedPoint);
+}
+function updatePlane(v0: THREE.Vector3, v1:THREE.Vector3, v2:THREE.Vector3) {
+    const edge1 = new THREE.Vector3().subVectors(v1, v0);
+    const edge2 = new THREE.Vector3().subVectors(v2, v0);
+    boatP.normal.crossVectors(edge1, edge2).normalize();
+    boatP.constant = -boatP.normal.dot(v0);
+}
+function createPlane(v0: THREE.Vector3, v1:THREE.Vector3, v2:THREE.Vector3) {
+    const edge1 = new THREE.Vector3().subVectors(v1, v0);
+    const edge2 = new THREE.Vector3().subVectors(v2, v0);
+    const normal = new THREE.Vector3().crossVectors(edge1, edge2).normalize();
+    const constant = -normal.dot(v0);
+    return new THREE.Plane(normal, constant);
+}
+function oscillateValue(min:number, max:number, frequency:number, time:number) {
+    const range = max - min;
+    const amplitude = range / 2;
+    const offset = min + amplitude;
+    return amplitude * Math.sin(frequency * time) + offset;
+}
+function boatRot(time: number) {
+    const angle = oscillateValue(-0.2,0.2,0.75,time/2000);
+    boatMesh.rotation.z = angle
+}
+
+function updateBoat(time: number) {
+    if (boatMesh) {
+        const pos = geometry.attributes.position
+        const zs = [pos.getZ(594), pos.getZ(595), pos.getZ(561)]
+        boatv0.setY(zs[0]), boatv1.setY(zs[1]), boatv2.setY(zs[2])
+        updatePlane(boatv0, boatv1, boatv2);
+        updateBoatPos(boatP);
+        boatRot(time)
+    }   
 }
 
 function onKeyDown (event: any) {
@@ -332,6 +391,7 @@ function onKeyUp (event: any) {
             break;
     }
 };
+
 document.addEventListener("keydown", onKeyDown, false);
 document.addEventListener("keyup", onKeyUp, false);
 
@@ -353,7 +413,7 @@ function animate() {
 
     // player controls
     const new_zoom = normalizeZoom(camera.zoom, 0, 0.90);
-1
+
 	velocity.z -= velocity.z * 30.0 * (1.1-new_zoom) * delta;
     velocity.x -= velocity.x * 30.0 * (1.1-new_zoom) * delta;
     if ( moveUp ) velocity.x += 20.0 * (1.01-new_zoom) * delta;
@@ -376,7 +436,7 @@ function animate() {
 
     // object controls
     updateClouds(delta);
-    updateBoat();
+    updateBoat(time);
     updateOcean();
 
 
