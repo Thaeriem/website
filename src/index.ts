@@ -1,5 +1,6 @@
 import * as THREE from "three"
 import { Vector2 } from "three"
+import TWEEN from '@tweenjs/tween.js'
 import * as SimplexNoise from 'simplex-noise';
 
 import { MapControls } from "three/examples/jsm/controls/OrbitControls"
@@ -39,7 +40,7 @@ let moveUp: boolean = false,
     moveLeft: boolean = false, 
     moveRight: boolean = false, 
     rotateLeft: boolean = false, 
-    rotateRight: boolean = false;
+    rotateRight: boolean = false
 let islandModel: THREE.Object3D, 
     cloudModel: THREE.Object3D, 
     boatModel: THREE.Object3D
@@ -60,11 +61,12 @@ let dummy: THREE.Object3D = new THREE.Object3D(),
     dummyColor: THREE.Color = new THREE.Color(),
     dummyArr: number[] = []
 const pOptions = {
-    count: 100,
+    count: 75,
     opacity: 0.7,
     size: 0.1,
+    scale: 0.002,
     maxHeight: 5,
-    spawnheight: 3
+    pos: new THREE.Vector3(0, 0.5, 1.75)
 }
 const boatv0 = new THREE.Vector3(0, 0, 0), 
       boatv1 = new THREE.Vector3(0, 0, 0), 
@@ -154,6 +156,7 @@ function init() {
             color: 0x046997,
             transparent: true,
             opacity: 0.6,
+            side: THREE.DoubleSide
         });
     
         // Create the material for the outline with gradient
@@ -312,16 +315,16 @@ function resetParticle(index: number, init: boolean) {
     const scale = 0.5
     if (init) {
         dummyPos.set(
-            (Math.random()-0.5)*scale,
-            (Math.random() * pOptions.maxHeight/2) + pOptions.spawnheight,
-            (Math.random()-0.5)*scale
+            (Math.random()-0.5)*scale + pOptions.pos.x,
+            (Math.random() * pOptions.maxHeight/2) + pOptions.pos.y,
+            (Math.random()-0.5)*scale + pOptions.pos.z
         )
     }
     else {
         dummyPos.set(
-            (Math.random()-0.5)*scale,           
-            pOptions.spawnheight,
-            (Math.random()-0.5)*scale
+            (Math.random()-0.5)*scale + pOptions.pos.x,           
+            pOptions.pos.y,
+            (Math.random()-0.5)*scale + pOptions.pos.z
         )
     }
     dummyMat.setPosition(dummyPos)
@@ -330,10 +333,10 @@ function resetParticle(index: number, init: boolean) {
 }
 
 function smokeSpeed(y: number): number {
-    return Math.log(y - pOptions.spawnheight + 2);
+    return Math.log(y - pOptions.pos.y + 2);
 }
-function smokeDrift(y: number): number {
-    return -0.005*Math.log(y - pOptions.spawnheight + 1);
+function smokeDrift(y: number, d: number): number {
+    return d*Math.log(y - pOptions.pos.y + 1);
 }
 
 function updateSmoke() {
@@ -341,10 +344,10 @@ function updateSmoke() {
         smokeParticles.getMatrixAt(i, dummyMat);
         dummyPos.setFromMatrixPosition(dummyMat);
         dummyPos.y += 0.01 * smokeSpeed(dummyPos.y);
-        dummyPos.x += Math.sin(time/500)*0.004;
-        dummyPos.z += Math.cos(time/500)*0.004+smokeDrift(dummyPos.y);
+        dummyPos.x += Math.sin(time/500)*pOptions.scale;
+        dummyPos.z += Math.cos(time/500)*pOptions.scale+smokeDrift(dummyPos.y, 0.005);
         dummyMat.setPosition(dummyPos);
-        if (dummyPos.y > (pOptions.spawnheight + pOptions.maxHeight/3)) {
+        if (dummyPos.y > (pOptions.pos.y + pOptions.maxHeight/3)) {
             if (Math.random() > 0.98) resetParticle(i,false);
             else smokeParticles.setMatrixAt(i, dummyMat);
         }
@@ -396,16 +399,36 @@ function oscillateValue(min:number, max:number, frequency:number, time:number) {
 }
 // ---------------------------------
 // Keyboard Controls
+function camReset() {
+    
+    new TWEEN.Tween(camera.position)
+        .to({ x: -200, y: 80, z: -8 }, 1500)
+        .easing(TWEEN.Easing.Quadratic.Out)
+        .start();
+    new TWEEN.Tween(controls.target)
+        .to({ x: 0, y: 0, z: 0 }, 1500) 
+        .easing(TWEEN.Easing.Quadratic.Out)
+        .start();
+    new TWEEN.Tween({ zoom: camera.zoom })
+        .to({ zoom: 0.15 }, 1500) 
+        .easing(TWEEN.Easing.Quadratic.InOut)
+        .onUpdate(function (object) {
+            camera.zoom = object.zoom;
+            camera.updateProjectionMatrix();
+        })
+        .start();
+    globalGroup.rotation.set(0,0,0)
+    velocity.set(0, 0, 0);
+    y_rotation = 0;
+}
+
+
 function onKeyDown (event: any) {
     switch (event.code) {
         case 'KeyZ':
         case 'Escape':
             moveUp = moveDown = moveLeft = moveRight = false;
-            camera.position.set(-200, 80, -8);
-            controls.target.set(0,0,0);
-            velocity.set(0,0,0);
-            globalGroup.rotation.set(0,0,0)
-            y_rotation = 0
+            camReset()
             break;
         case 'KeyW':
         case 'ArrowUp':
@@ -479,9 +502,9 @@ function animate() {
     time = performance.now();
     const delta = ( time - prevTime ) / 1000;
 
-    const new_zoom = normalizeZoom(camera.zoom, 0, 0.90);
 
-	velocity.z -= velocity.z * 30.0 * (1.1-new_zoom) * delta;
+    const new_zoom = normalizeZoom(camera.zoom, 0, 0.90);
+    velocity.z -= velocity.z * 30.0 * (1.1-new_zoom) * delta;
     velocity.x -= velocity.x * 30.0 * (1.1-new_zoom) * delta;
     if ( moveUp ) velocity.x += 20.0 * (1.01-new_zoom) * delta;
     if (moveDown )  velocity.x -= 20.0 * (1.01-new_zoom) * delta;
@@ -518,6 +541,7 @@ function animate() {
     //     mech.rotation.y = Math.floor( t * 8 ) * Math.PI / 32
     // console.log(camera.position)
     controls.update();
+    TWEEN.update();
     composer.render();
 
     prevTime = time;
