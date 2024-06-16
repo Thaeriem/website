@@ -2,6 +2,7 @@ import * as THREE from "three"
 import { Vector2 } from "three"
 import TWEEN from '@tweenjs/tween.js'
 import * as SimplexNoise from 'simplex-noise';
+import { CSS3DRenderer, CSS3DObject } from 'three/examples/jsm/renderers/CSS3DRenderer.js';
 
 import { MapControls } from "three/examples/jsm/controls/OrbitControls"
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
@@ -11,9 +12,6 @@ import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass'
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass'
 
 import RenderPixelatedPass from "./RenderPixelatedPass"
-import PixelatePass from "./PixelatePass"
-
-import { stopGoEased } from "./math"
 
 import islandModelURL from "./assets/island.glb"
 import cloudModelURL from "./assets/cloud.glb"
@@ -21,7 +19,9 @@ import boatModelURL from "./assets/boat.glb"
 
 let camera: THREE.OrthographicCamera, 
     scene: THREE.Scene, 
+    sceneCss: THREE.Scene,
     renderer: THREE.WebGLRenderer, 
+    rendererCss: CSS3DRenderer,
     composer: EffectComposer
 const cameraBounds = {
     minX: -270,
@@ -91,9 +91,12 @@ function init() {
     camera.position.set(-200, 80, -8)
     camera.zoom = 0.15
     camera.updateProjectionMatrix()
+
     scene = new THREE.Scene()
     scene.background = new THREE.Color( 0x151729 )
     scene.add(globalGroup);
+
+    sceneCss = new THREE.Scene();
 
     // Renderer
     renderer = new THREE.WebGLRenderer( { antialias: false } )
@@ -104,13 +107,19 @@ function init() {
     // renderer.debug.checkShaderErrors = false;
     document.body.appendChild( renderer.domElement )
 
+    rendererCss = new CSS3DRenderer();
+    rendererCss.setSize( screenResolution.x, screenResolution.y )
+    rendererCss.domElement.style.position = 'absolute';
+    rendererCss.domElement.style.top = "0";
+    document.body.appendChild( rendererCss.domElement );
+
     composer = new EffectComposer( renderer )
     composer.addPass( new RenderPass( scene, camera ) )
     composer.addPass( new RenderPixelatedPass( renderResolution, scene, camera ) )
     let bloomPass = new UnrealBloomPass( screenResolution, .4, .1, .9 )
     composer.addPass( bloomPass )
 
-    controls = new MapControls( camera, renderer.domElement )
+    controls = new MapControls( camera, rendererCss.domElement )
     controls.enablePan = false //
     controls.target.set( 0, 0, 0 )
     controls.maxZoom = 1
@@ -263,6 +272,11 @@ function init() {
         directionalLight.shadow.mapSize.set(4000, 4000);
         globalGroup.add(directionalLight);
     }
+
+    // events
+    window.addEventListener( 'resize', onWindowResize );
+    document.addEventListener("keydown", onKeyDown, false);
+    document.addEventListener("keyup", onKeyUp, false);
 }
 // ---------------------------------
 // Ocean
@@ -481,9 +495,6 @@ function onKeyUp (event: any) {
             break;
     }
 };
-
-document.addEventListener("keydown", onKeyDown, false);
-document.addEventListener("keyup", onKeyUp, false);
 // ---------------------------------
 // Camera Controls
 function normalizeZoom(zoom: any, low: any, high: any) {
@@ -492,6 +503,22 @@ function normalizeZoom(zoom: any, low: any, high: any) {
     const normalizedValue = (zoom - minOriginal) / (maxOriginal - minOriginal);
     const newZoom = low + normalizedValue * (high - low);
     return newZoom;
+}
+function onWindowResize() {
+
+    const aspect = window.innerWidth / window.innerHeight;
+
+    camera.left = - aspect;
+    camera.right = aspect;
+    camera.top = 1;
+    camera.bottom = -1;
+
+    camera.updateProjectionMatrix();
+
+    renderer.setSize( window.innerWidth, window.innerHeight );
+
+    rendererCss.setSize( window.innerWidth, window.innerHeight );
+
 }
 // ---------------------------------
 
@@ -530,19 +557,10 @@ function animate() {
     updateOcean(time * 0.0001,0.1,0.4);
     updateSmoke();
 
-
-    // let mat = ( crystalMesh.material as THREE.MeshPhongMaterial )
-    // mat.emissiveIntensity = Math.sin( t * 3 ) * .5 + .5
-    // crystalMesh.position.y = .7 + Math.sin( t * 2 ) * .05
-    // crystalMesh.rotation.y = stopGoEased( t, 3, 4 ) * Math.PI / 2
-    // crystalMesh.rotation.y = stopGoEased( t, 2, 4 ) * 2 * Math.PI
-
-    // if ( mech )
-    //     mech.rotation.y = Math.floor( t * 8 ) * Math.PI / 32
-    // console.log(camera.position)
     controls.update();
     TWEEN.update();
     composer.render();
+    rendererCss.render( sceneCss, camera );
 
     prevTime = time;
 }
