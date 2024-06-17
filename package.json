@@ -1,21 +1,22 @@
 {
-    "name": "hello-threejs",
+    "name": "website",
     "version": "1.0.0",
-    "main": "index.js",
+    "type": "module",
     "license": "MIT",
     "dependencies": {
         "@tweenjs/tween.js": "^23.1.2",
+        "create-vite": "^5.2.3",
         "simplex-noise": "^4.0.1",
         "three": "^0.144.0"
     },
     "scripts": {
-        "watch": "parcel src/index.html"
+        "dev": "vite",
+        "build": "tsc && vite build",
+        "preview": "vite preview"
     },
     "devDependencies": {
-        "@babel/core": "^7.14.8",
-        "@babel/preset-env": "^7.14.9",
-        "@babel/preset-typescript": "^7.14.5",
         "@types/three": "^0.130.1",
-        "parcel": "^2.0.0-rc.0"
+        "typescript": "^5.2.2",
+        "vite": "^5.3.1"
     }
 }

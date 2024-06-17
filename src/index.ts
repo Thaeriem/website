@@ -13,16 +13,17 @@ import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPa
 
 import RenderPixelatedPass from "./RenderPixelatedPass"
 
-import islandModelURL from "./assets/island.glb"
-import cloudModelURL from "./assets/cloud.glb"
-import boatModelURL from "./assets/boat.glb"
+import islandModelURL from '/island.glb?url'
+import cloudModelURL from '/cloud.glb?url'
+import boatModelURL from '/boat.glb?url'
 
 let camera: THREE.OrthographicCamera, 
     scene: THREE.Scene, 
     sceneCss: THREE.Scene,
     renderer: THREE.WebGLRenderer, 
     rendererCss: CSS3DRenderer,
-    composer: EffectComposer
+    composer: EffectComposer,
+    pixelPass: RenderPixelatedPass
 const cameraBounds = {
     minX: -270,
     maxX: -140,
@@ -51,12 +52,10 @@ let geometry: THREE.PlaneGeometry,
     cloudAmt: number = 10,
     cloudMesh: THREE.InstancedMesh,
     cloudMat: THREE.Material,
-    boatMat: THREE.Material,
     boatMesh: THREE.Mesh,
     boatP: THREE.Plane,
     smokeParticles: THREE.InstancedMesh
-let dummy: THREE.Object3D = new THREE.Object3D(),
-    dummyMat: THREE.Matrix4 = new THREE.Matrix4(),
+let dummyMat: THREE.Matrix4 = new THREE.Matrix4(),
     dummyPos: THREE.Vector3 = new THREE.Vector3(),
     dummyColor: THREE.Color = new THREE.Color(),
     dummyArr: number[] = []
@@ -113,9 +112,10 @@ function init() {
     rendererCss.domElement.style.top = "0";
     document.body.appendChild( rendererCss.domElement );
 
+    pixelPass = new RenderPixelatedPass( renderResolution, scene, camera );
     composer = new EffectComposer( renderer )
     composer.addPass( new RenderPass( scene, camera ) )
-    composer.addPass( new RenderPixelatedPass( renderResolution, scene, camera ) )
+    composer.addPass( pixelPass )
     let bloomPass = new UnrealBloomPass( screenResolution, .4, .1, .9 )
     composer.addPass( bloomPass )
 
@@ -134,7 +134,7 @@ function init() {
     // controls.minPolarAngle = controls.getPolarAngle() - Math.PI
     // controls.maxPolarAngle = controls.getPolarAngle() + (Math.PI / 24)
 
-    const texLoader = new THREE.TextureLoader()
+    // const texLoader = new THREE.TextureLoader()
     const gltfLoader = new GLTFLoader()
 
     {
@@ -202,7 +202,7 @@ function init() {
             const cloud = cloudModel.getObjectByName('Cloud') as THREE.Mesh
             cloudMat = cloud.material as THREE.Material
             cloudMat.transparent = true;
-            cloudMat.opacity = 0.65
+            cloudMat.opacity = 0.65;
             cloudMesh = new THREE.InstancedMesh(cloud.geometry, cloud.material, cloudAmt);
             cloudMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
             for (let i = 0; i < cloudAmt; i++) {
@@ -231,7 +231,6 @@ function init() {
                 child.frustumCulled = false;
             });
             const boat = boatModel.getObjectByName('Boat') as THREE.Mesh
-            boatMat = boat.material as THREE.Material
             boatMesh = new THREE.Mesh(boat.geometry, boat.material);
             boatMesh.scale.set(0.5,0.5,0.5);
             boatMesh.position.set(2,0,3.5);
@@ -267,12 +266,12 @@ function init() {
 
         // Directional light for strong, directional lighting
         let directionalLight = new THREE.DirectionalLight(0xff6900, 4.5);
-        directionalLight.position.set(100, 100, 100);
+        directionalLight.position.set(-200, 80, 800);
         directionalLight.castShadow = true;
         directionalLight.shadow.mapSize.set(4000, 4000);
         globalGroup.add(directionalLight);
     }
-
+    renderHTML()
     // events
     window.addEventListener( 'resize', onWindowResize );
     document.addEventListener("keydown", onKeyDown, false);
@@ -436,7 +435,6 @@ function camReset() {
     y_rotation = 0;
 }
 
-
 function onKeyDown (event: any) {
     switch (event.code) {
         case 'KeyZ':
@@ -504,24 +502,37 @@ function normalizeZoom(zoom: any, low: any, high: any) {
     const newZoom = low + normalizedValue * (high - low);
     return newZoom;
 }
+
 function onWindowResize() {
 
-    const aspect = window.innerWidth / window.innerHeight;
+    let screenResolution = new Vector2( window.innerWidth, window.innerHeight )
+    const aspect = screenResolution.x / screenResolution.y;
+    let renderResolution = screenResolution.clone().divideScalar( 4 )
+    renderResolution.x |= 0
+    renderResolution.y |= 0
 
-    camera.left = - aspect;
+    camera.left = -aspect;
     camera.right = aspect;
     camera.top = 1;
     camera.bottom = -1;
-
+    pixelPass.resolution = renderResolution
     camera.updateProjectionMatrix();
 
-    renderer.setSize( window.innerWidth, window.innerHeight );
+    renderer.setSize( screenResolution.x, screenResolution.y );
 
-    rendererCss.setSize( window.innerWidth, window.innerHeight );
+    rendererCss.setSize( screenResolution.x, screenResolution.y );
 
 }
 // ---------------------------------
-
+// HTML Render
+function renderHTML() {
+    const cssElement = document.getElementById('test-element') as HTMLElement;
+    const cssObject = new CSS3DObject(cssElement);
+    cssObject.position.set(10, 4, 0);
+    cssObject.rotation.set(0,Math.PI/2, 0)
+    sceneCss.add(cssObject);
+    sceneCss.rotateY(Math.PI)
+}
 function animate() {
     
     requestAnimationFrame( animate )
@@ -565,11 +576,11 @@ function animate() {
     prevTime = time;
 }
 
-function pixelTex( tex: THREE.Texture ) {
-    tex.minFilter = THREE.NearestFilter
-    tex.magFilter = THREE.NearestFilter
-    tex.generateMipmaps = false
-    tex.wrapS = THREE.RepeatWrapping
-    tex.wrapT = THREE.RepeatWrapping
-    return tex
-}
+// function pixelTex( tex: THREE.Texture ) {
+//     tex.minFilter = THREE.NearestFilter
+//     tex.magFilter = THREE.NearestFilter
+//     tex.generateMipmaps = false
+//     tex.wrapS = THREE.RepeatWrapping
+//     tex.wrapT = THREE.RepeatWrapping
+//     return tex
+// }
