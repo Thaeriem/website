@@ -530,8 +530,8 @@ function renderHTML() {
     const cssObject = new CSS3DObject(cssElement);
     cssObject.position.set(10, 4, 0);
     cssObject.rotation.set(0,Math.PI/2, 0)
-    sceneCss.add(cssObject);
-    sceneCss.rotateY(Math.PI)
+    // sceneCss.add(cssObject);
+    // sceneCss.rotateY(Math.PI)
 }
 function animate() {
     
