@@ -78,26 +78,15 @@ const colorStart = new THREE.Color("#046997"),
 init()
 animate()
 
-function init() {
-
-    let screenResolution = new Vector2( window.innerWidth, window.innerHeight )
-    let renderResolution = screenResolution.clone().divideScalar( 4 )
-    renderResolution.x |= 0
-    renderResolution.y |= 0
+function setupCamera(screenResolution: Vector2) {
     let aspectRatio = screenResolution.x / screenResolution.y
-
     camera = new THREE.OrthographicCamera(-aspectRatio, aspectRatio, 1, -1, 0.01, 2000);
     camera.position.set(-200, 80, -8)
     camera.zoom = 0.15
     camera.updateProjectionMatrix()
+}
 
-    scene = new THREE.Scene()
-    scene.background = new THREE.Color( 0x151729 )
-    scene.add(globalGroup);
-
-    sceneCss = new THREE.Scene();
-
-    // Renderer
+function setupRenderers(screenResolution: Vector2) {
     renderer = new THREE.WebGLRenderer( { antialias: false } )
     renderer.toneMapping = THREE.ACESFilmicToneMapping
     renderer.toneMappingExposure = .75
@@ -111,14 +100,9 @@ function init() {
     rendererCss.domElement.style.position = 'absolute';
     rendererCss.domElement.style.top = "0";
     document.body.appendChild( rendererCss.domElement );
+}
 
-    pixelPass = new RenderPixelatedPass( renderResolution, scene, camera );
-    composer = new EffectComposer( renderer )
-    composer.addPass( new RenderPass( scene, camera ) )
-    composer.addPass( pixelPass )
-    let bloomPass = new UnrealBloomPass( screenResolution, .4, .1, .9 )
-    composer.addPass( bloomPass )
-
+function setupControls() {
     controls = new MapControls( camera, rendererCss.domElement )
     controls.enablePan = false //
     controls.target.set( 0, 0, 0 )
@@ -133,6 +117,31 @@ function init() {
     controls.update()
     // controls.minPolarAngle = controls.getPolarAngle() - Math.PI
     // controls.maxPolarAngle = controls.getPolarAngle() + (Math.PI / 24)
+}
+
+function init() {
+    let screenResolution = new Vector2( window.innerWidth, window.innerHeight )
+    let renderResolution = screenResolution.clone().divideScalar( 4 )
+    renderResolution.x |= 0
+    renderResolution.y |= 0
+
+    setupCamera(screenResolution);
+
+    scene = new THREE.Scene()
+    scene.background = new THREE.Color( 0x151729 )
+    scene.add(globalGroup);
+    sceneCss = new THREE.Scene();
+
+    setupRenderers(screenResolution);
+
+    pixelPass = new RenderPixelatedPass( renderResolution, scene, camera );
+    composer = new EffectComposer( renderer )
+    composer.addPass( new RenderPass( scene, camera ) )
+    composer.addPass( pixelPass )
+    let bloomPass = new UnrealBloomPass( screenResolution, .4, .1, .9 )
+    composer.addPass( bloomPass )
+
+    setupControls();
 
     // const texLoader = new THREE.TextureLoader()
     const gltfLoader = new GLTFLoader()
