@@ -1,5 +1,5 @@
 import * as THREE from "three"
-import { Vector2, WebGLRenderer, WebGLRenderTarget } from "three"
+import { WebGLRenderer, WebGLRenderTarget } from "three"
 import { Pass, FullScreenQuad } from "three/examples/jsm/postprocessing/Pass"
 
 export default class RenderPixelatedPass extends Pass {
@@ -103,7 +103,7 @@ export default class RenderPixelatedPass extends Pass {
                     // Only the shallower pixel should detect the normal edge.
                     float depthIndicator = clamp(sign(depthDiff * .25 + .0025), 0.0, 1.0);
 
-                    return distance(normal, getNormal(x, y)) * depthIndicator * normalIndicator;
+                    return 1.0*distance(normal, getNormal(x, y)) * depthIndicator * normalIndicator;
                 }
 
                 float depthEdgeIndicator() {
@@ -134,14 +134,13 @@ export default class RenderPixelatedPass extends Pass {
                 void main() {
                     vec4 texel = texture2D( tDiffuse, vUv );
 
-                    float normalEdgeCoefficient = .3;
-                    float depthEdgeCoefficient = .4;
+                    float normalEdgeCoefficient = .0;
+                    float depthEdgeCoefficient = .05;
 
                     float dei = depthEdgeIndicator();
                     float nei = normalEdgeIndicator();
 
                     float coefficient = dei > 0.0 ? (1.0 - depthEdgeCoefficient * dei) : (1.0 + normalEdgeCoefficient * nei);
-
                     gl_FragColor = texel * coefficient;
                 }
                 `

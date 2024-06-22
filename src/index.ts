@@ -11,11 +11,13 @@ import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass'
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass'
 
-import RenderPixelatedPass from "./RenderPixelatedPass"
+import RenderPixelatedPass from "./shaders/pix-pass"
+import grassShader from './shaders/grass';
 
 import islandModelURL from '/island.glb?url'
 import cloudModelURL from '/cloud.glb?url'
 import boatModelURL from '/boat.glb?url'
+
 
 let camera: THREE.OrthographicCamera, 
     scene: THREE.Scene, 
@@ -54,11 +56,26 @@ let geometry: THREE.PlaneGeometry,
     cloudMat: THREE.Material,
     boatMesh: THREE.Mesh,
     boatP: THREE.Plane,
-    smokeParticles: THREE.InstancedMesh
-let dummyMat: THREE.Matrix4 = new THREE.Matrix4(),
+    smokeParticles: THREE.InstancedMesh,
+    grass: THREE.Mesh
+let dummyVec: THREE.Vector3 = new THREE.Vector3(),
+    dummyMat: THREE.Matrix4 = new THREE.Matrix4(),
     dummyPos: THREE.Vector3 = new THREE.Vector3(),
     dummyColor: THREE.Color = new THREE.Color(),
     dummyArr: number[] = []
+// -----------------------------------------------------------------------
+// TEXTURE LOADER
+const texLoader = new THREE.TextureLoader();
+function pixelTex( tex: THREE.Texture ) {
+    tex.minFilter = THREE.NearestFilter
+    tex.magFilter = THREE.NearestFilter
+    tex.generateMipmaps = false
+    tex.wrapS = THREE.RepeatWrapping
+    tex.wrapT = THREE.RepeatWrapping
+    return tex
+}
+// -----------------------------------------------------------------------
+// SMOKE
 const pOptions = {
     count: 75,
     opacity: 0.7,
@@ -67,6 +84,8 @@ const pOptions = {
     maxHeight: 5,
     pos: new THREE.Vector3(0, 0.5, 1.75)
 }
+// -----------------------------------------------------------------------
+// BOAT + OCEAN
 const boatv0 = new THREE.Vector3(0, 0, 0), 
       boatv1 = new THREE.Vector3(0, 0, 0), 
       boatv2 = new THREE.Vector3(0, 0, 0);
@@ -75,9 +94,8 @@ const noise = SimplexNoise.createNoise2D();
 const colorStart = new THREE.Color("#046997"), 
       colorEnd = new THREE.Color("#30b1ce");
 
-init()
-animate()
-
+// -----------------------------------------------------------------------
+// SETUP
 function setupCamera(screenResolution: Vector2) {
     let aspectRatio = screenResolution.x / screenResolution.y
     camera = new THREE.OrthographicCamera(-aspectRatio, aspectRatio, 1, -1, 0.01, 2000);
@@ -93,6 +111,7 @@ function setupRenderers(screenResolution: Vector2) {
     renderer.shadowMap.enabled = true
     renderer.setSize( screenResolution.x, screenResolution.y )
     // renderer.debug.checkShaderErrors = false;
+    renderer.setPixelRatio(window.devicePixelRatio);
     document.body.appendChild( renderer.domElement )
 
     rendererCss = new CSS3DRenderer();
@@ -112,13 +131,139 @@ function setupControls() {
     controls.mouseButtons = {
         LEFT: THREE.MOUSE.DOLLY,
         MIDDLE: THREE.MOUSE.DOLLY,
-        RIGHT: THREE.MOUSE.ROTATE //
+        RIGHT: THREE.MOUSE.DOLLY //
     }
     controls.update()
-    // controls.minPolarAngle = controls.getPolarAngle() - Math.PI
-    // controls.maxPolarAngle = controls.getPolarAngle() + (Math.PI / 24)
+    controls.minPolarAngle = controls.getPolarAngle() - Math.PI
+    controls.maxPolarAngle = controls.getPolarAngle() + (Math.PI / 24)
 }
+// -----------------------------------------------------------------------
+// GRASS
+const PLANE_SIZE = 3;
+const BLADE_COUNT = 500;
+const BLADE_WIDTH = 0.1;
+const BLADE_HEIGHT = 0.3;
+const BLADE_HEIGHT_VARIATION = 0.4;
 
+const startTime = performance.now();
+const grassTexture = pixelTex(texLoader.load('grass.jpg'));
+
+const timeUniform = { type: 'f', value: 0.0 };
+
+// Grass Shader
+const grassUniforms = {
+  textures: { value: [grassTexture] },
+  iTime: timeUniform
+};
+
+const grassMaterial = new THREE.ShaderMaterial({
+  uniforms: grassUniforms,
+  vertexShader: grassShader.vert,
+  fragmentShader: grassShader.frag,
+  vertexColors: true,
+  side: THREE.DoubleSide
+});
+
+generateField();
+
+function convertRange (val: number, oldMin: number, 
+    oldMax: number, newMin: number, newMax: number) {
+    return (((val - oldMin) * (newMax - newMin)) / (oldMax - oldMin)) + newMin;
+}
+  
+function generateField () {
+    const positions: number[] = [];
+    const uvs: number[] = [];
+    const indices: number[] = [];
+    const colors: number[] = [];
+  
+    for (let i = 0; i < BLADE_COUNT; i++) {
+        const VERTEX_COUNT = 5;
+        const surfaceMin = PLANE_SIZE / 2 * -1;
+        const surfaceMax = PLANE_SIZE / 2;
+        const radius = PLANE_SIZE / 2;
+    
+        const r = radius * Math.sqrt(Math.random());
+        const theta = Math.random() * 2 * Math.PI;
+        const x = r * Math.cos(theta);
+        const y = r * Math.sin(theta);
+    
+        const pos = new THREE.Vector3(x, 0, y);
+    
+        const uv = [convertRange(pos.x, surfaceMin, surfaceMax, 0, 1), 
+                    convertRange(pos.z, surfaceMin, surfaceMax, 0, 1)];
+    
+        const blade = generateBlade(pos, i * VERTEX_COUNT, uv);
+        blade.verts.forEach(vert => {
+            positions.push(...vert.pos);
+            uvs.push(...vert.uv);
+            colors.push(...vert.color);
+        });
+        blade.indices.forEach(indice => indices.push(indice));
+    }
+  
+    const geom = new THREE.BufferGeometry();
+    geom.setAttribute('position', new THREE.BufferAttribute(new Float32Array(positions), 3));
+    geom.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(uvs), 2));
+    geom.setAttribute('color', new THREE.BufferAttribute(new Float32Array(colors), 3));
+    geom.setIndex(indices);
+    geom.computeVertexNormals();
+  
+    grass = new THREE.Mesh(geom, grassMaterial);
+    globalGroup.add(grass);
+}
+  
+function generateBlade (center: THREE.Vector3, vArrOffset: number, uv: number[]) {
+    const MID_WIDTH = BLADE_WIDTH * 0.5;
+    const TIP_OFFSET = 0.1;
+    const height = BLADE_HEIGHT + (Math.random() * BLADE_HEIGHT_VARIATION);
+  
+    const yaw = Math.random() * Math.PI * 2;
+    const yawUnitVec = new THREE.Vector3(Math.sin(yaw), 0, -Math.cos(yaw));
+    const tipBend = Math.random() * Math.PI * 2;
+    const tipBendUnitVec = new THREE.Vector3(Math.sin(tipBend), 0, -Math.cos(tipBend));
+  
+    // Find the Bottom Left, Bottom Right, Top Left, Top right, Top Center vertex positions
+    const bl = new THREE.Vector3().addVectors(center, dummyVec.copy(yawUnitVec).multiplyScalar((BLADE_WIDTH / 2) * 1));
+    const br = new THREE.Vector3().addVectors(center, dummyVec.copy(yawUnitVec).multiplyScalar((BLADE_WIDTH / 2) * -1));
+    const tl = new THREE.Vector3().addVectors(center, dummyVec.copy(yawUnitVec).multiplyScalar((MID_WIDTH / 2) * 1));
+    const tr = new THREE.Vector3().addVectors(center, dummyVec.copy(yawUnitVec).multiplyScalar((MID_WIDTH / 2) * -1));
+    const tc = new THREE.Vector3().addVectors(center, dummyVec.copy(tipBendUnitVec).multiplyScalar(TIP_OFFSET));
+  
+    tl.y += height / 2;
+    tr.y += height / 2;
+    tc.y += height;
+  
+    // Vertex Colors
+    const black = [0, 0, 0];
+    const gray = [0.5, 0.5, 0.5];
+    const white = [1.0, 1.0, 1.0];
+  
+    const verts = [
+      { pos: bl.toArray(), uv: uv, color: black },
+      { pos: br.toArray(), uv: uv, color: black },
+      { pos: tr.toArray(), uv: uv, color: gray },
+      { pos: tl.toArray(), uv: uv, color: gray },
+      { pos: tc.toArray(), uv: uv, color: white }
+    ];
+  
+    const indices = [
+      vArrOffset,
+      vArrOffset + 1,
+      vArrOffset + 2,
+      vArrOffset + 2,
+      vArrOffset + 4,
+      vArrOffset + 3,
+      vArrOffset + 3,
+      vArrOffset,
+      vArrOffset + 2
+    ];
+  
+    return { verts, indices };
+}
+  
+// -----------------------------------------------------------------------
+init();
 function init() {
     let screenResolution = new Vector2( window.innerWidth, window.innerHeight )
     let renderResolution = screenResolution.clone().divideScalar( 4 )
@@ -143,7 +288,6 @@ function init() {
 
     setupControls();
 
-    // const texLoader = new THREE.TextureLoader()
     const gltfLoader = new GLTFLoader()
 
     {
@@ -268,6 +412,11 @@ function init() {
         smokeParticles.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
     }
 
+    {
+        grass.position.set(0.2,0.3,0.2);
+        grass.rotation.set(0,Math.PI/2, 0);
+    }
+
     // Lights
     // Ambient light for general illumination
     {
@@ -275,10 +424,25 @@ function init() {
 
         // Directional light for strong, directional lighting
         let directionalLight = new THREE.DirectionalLight(0xff6900, 4.5);
-        directionalLight.position.set(-200, 80, 800);
+        directionalLight.position.set(-200, 80, -1000);
         directionalLight.castShadow = true;
         directionalLight.shadow.mapSize.set(4000, 4000);
         globalGroup.add(directionalLight);
+
+        const spotLight = new THREE.SpotLight(0xffffff);
+        spotLight.position.set(0, 300, 0);
+        spotLight.angle = Math.PI / 6; 
+        spotLight.penumbra = 0.1; 
+        spotLight.decay = 1;
+        spotLight.distance = 400;
+        globalGroup.add(spotLight);
+        spotLight.target = islandModel;
+
+        // Add a target for the spotlight to look at
+        const targetObject = new THREE.Object3D();
+        targetObject.position.set(0, 0, 0);
+        globalGroup.add(targetObject);
+        spotLight.target = targetObject;
     }
     renderHTML()
     // events
@@ -286,7 +450,7 @@ function init() {
     document.addEventListener("keydown", onKeyDown, false);
     document.addEventListener("keyup", onKeyUp, false);
 }
-// ---------------------------------
+// -----------------------------------------------------------------------
 // Ocean
 function updateOcean(time: number, scale: number, amplitude: number) {
     const positionAttribute = geometry.attributes.position;
@@ -308,7 +472,7 @@ function updateOcean(time: number, scale: number, amplitude: number) {
     outlineGeometry.setAttribute('color', new THREE.Float32BufferAttribute(dummyArr, 3));
 
 }
-// ---------------------------------
+// -----------------------------------------------------------------------
 // Clouds
 function updateClouds(delta: number) {
     if (cloudMesh) {
@@ -331,7 +495,7 @@ function updateClouds(delta: number) {
         if (cloudMesh.visible) cloudMesh.instanceMatrix.needsUpdate = true;
     }
 }
-// ---------------------------------
+// -----------------------------------------------------------------------
 // Smoke
 function resetParticle(index: number, init: boolean) {
     const scale = 0.5
@@ -380,7 +544,7 @@ function updateSmoke() {
 
     smokeParticles.instanceMatrix.needsUpdate = true;
 }
-// ---------------------------------
+// -----------------------------------------------------------------------
 // BOAT
 function updateBoat(time: number) {
     if (boatMesh) {
@@ -419,7 +583,7 @@ function oscillateValue(min:number, max:number, frequency:number, time:number) {
     const offset = min + amplitude;
     return amplitude * Math.sin(frequency * time) + offset;
 }
-// ---------------------------------
+// -----------------------------------------------------------------------
 // Keyboard Controls
 function camReset() {
     
@@ -502,7 +666,7 @@ function onKeyUp (event: any) {
             break;
     }
 };
-// ---------------------------------
+// -----------------------------------------------------------------------
 // Camera Controls
 function normalizeZoom(zoom: any, low: any, high: any) {
     const minOriginal = 0.030563645913324056;
@@ -530,9 +694,8 @@ function onWindowResize() {
     renderer.setSize( screenResolution.x, screenResolution.y );
 
     rendererCss.setSize( screenResolution.x, screenResolution.y );
-
 }
-// ---------------------------------
+// -----------------------------------------------------------------------
 // HTML Render
 function renderHTML() {
     const cssElement = document.getElementById('test-element') as HTMLElement;
@@ -542,13 +705,14 @@ function renderHTML() {
     // sceneCss.add(cssObject);
     // sceneCss.rotateY(Math.PI)
 }
+// -----------------------------------------------------------------------
+animate()
 function animate() {
-    
-    requestAnimationFrame( animate )
 
     time = performance.now();
     const delta = ( time - prevTime ) / 1000;
 
+    grassUniforms.iTime.value = time - startTime;
 
     const new_zoom = normalizeZoom(camera.zoom, 0, 0.90);
     velocity.z -= velocity.z * 30.0 * (1.1-new_zoom) * delta;
@@ -579,17 +743,9 @@ function animate() {
 
     controls.update();
     TWEEN.update();
+    requestAnimationFrame( animate )
     composer.render();
     rendererCss.render( sceneCss, camera );
 
     prevTime = time;
 }
-
-// function pixelTex( tex: THREE.Texture ) {
-//     tex.minFilter = THREE.NearestFilter
-//     tex.magFilter = THREE.NearestFilter
-//     tex.generateMipmaps = false
-//     tex.wrapS = THREE.RepeatWrapping
-//     tex.wrapT = THREE.RepeatWrapping
-//     return tex
-// }
