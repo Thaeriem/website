@@ -12,7 +12,7 @@ void main() {
 
   float waveSize = 0.3f;
   float tipDistance = .1f;
-  float centerDistance = 0.01f;
+  float centerDistance = 0.02f;
 
   if (color.x > 0.6f) {
     cpos.x += sin((iTime / 500.) + (uv.x * waveSize)) * tipDistance;

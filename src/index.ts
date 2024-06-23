@@ -140,7 +140,7 @@ function setupControls() {
 // -----------------------------------------------------------------------
 // GRASS
 const PLANE_SIZE = 3;
-const BLADE_COUNT = 500;
+const BLADE_COUNT = 1000;
 const BLADE_WIDTH = 0.1;
 const BLADE_HEIGHT = 0.3;
 const BLADE_HEIGHT_VARIATION = 0.4;
