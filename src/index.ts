@@ -17,6 +17,7 @@ import grassShader from './shaders/grass';
 import islandModelURL from '/island.glb?url'
 import cloudModelURL from '/cloud.glb?url'
 import boatModelURL from '/boat.glb?url'
+import barrelModelURL from '/barrel.glb?url'
 
 
 let camera: THREE.OrthographicCamera, 
@@ -46,7 +47,8 @@ let moveUp: boolean = false,
     rotateRight: boolean = false
 let islandModel: THREE.Object3D, 
     cloudModel: THREE.Object3D, 
-    boatModel: THREE.Object3D
+    boatModel: THREE.Object3D,
+    barrelModel: THREE.Object3D
 let geometry: THREE.PlaneGeometry, 
     mesh: THREE.Mesh,
     outlineGeometry: THREE.PlaneGeometry, 
@@ -57,7 +59,8 @@ let geometry: THREE.PlaneGeometry,
     boatMesh: THREE.Mesh,
     boatP: THREE.Plane,
     smokeParticles: THREE.InstancedMesh,
-    grass: THREE.Mesh
+    grass: THREE.Mesh,
+    barrelMesh: THREE.InstancedMesh
 let dummyVec: THREE.Vector3 = new THREE.Vector3(),
     dummyMat: THREE.Matrix4 = new THREE.Matrix4(),
     dummyPos: THREE.Vector3 = new THREE.Vector3(),
@@ -131,11 +134,11 @@ function setupControls() {
     controls.mouseButtons = {
         LEFT: THREE.MOUSE.DOLLY,
         MIDDLE: THREE.MOUSE.DOLLY,
-        RIGHT: THREE.MOUSE.DOLLY //
+        RIGHT: THREE.MOUSE.ROTATE //
     }
     controls.update()
-    controls.minPolarAngle = controls.getPolarAngle() - Math.PI
-    controls.maxPolarAngle = controls.getPolarAngle() + (Math.PI / 24)
+    // controls.minPolarAngle = controls.getPolarAngle() - Math.PI
+    // controls.maxPolarAngle = controls.getPolarAngle() + (Math.PI / 24)
 }
 // -----------------------------------------------------------------------
 // GRASS
@@ -308,6 +311,26 @@ function init() {
         });
     }
 
+    {
+        gltfLoader.load(barrelModelURL, (gltf) => {
+            barrelModel = gltf.scene;
+            barrelModel.traverse((child) => {
+                if (child instanceof THREE.Mesh) {
+                    child.castShadow = true;
+                    child.receiveShadow = true;
+                }
+                child.frustumCulled = false;
+            });
+            const barrel = barrelModel.getObjectByName('Barrel') as THREE.Mesh
+            barrelMesh = new THREE.InstancedMesh(barrel.geometry, barrel.material, 4);
+            dummyMat.setPosition(0,1,0);
+            barrelMesh.setMatrixAt(0,dummyMat);
+            barrelMesh.instanceMatrix.needsUpdate = true;
+            globalGroup.add(barrelMesh);
+        }, undefined, (error) => {
+            console.error('An error happened while loading the glb model', error);
+        });
+    }
      // Geometry setup
      {
         const width = 400, height = 400, segmentsX = Math.floor(width / 12), segmentsY = Math.floor(height / 12);
