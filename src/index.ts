@@ -17,7 +17,6 @@ import grassShader from './shaders/grass';
 import islandModelURL from '/island.glb?url'
 import cloudModelURL from '/cloud.glb?url'
 import boatModelURL from '/boat.glb?url'
-import barrelModelURL from '/barrel.glb?url'
 
 
 let camera: THREE.OrthographicCamera, 
@@ -47,8 +46,7 @@ let moveUp: boolean = false,
     rotateRight: boolean = false
 let islandModel: THREE.Object3D, 
     cloudModel: THREE.Object3D, 
-    boatModel: THREE.Object3D,
-    barrelModel: THREE.Object3D
+    boatModel: THREE.Object3D
 let geometry: THREE.PlaneGeometry, 
     mesh: THREE.Mesh,
     outlineGeometry: THREE.PlaneGeometry, 
@@ -59,8 +57,7 @@ let geometry: THREE.PlaneGeometry,
     boatMesh: THREE.Mesh,
     boatP: THREE.Plane,
     smokeParticles: THREE.InstancedMesh,
-    grass: THREE.Mesh,
-    barrelMesh: THREE.InstancedMesh
+    grass: THREE.Mesh
 let dummyVec: THREE.Vector3 = new THREE.Vector3(),
     dummyMat: THREE.Matrix4 = new THREE.Matrix4(),
     dummyPos: THREE.Vector3 = new THREE.Vector3(),
@@ -310,27 +307,6 @@ function init() {
             console.error('An error happened while loading the glb model', error);
         });
     }
-
-    {
-        gltfLoader.load(barrelModelURL, (gltf) => {
-            barrelModel = gltf.scene;
-            barrelModel.traverse((child) => {
-                if (child instanceof THREE.Mesh) {
-                    child.castShadow = true;
-                    child.receiveShadow = true;
-                }
-                child.frustumCulled = false;
-            });
-            const barrel = barrelModel.getObjectByName('Barrel') as THREE.Mesh
-            barrelMesh = new THREE.InstancedMesh(barrel.geometry, barrel.material, 4);
-            dummyMat.setPosition(0,1,0);
-            barrelMesh.setMatrixAt(0,dummyMat);
-            barrelMesh.instanceMatrix.needsUpdate = true;
-            globalGroup.add(barrelMesh);
-        }, undefined, (error) => {
-            console.error('An error happened while loading the glb model', error);
-        });
-    }
      // Geometry setup
      {
         const width = 400, height = 400, segmentsX = Math.floor(width / 12), segmentsY = Math.floor(height / 12);
@@ -340,10 +316,9 @@ function init() {
         const material = new THREE.MeshBasicMaterial({
             color: 0x046997,
             transparent: true,
-            opacity: 0.6,
+            opacity: 0.95,
             side: THREE.DoubleSide
         });
-    
         // Create the material for the outline with gradient
         const material2 = new THREE.MeshBasicMaterial({
             wireframe: true,
@@ -351,7 +326,10 @@ function init() {
             transparent:true,
             opacity:0.05
         });
-    
+        const material3 = new THREE.MeshBasicMaterial({
+            color: 0x046997,
+            side: THREE.DoubleSide
+        });
         // Create the mesh for the plane
         mesh = new THREE.Mesh(geometry, material);
         mesh.rotation.x = -Math.PI / 2;
@@ -360,8 +338,14 @@ function init() {
         outline = new THREE.Mesh(outlineGeometry, material2);
         outline.rotation.x = -Math.PI / 2;
         globalGroup.add(outline);
+        const waterPlane = new THREE.Mesh(new THREE.PlaneGeometry(width, height), material3);
+        waterPlane.rotation.x = -Math.PI / 2;
+        waterPlane.position.y = -0.5;
+        globalGroup.add(waterPlane);
+
+
         // Adjust the vertices with noise
-        updateOcean(0,0.1,0.4);
+        updateOcean(0,0.1,0.3);
     }
 
     {
@@ -483,7 +467,7 @@ function updateOcean(time: number, scale: number, amplitude: number) {
     for (let i = 0; i < positionAttribute.count; i++) {
         z = noise(positionAttribute.getX(i) * scale + time, 
                         positionAttribute.getY(i) * scale + time) 
-                  * amplitude + 0.2;
+                  * amplitude + 0.3;
         positionAttribute.setZ(i, z);
         
         zNorm = (z + 0.2) / 0.4;
@@ -761,7 +745,7 @@ function animate() {
     // object controls
     updateClouds(delta);
     updateBoat(time);
-    updateOcean(time * 0.0001,0.1,0.4);
+    updateOcean(time * 0.0001,0.1,0.3);
     updateSmoke();
 
     controls.update();
