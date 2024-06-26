@@ -345,7 +345,7 @@ function init() {
 
 
         // Adjust the vertices with noise
-        updateOcean(0,0.1,0.3);
+        updateOcean(0,0.1,0.2);
     }
 
     {
@@ -392,9 +392,9 @@ function init() {
             });
             const boat = boatModel.getObjectByName('Boat') as THREE.Mesh
             boatMesh = new THREE.Mesh(boat.geometry, boat.material);
-            boatMesh.scale.set(0.5,0.5,0.5);
-            boatMesh.position.set(2,0,3.5);
-            boatMesh.rotation.set(0,-1,0)
+            boatMesh.scale.set(0.3,0.3,0.3);
+            boatMesh.position.set(-1,0,3.5);
+            boatMesh.rotation.set(0,-0.8,0)
             globalGroup.add(boatMesh);
             const pos = geometry.attributes.position
             boatv0.set(pos.getX(boatInd[0]), pos.getZ(boatInd[0]), pos.getY(boatInd[0]))
@@ -467,7 +467,7 @@ function updateOcean(time: number, scale: number, amplitude: number) {
     for (let i = 0; i < positionAttribute.count; i++) {
         z = noise(positionAttribute.getX(i) * scale + time, 
                         positionAttribute.getY(i) * scale + time) 
-                  * amplitude + 0.3;
+                  * amplitude + 0.4;
         positionAttribute.setZ(i, z);
         
         zNorm = (z + 0.2) / 0.4;
@@ -745,7 +745,7 @@ function animate() {
     // object controls
     updateClouds(delta);
     updateBoat(time);
-    updateOcean(time * 0.0001,0.1,0.3);
+    updateOcean(time * 0.0001,0.1,0.2);
     updateSmoke();
 
     controls.update();
