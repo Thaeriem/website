@@ -17,6 +17,7 @@ import grassShader from './shaders/grass';
 import islandModelURL from '/island.glb?url'
 import cloudModelURL from '/cloud.glb?url'
 import boatModelURL from '/boat.glb?url'
+import debrisModelURL from '/debris.glb?url'
 
 
 let camera: THREE.OrthographicCamera, 
@@ -46,7 +47,8 @@ let moveUp: boolean = false,
     rotateRight: boolean = false
 let islandModel: THREE.Object3D, 
     cloudModel: THREE.Object3D, 
-    boatModel: THREE.Object3D
+    boatModel: THREE.Object3D,
+    debrisModel: THREE.Object3D
 let geometry: THREE.PlaneGeometry, 
     mesh: THREE.Mesh,
     outlineGeometry: THREE.PlaneGeometry, 
@@ -55,9 +57,13 @@ let geometry: THREE.PlaneGeometry,
     cloudMesh: THREE.InstancedMesh,
     cloudMat: THREE.Material,
     boatMesh: THREE.Mesh,
-    boatP: THREE.Plane,
+    boatP: THREE.Plane, 
+    debrisMesh: THREE.Mesh,
+    debrP: THREE.Plane,
     smokeParticles: THREE.InstancedMesh,
-    grass: THREE.Mesh
+    fireParticles: THREE.InstancedMesh,
+    grass: THREE.Mesh,
+    kelpArr: THREE.Mesh[] = []
 let dummyVec: THREE.Vector3 = new THREE.Vector3(),
     dummyMat: THREE.Matrix4 = new THREE.Matrix4(),
     dummyPos: THREE.Vector3 = new THREE.Vector3(),
@@ -77,19 +83,32 @@ function pixelTex( tex: THREE.Texture ) {
 // -----------------------------------------------------------------------
 // SMOKE
 const pOptions = {
-    count: 75,
-    opacity: 0.7,
-    size: 0.1,
+    count: 50,
+    opacity: 0.8,
+    size: 0.075,
     scale: 0.002,
-    maxHeight: 5,
-    pos: new THREE.Vector3(0, 0.5, 1.75)
+    maxHeight: 3,
+    width: 0.2,
+    p: 0.975,
+    pos: new THREE.Vector3(0.1, 0.8, 0.95)
+}
+// FIRE
+const fOptions = {
+    count: 50,
+    opacity: 0.8,
+    size: 0.075,
+    scale: 0.002,
+    maxHeight: 3,
+    width: 0.2,
+    p: 0.975,
+    pos: new THREE.Vector3(0.1, 0.8, 0.95)
 }
 // -----------------------------------------------------------------------
 // BOAT + OCEAN
-const boatv0 = new THREE.Vector3(0, 0, 0), 
-      boatv1 = new THREE.Vector3(0, 0, 0), 
-      boatv2 = new THREE.Vector3(0, 0, 0);
-const boatInd: number[] = [560, 561, 595]
+const boatv0 = new THREE.Vector3(0, 0, 0), boatv1 = new THREE.Vector3(0, 0, 0), 
+      boatv2 = new THREE.Vector3(0, 0, 0), debrv0 = new THREE.Vector3(0, 0, 0),
+      debrv1 = new THREE.Vector3(0, 0, 0), debrv2 = new THREE.Vector3(0, 0, 0)
+const bInd: number[] = [560, 561, 595], dInd: number[] = [560,595, 594]
 const noise = SimplexNoise.createNoise2D();
 const colorStart = new THREE.Color("#046997"), 
       colorEnd = new THREE.Color("#30b1ce");
@@ -123,7 +142,7 @@ function setupRenderers(screenResolution: Vector2) {
 
 function setupControls() {
     controls = new MapControls( camera, rendererCss.domElement )
-    controls.enablePan = false //
+    // controls.enablePan = false //
     controls.target.set( 0, 0, 0 )
     controls.maxZoom = 1
     controls.minZoom = 0.03
@@ -210,7 +229,7 @@ function generateField () {
     geom.computeVertexNormals();
   
     grass = new THREE.Mesh(geom, grassMaterial);
-    globalGroup.add(grass);
+    // globalGroup.add(grass);
 }
   
 function generateBlade (center: THREE.Vector3, vArrOffset: number, uv: number[]) {
@@ -297,6 +316,7 @@ function init() {
                 if (child instanceof THREE.Mesh) {
                     child.castShadow = true;
                     child.receiveShadow = true;
+                    if (child.name.slice(0,4) == "Kelp") kelpArr.push(child)
                 }
                 child.frustumCulled = false;
             });
@@ -316,7 +336,7 @@ function init() {
         const material = new THREE.MeshBasicMaterial({
             color: 0x046997,
             transparent: true,
-            opacity: 0.95,
+            opacity: 0.85,
             side: THREE.DoubleSide
         });
         // Create the material for the outline with gradient
@@ -397,26 +417,57 @@ function init() {
             boatMesh.rotation.set(0,-0.8,0)
             globalGroup.add(boatMesh);
             const pos = geometry.attributes.position
-            boatv0.set(pos.getX(boatInd[0]), pos.getZ(boatInd[0]), pos.getY(boatInd[0]))
-            boatv1.set(pos.getX(boatInd[1]), pos.getZ(boatInd[1]), pos.getY(boatInd[1]))
-            boatv2.set(pos.getX(boatInd[2]), pos.getZ(boatInd[2]), pos.getY(boatInd[2]))
+            boatv0.set(pos.getX(bInd[0]), pos.getZ(bInd[0]), pos.getY(bInd[0]))
+            boatv1.set(pos.getX(bInd[1]), pos.getZ(bInd[1]), pos.getY(bInd[1]))
+            boatv2.set(pos.getX(bInd[2]), pos.getZ(bInd[2]), pos.getY(bInd[2]))
             boatP = createPlane(boatv0, boatv1, boatv2);
+        });
+
+        gltfLoader.load(debrisModelURL, (gltf) => {
+            debrisModel = gltf.scene;
+            debrisModel.traverse((child) => {
+                if (child instanceof THREE.Mesh) {
+                    child.castShadow = true;
+                    child.receiveShadow = true;
+                }
+                child.frustumCulled = false;
+            });
+            debrisMesh = debrisModel.getObjectByName('Debris') as THREE.Mesh
+            // debrisMesh.scale.set(0.3,0.3,0.3);
+            debrisMesh.position.set(1,2,-3.5);
+            debrisMesh.rotation.set(0,-0.8,0)
+            globalGroup.add(debrisMesh);
+            const pos = geometry.attributes.position
+            debrv0.set(pos.getX(dInd[0]), pos.getZ(dInd[0]), pos.getY(dInd[0]))
+            debrv1.set(pos.getX(dInd[1]), pos.getZ(dInd[1]), pos.getY(dInd[1]))
+            debrv2.set(pos.getX(dInd[2]), pos.getZ(dInd[2]), pos.getY(dInd[2]))
+            debrP = createPlane(debrv0, debrv1, debrv2);
         });
     
     }
 
     {
-        const geometry = new THREE.SphereGeometry(pOptions.size, 8, 8);
-        const material = new THREE.MeshBasicMaterial({ color: 0x555555, transparent: true, opacity: pOptions.opacity });
-        smokeParticles = new THREE.InstancedMesh(geometry, material, pOptions.count);
+        const geo = new THREE.SphereGeometry(pOptions.size, 8, 8);
+        const mat = new THREE.MeshBasicMaterial({ color: 0x555555, transparent: true, opacity: pOptions.opacity });
+        smokeParticles = new THREE.InstancedMesh(geo, mat, pOptions.count);
         globalGroup.add(smokeParticles);
 
-        // Initialize particles
         for (let i = 0; i < pOptions.count; i++) {
-            resetParticle(i, true);
+            resetParticle(smokeParticles, i, true, pOptions);
         }
         smokeParticles.instanceMatrix.needsUpdate = true;
         smokeParticles.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+
+        const fgeo = new THREE.SphereGeometry(pOptions.size, 8, 8);
+        const fmat = new THREE.MeshBasicMaterial({ color: 0x737373, transparent: true, opacity: fOptions.opacity });
+        fireParticles = new THREE.InstancedMesh(fgeo, fmat, fOptions.count);
+        globalGroup.add(fireParticles);
+
+        for (let i = 0; i < fOptions.count; i++) {
+            resetParticle(fireParticles, i, true, fOptions);
+        }
+        fireParticles.instanceMatrix.needsUpdate = true;
+        fireParticles.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
     }
 
     {
@@ -504,44 +555,44 @@ function updateClouds(delta: number) {
 }
 // -----------------------------------------------------------------------
 // Smoke
-function resetParticle(index: number, init: boolean) {
-    const scale = 0.5
+function resetParticle(mesh: THREE.InstancedMesh, index: number, init: boolean, opt: any) {
+    const scale = opt.width
     if (init) {
         dummyPos.set(
-            (Math.random()-0.5)*scale + pOptions.pos.x,
-            (Math.random() * pOptions.maxHeight/2) + pOptions.pos.y,
-            (Math.random()-0.5)*scale + pOptions.pos.z
+            (Math.random()-0.5)*scale + opt.pos.x,
+            (Math.random() * opt.maxHeight/2) + opt.pos.y,
+            (Math.random()-0.5)*scale + opt.pos.z
         )
     }
     else {
         dummyPos.set(
-            (Math.random()-0.5)*scale + pOptions.pos.x,           
-            pOptions.pos.y,
-            (Math.random()-0.5)*scale + pOptions.pos.z
+            (Math.random()-0.5)*scale + opt.pos.x,           
+            opt.pos.y,
+            (Math.random()-0.5)*scale + opt.pos.z
         )
     }
     dummyMat.setPosition(dummyPos)
-    smokeParticles.setMatrixAt(index, dummyMat);
-    smokeParticles.instanceMatrix.needsUpdate = true;
+    mesh.setMatrixAt(index, dummyMat);
+    mesh.instanceMatrix.needsUpdate = true;
 }
 
-function smokeSpeed(y: number): number {
-    return Math.log(y - pOptions.pos.y + 2);
+function smokeSpeed(y: number, opt: any): number {
+    return Math.log(y - opt.pos.y + 2);
 }
-function smokeDrift(y: number, d: number): number {
-    return d*Math.log(y - pOptions.pos.y + 1);
+function smokeDrift(y: number, d: number, opt: any): number {
+    return d*Math.log(y - opt.pos.y + 1);
 }
 
 function updateSmoke() {
     for (let i = 0; i < pOptions.count; i++) {
         smokeParticles.getMatrixAt(i, dummyMat);
         dummyPos.setFromMatrixPosition(dummyMat);
-        dummyPos.y += 0.01 * smokeSpeed(dummyPos.y);
+        dummyPos.y += 0.01 * smokeSpeed(dummyPos.y, pOptions);
         dummyPos.x += Math.sin(time/500)*pOptions.scale;
-        dummyPos.z += Math.cos(time/500)*pOptions.scale+smokeDrift(dummyPos.y, 0.005);
+        dummyPos.z += Math.cos(time/500)*pOptions.scale+smokeDrift(dummyPos.y, 0.005, pOptions);
         dummyMat.setPosition(dummyPos);
         if (dummyPos.y > (pOptions.pos.y + pOptions.maxHeight/3)) {
-            if (Math.random() > 0.98) resetParticle(i,false);
+            if (Math.random() > pOptions.p) resetParticle(smokeParticles,i,false, pOptions);
             else smokeParticles.setMatrixAt(i, dummyMat);
         }
         else {
@@ -551,13 +602,32 @@ function updateSmoke() {
 
     smokeParticles.instanceMatrix.needsUpdate = true;
 }
+function updateFire() {
+    for (let i = 0; i < fOptions.count; i++) {
+        fireParticles.getMatrixAt(i, dummyMat);
+        dummyPos.setFromMatrixPosition(dummyMat);
+        dummyPos.y += 0.01 * smokeSpeed(dummyPos.y, fOptions);
+        dummyPos.x += Math.sin(time/500)*fOptions.scale;
+        dummyPos.z += Math.cos(time/500)*fOptions.scale+smokeDrift(dummyPos.y, 0.005, fOptions);
+        dummyMat.setPosition(dummyPos);
+        if (dummyPos.y > (fOptions.pos.y + fOptions.maxHeight/3)) {
+            if (Math.random() > fOptions.p) resetParticle(fireParticles,i,false, fOptions);
+            else fireParticles.setMatrixAt(i, dummyMat);
+        }
+        else {
+            fireParticles.setMatrixAt(i, dummyMat);
+        }
+    }
+
+    fireParticles.instanceMatrix.needsUpdate = true;
+}
 // -----------------------------------------------------------------------
 // BOAT
 function updateBoat(time: number) {
     if (boatMesh) {
         const pos = geometry.attributes.position
-        boatv0.setY(pos.getZ(594)), boatv1.setY(pos.getZ(595)), boatv2.setY(pos.getZ(561))
-        updatePlane(boatv0, boatv1, boatv2);
+        boatv0.setY(pos.getZ(594)), boatv1.setY(pos.getZ(595)), boatv2.setY(pos.getZ(560))
+        updatePlane(boatP, boatv0, boatv1, boatv2);
         dummyPos.copy(boatMesh.position);
         dummyPos.copy(projPlane(dummyPos, boatP));
         boatMesh.position.copy(dummyPos);
@@ -571,11 +641,11 @@ function projPlane(point: THREE.Vector3, plane: THREE.Plane) {
     plane.projectPoint(point, projectedPoint);
     return projectedPoint;
 }
-function updatePlane(v0: THREE.Vector3, v1:THREE.Vector3, v2:THREE.Vector3) {
+function updatePlane(plane: THREE.Plane, v0: THREE.Vector3, v1:THREE.Vector3, v2:THREE.Vector3) {
     const edge1 = new THREE.Vector3().subVectors(v1, v0);
     const edge2 = new THREE.Vector3().subVectors(v2, v0);
-    boatP.normal.crossVectors(edge1, edge2).normalize();
-    boatP.constant = -boatP.normal.dot(v0);
+    plane.normal.crossVectors(edge1, edge2).normalize();
+    plane.constant = -plane.normal.dot(v0);
 }
 function createPlane(v0: THREE.Vector3, v1:THREE.Vector3, v2:THREE.Vector3) {
     const edge1 = new THREE.Vector3().subVectors(v1, v0);
@@ -589,6 +659,29 @@ function oscillateValue(min:number, max:number, frequency:number, time:number) {
     const amplitude = range / 2;
     const offset = min + amplitude;
     return amplitude * Math.sin(frequency * time) + offset;
+}
+// DEBRIS
+function updateDebris() {
+    if (debrisMesh) {
+        const pos = geometry.attributes.position
+        debrv0.setY(pos.getZ(594)), debrv1.setY(pos.getZ(561)), debrv2.setY(pos.getZ(560))
+        updatePlane(debrP, debrv0, debrv1, debrv2);
+        dummyPos.copy(debrisMesh.position);
+        dummyPos.copy(projPlane(dummyPos, debrP));
+        debrisMesh.position.copy(dummyPos);
+    }   
+}
+// -----------------------------------------------------------------------
+// KELP
+function updateKelp(time: number) {
+    if (islandModel) {
+        const zangle = oscillateValue(11*Math.PI/12,13*Math.PI/12,1,time/2000);
+        const xangle = oscillateValue(11*Math.PI/12,14*Math.PI/12,1,time/2000);
+        for (let i = 0; i < kelpArr.length; i++) {
+            kelpArr[i].rotation.z = zangle
+            kelpArr[i].rotation.x = xangle
+        }
+    }
 }
 // -----------------------------------------------------------------------
 // Keyboard Controls
@@ -745,8 +838,11 @@ function animate() {
     // object controls
     updateClouds(delta);
     updateBoat(time);
+    updateDebris();
     updateOcean(time * 0.0001,0.1,0.2);
     updateSmoke();
+    updateFire();
+    updateKelp(time);
 
     controls.update();
     TWEEN.update();
