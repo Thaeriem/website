@@ -63,8 +63,9 @@ let geometry: THREE.PlaneGeometry,
     smokeParticles: THREE.InstancedMesh,
     fireParticles: THREE.InstancedMesh,
     grass: THREE.Mesh,
-    kelpArr: THREE.Mesh[] = []
-let dummyVec: THREE.Vector3 = new THREE.Vector3(),
+    kelpArr: THREE.InstancedMesh[] = []
+let dummy: THREE.Object3D = new THREE.Object3D(),
+    dummyVec: THREE.Vector3 = new THREE.Vector3(),
     dummyMat: THREE.Matrix4 = new THREE.Matrix4(),
     dummyPos: THREE.Vector3 = new THREE.Vector3(),
     dummyColor: THREE.Color = new THREE.Color(),
@@ -280,7 +281,20 @@ function generateBlade (center: THREE.Vector3, vArrOffset: number, uv: number[])
   
     return { verts, indices };
 }
-  
+// -----------------------------------------------------------------------
+// KELP
+const kelpPos: Array<Array<number>> = [
+    [
+        -1,-1.3,-8,-2,-1.4,-12
+        
+    ],
+    [
+        -4,-1.4,-9, 2, -1.3, -8, 0, -1.4, -10, 2, -1.5, -12
+    ],
+    [
+        -3,-1.5,-7, 3,-1.6,-9.5, 
+    ]
+]
 // -----------------------------------------------------------------------
 init();
 function init() {
@@ -311,15 +325,34 @@ function init() {
 
     {
         gltfLoader.load(islandModelURL, (gltf) => {
+
             islandModel = gltf.scene;
+            let toRem:THREE.Object3D[] = []
             islandModel.traverse((child) => {
                 if (child instanceof THREE.Mesh) {
                     child.castShadow = true;
                     child.receiveShadow = true;
-                    if (child.name.slice(0,4) == "Kelp") kelpArr.push(child)
+                    if (child.name.slice(0,4) == "Kelp") {
+                        const ind = parseInt(child.name.slice(4)) - 1
+                        const kelp = islandModel.getObjectByName(child.name) as THREE.Mesh
+                        const instMesh = new THREE.InstancedMesh(kelp.geometry, kelp.material, kelpPos[ind].length);
+                        globalGroup.add(instMesh)
+                        for (let i = 0; i < kelpPos[ind].length*3; i+= 3) {
+                            dummyPos.set(kelpPos[ind][i], kelpPos[ind][i+1], kelpPos[ind][i+2]);
+                            dummyMat.setPosition(dummyPos);
+                            instMesh.setMatrixAt(i, dummyMat);
+                        }
+                        instMesh.instanceMatrix.needsUpdate = true;
+                        instMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+                        kelpArr.push(instMesh)
+                        toRem.push(child)
+                        instMesh.scale.set(0.4,0.4,0.4);
+
+                    }
                 }
-                child.frustumCulled = false;
+                if (child) child.frustumCulled = false;
             });
+            toRem.forEach((val) => { islandModel.remove(val) })
             islandModel.scale.set(1, 1, 1);
             islandModel.position.set(0, 0, 0); 
             globalGroup.add(islandModel);
@@ -365,7 +398,7 @@ function init() {
 
 
         // Adjust the vertices with noise
-        updateOcean(0,0.1,0.2);
+        updateOcean(0,0.1,0.1);
     }
 
     {
@@ -433,9 +466,8 @@ function init() {
                 child.frustumCulled = false;
             });
             debrisMesh = debrisModel.getObjectByName('Debris') as THREE.Mesh
-            // debrisMesh.scale.set(0.3,0.3,0.3);
-            debrisMesh.position.set(1,2,-3.5);
-            debrisMesh.rotation.set(0,-0.8,0)
+            debrisMesh.position.set(0,2,-4);
+            debrisMesh.rotation.set(0,0.8,0)
             globalGroup.add(debrisMesh);
             const pos = geometry.attributes.position
             debrv0.set(pos.getX(dInd[0]), pos.getZ(dInd[0]), pos.getY(dInd[0]))
@@ -518,7 +550,7 @@ function updateOcean(time: number, scale: number, amplitude: number) {
     for (let i = 0; i < positionAttribute.count; i++) {
         z = noise(positionAttribute.getX(i) * scale + time, 
                         positionAttribute.getY(i) * scale + time) 
-                  * amplitude + 0.4;
+                  * amplitude + 0.5;
         positionAttribute.setZ(i, z);
         
         zNorm = (z + 0.2) / 0.4;
@@ -631,7 +663,7 @@ function updateBoat(time: number) {
         dummyPos.copy(boatMesh.position);
         dummyPos.copy(projPlane(dummyPos, boatP));
         boatMesh.position.copy(dummyPos);
-        const angle = oscillateValue(-0.2,0.2,1,time/2000);
+        const angle = oscillateValue(-0.2,0.2,1,time/3000);
         boatMesh.rotation.z = angle
     }   
 }
@@ -673,13 +705,22 @@ function updateDebris() {
 }
 // -----------------------------------------------------------------------
 // KELP
-function updateKelp(time: number) {
+function updateKelp() {
     if (islandModel) {
-        const zangle = oscillateValue(11*Math.PI/12,13*Math.PI/12,1,time/2000);
-        const xangle = oscillateValue(11*Math.PI/12,14*Math.PI/12,1,time/2000);
+        const height = (debrv0.y + debrv1.y + debrv2.y)/3
+        const hnorm = (((height - 0.25) / (0.55 - 0.25)) - 0.5)
         for (let i = 0; i < kelpArr.length; i++) {
-            kelpArr[i].rotation.z = zangle
-            kelpArr[i].rotation.x = xangle
+            console.log(kelpArr[i])
+            for (let j = 0; j < kelpArr[i].count; j++) {
+                kelpArr[i].getMatrixAt(j, dummyMat);
+                dummyMat.decompose(dummy.position,dummy.quaternion,dummy.scale);
+                dummy.rotation.z = 0.2*(hnorm)+Math.PI
+                dummy.rotation.x = 0.5*(hnorm)+Math.PI
+                dummy.updateMatrix()
+                kelpArr[i].setMatrixAt(j, dummy.matrix);
+                kelpArr[i].instanceMatrix.needsUpdate = true;
+            }
+           
         }
     }
 }
@@ -839,10 +880,10 @@ function animate() {
     updateClouds(delta);
     updateBoat(time);
     updateDebris();
-    updateOcean(time * 0.0001,0.1,0.2);
+    updateOcean(time * 0.0001,0.1,0.1);
     updateSmoke();
     updateFire();
-    updateKelp(time);
+    updateKelp();
 
     controls.update();
     TWEEN.update();
