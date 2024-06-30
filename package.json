@@ -9,13 +9,21 @@
         "simplex-noise": "^4.0.1",
         "three": "^0.144.0"
     },
+    "browserslist": [
+        ">0.2%",
+        "not dead",
+        "not op_mini all",
+        "not IE <= 11",
+        "not Safari <= 8",
+        "not Android <= 4.4"
+    ],
     "scripts": {
         "dev": "vite",
         "build": "tsc && vite build",
         "preview": "vite preview"
     },
     "devDependencies": {
-        "@types/three": "^0.130.1",
+        "@types/three": "^0.130.2",
         "typescript": "^5.2.2",
         "vite": "^5.3.1"
     }

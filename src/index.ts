@@ -10,6 +10,8 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer'
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass'
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass'
+import Stats from 'three/examples/jsm/libs/stats.module.js';
+const stats:Stats = Stats();
 
 import RenderPixelatedPass from "./shaders/pix-pass"
 import grassShader from './shaders/grass';
@@ -84,7 +86,7 @@ function pixelTex( tex: THREE.Texture ) {
 // -----------------------------------------------------------------------
 // SMOKE
 const pOptions = {
-    count: 50,
+    count: 20,
     opacity: 0.8,
     size: 0.075,
     scale: 0.002,
@@ -95,7 +97,7 @@ const pOptions = {
 }
 // FIRE
 const fOptions = {
-    count: 50,
+    count: 20,
     opacity: 0.8,
     size: 0.075,
     scale: 0.002,
@@ -120,7 +122,7 @@ function setupCamera(screenResolution: Vector2) {
     let aspectRatio = screenResolution.x / screenResolution.y
     camera = new THREE.OrthographicCamera(-aspectRatio, aspectRatio, 1, -1, 0.01, 2000);
     camera.position.set(-200, 80, -8)
-    camera.zoom = 0.15
+    camera.zoom = 0.25
     camera.updateProjectionMatrix()
 }
 
@@ -145,9 +147,9 @@ function setupControls() {
     controls = new MapControls( camera, rendererCss.domElement )
     // controls.enablePan = false //
     controls.target.set( 0, 0, 0 )
-    controls.maxZoom = 1
+    // controls.maxZoom = 1
     controls.minZoom = 0.03
-    controls.zoomSpeed = 1.5
+    controls.zoomSpeed = 2
     controls.mouseButtons = {
         LEFT: THREE.MOUSE.DOLLY,
         MIDDLE: THREE.MOUSE.DOLLY,
@@ -298,6 +300,10 @@ const kelpPos: Array<Array<number>> = [
 // -----------------------------------------------------------------------
 init();
 function init() {
+    stats.dom.style.width = '80px';
+    stats.dom.style.height = '48px';
+    document.body.appendChild( stats.dom );
+
     let screenResolution = new Vector2( window.innerWidth, window.innerHeight )
     let renderResolution = screenResolution.clone().divideScalar( 4 )
     renderResolution.x |= 0
@@ -333,6 +339,7 @@ function init() {
                     child.castShadow = true;
                     child.receiveShadow = true;
                     if (child.name.slice(0,4) == "Kelp") {
+                        console.log(child.name)
                         const ind = parseInt(child.name.slice(4)) - 1
                         const kelp = islandModel.getObjectByName(child.name) as THREE.Mesh
                         const instMesh = new THREE.InstancedMesh(kelp.geometry, kelp.material, kelpPos[ind].length);
@@ -710,7 +717,6 @@ function updateKelp() {
         const height = (debrv0.y + debrv1.y + debrv2.y)/3
         const hnorm = (((height - 0.25) / (0.55 - 0.25)) - 0.5)
         for (let i = 0; i < kelpArr.length; i++) {
-            console.log(kelpArr[i])
             for (let j = 0; j < kelpArr[i].count; j++) {
                 kelpArr[i].getMatrixAt(j, dummyMat);
                 dummyMat.decompose(dummy.position,dummy.quaternion,dummy.scale);
@@ -720,7 +726,6 @@ function updateKelp() {
                 kelpArr[i].setMatrixAt(j, dummy.matrix);
                 kelpArr[i].instanceMatrix.needsUpdate = true;
             }
-           
         }
     }
 }
@@ -737,7 +742,7 @@ function camReset() {
         .easing(TWEEN.Easing.Quadratic.Out)
         .start();
     new TWEEN.Tween({ zoom: camera.zoom })
-        .to({ zoom: 0.15 }, 1500) 
+        .to({ zoom: 0.25 }, 1500) 
         .easing(TWEEN.Easing.Quadratic.InOut)
         .onUpdate(function (object) {
             camera.zoom = object.zoom;
@@ -809,13 +814,10 @@ function onKeyUp (event: any) {
 };
 // -----------------------------------------------------------------------
 // Camera Controls
-function normalizeZoom(zoom: any, low: any, high: any) {
-    const minOriginal = 0.030563645913324056;
-    const maxOriginal = 1;
-    const normalizedValue = (zoom - minOriginal) / (maxOriginal - minOriginal);
-    const newZoom = low + normalizedValue * (high - low);
-    return newZoom;
-}
+const nnorm = (z: number) => (z-0.03)/(1-0.03);
+const nzoom = (z: number, pow: number, disp: number) => (pow ** (1-z)-disp)/(pow-disp);
+const ndrift = (val: number) => (6-1.5*val);
+const nskew = (z: number, l: number, h: number) => l+(z)*(h-l);
 
 function onWindowResize() {
 
@@ -839,12 +841,24 @@ function onWindowResize() {
 // -----------------------------------------------------------------------
 // HTML Render
 function renderHTML() {
-    const cssElement = document.getElementById('test-element') as HTMLElement;
-    const cssObject = new CSS3DObject(cssElement);
+    const div = document.createElement( 'div' );
+    div.style.width = '80px';
+    div.style.height = '60px';
+    div.style.backgroundColor = '#000';
+
+    const iframe = document.createElement( 'iframe' );
+    iframe.style.width = '80px';
+    iframe.style.height = '60px';
+    iframe.style.border = '0px';
+    iframe.src = 'ifcontent.html';
+    div.appendChild( iframe );
+
+    // const cssElement = document.getElementById('test-element') as HTMLElement;
+    const cssObject = new CSS3DObject(div);
     cssObject.position.set(10, 4, 0);
     cssObject.rotation.set(0,Math.PI/2, 0)
-    // sceneCss.add(cssObject);
-    // sceneCss.rotateY(Math.PI)
+    sceneCss.add(cssObject);
+    sceneCss.rotateY(Math.PI)
 }
 // -----------------------------------------------------------------------
 animate()
@@ -854,14 +868,15 @@ function animate() {
     const delta = ( time - prevTime ) / 1000;
 
     grassUniforms.iTime.value = time - startTime;
+    const newZoom = nnorm(camera.zoom)
+    const coef = nzoom(newZoom, 200, 0.99);
 
-    const new_zoom = normalizeZoom(camera.zoom, 0, 0.90);
-    velocity.z -= velocity.z * 30.0 * (1.1-new_zoom) * delta;
-    velocity.x -= velocity.x * 30.0 * (1.1-new_zoom) * delta;
-    if ( moveUp ) velocity.x += 20.0 * (1.01-new_zoom) * delta;
-    if (moveDown )  velocity.x -= 20.0 * (1.01-new_zoom) * delta;
-    if ( moveLeft ) velocity.z -= 10.0 * (1.01-new_zoom) * delta;
-    if (moveRight ) velocity.z += 10.0 * (1.01-new_zoom) * delta;
+    velocity.z -= velocity.z * ndrift(coef) * delta;
+    velocity.x -= velocity.x * ndrift(coef) * delta;
+    if ( moveUp ) velocity.x += nskew(coef, 1.5,10) * delta;
+    if (moveDown )  velocity.x -= nskew(coef, 1.5,10) * delta;
+    if ( moveLeft ) velocity.z -= nskew(coef, 0.75,5) * delta;
+    if (moveRight ) velocity.z += nskew(coef, 0.75,5) * delta;
     
     const new_x = camera.position.x + velocity.x, new_z = camera.position.z + velocity.z;
     if (new_x > cameraBounds.maxX) velocity.x = 0;
@@ -886,6 +901,7 @@ function animate() {
     updateKelp();
 
     controls.update();
+    stats.update();
     TWEEN.update();
     requestAnimationFrame( animate )
     composer.render();
