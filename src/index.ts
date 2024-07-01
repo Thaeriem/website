@@ -147,7 +147,7 @@ function setupControls() {
     controls = new MapControls( camera, rendererCss.domElement )
     // controls.enablePan = false //
     controls.target.set( 0, 0, 0 )
-    // controls.maxZoom = 1
+    controls.maxZoom = 1
     controls.minZoom = 0.03
     controls.zoomSpeed = 2
     controls.mouseButtons = {
@@ -315,6 +315,7 @@ function init() {
     scene.background = new THREE.Color( 0x151729 )
     scene.add(globalGroup);
     sceneCss = new THREE.Scene();
+    sceneCss.scale.set(0.05, 0.05, 0.05);
 
     setupRenderers(screenResolution);
 
@@ -841,21 +842,16 @@ function onWindowResize() {
 // -----------------------------------------------------------------------
 // HTML Render
 function renderHTML() {
-    const div = document.createElement( 'div' );
-    div.style.width = '80px';
-    div.style.height = '60px';
-    div.style.backgroundColor = '#000';
-
     const iframe = document.createElement( 'iframe' );
-    iframe.style.width = '80px';
-    iframe.style.height = '60px';
+    iframe.style.width = '14em';
+    iframe.style.height = '10em';
     iframe.style.border = '0px';
+    iframe.style.transform = 'scale(0.01)'
     iframe.src = 'ifcontent.html';
-    div.appendChild( iframe );
 
     // const cssElement = document.getElementById('test-element') as HTMLElement;
-    const cssObject = new CSS3DObject(div);
-    cssObject.position.set(10, 4, 0);
+    const cssObject = new CSS3DObject(iframe);
+    cssObject.position.set(0, 0, 0);
     cssObject.rotation.set(0,Math.PI/2, 0)
     sceneCss.add(cssObject);
     sceneCss.rotateY(Math.PI)
