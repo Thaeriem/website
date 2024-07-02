@@ -16,9 +16,13 @@ const stats:Stats = Stats();
 import RenderPixelatedPass from "./shaders/pix-pass"
 import grassShader from './shaders/grass';
 
+// @ts-ignore  
 import islandModelURL from '/island.glb?url'
+// @ts-ignore  
 import cloudModelURL from '/cloud.glb?url'
+// @ts-ignore  
 import boatModelURL from '/boat.glb?url'
+// @ts-ignore  
 import debrisModelURL from '/debris.glb?url'
 
 
@@ -66,6 +70,7 @@ let geometry: THREE.PlaneGeometry,
     fireParticles: THREE.InstancedMesh,
     grass: THREE.Mesh,
     kelpArr: THREE.InstancedMesh[] = []
+let cssHolder: CSS3DObject;
 let dummy: THREE.Object3D = new THREE.Object3D(),
     dummyVec: THREE.Vector3 = new THREE.Vector3(),
     dummyMat: THREE.Matrix4 = new THREE.Matrix4(),
@@ -340,7 +345,6 @@ function init() {
                     child.castShadow = true;
                     child.receiveShadow = true;
                     if (child.name.slice(0,4) == "Kelp") {
-                        console.log(child.name)
                         const ind = parseInt(child.name.slice(4)) - 1
                         const kelp = islandModel.getObjectByName(child.name) as THREE.Mesh
                         const instMesh = new THREE.InstancedMesh(kelp.geometry, kelp.material, kelpPos[ind].length);
@@ -784,6 +788,9 @@ function onKeyDown (event: any) {
         case 'KeyQ':
             rotateLeft = true;
             break;
+        case 'KeyG':
+            cssHolder.visible = !cssHolder.visible
+            break;
     }
 };
 
@@ -843,17 +850,19 @@ function onWindowResize() {
 // HTML Render
 function renderHTML() {
     const iframe = document.createElement( 'iframe' );
-    iframe.style.width = '14em';
-    iframe.style.height = '10em';
-    iframe.style.border = '0px';
-    iframe.style.transform = 'scale(0.01)'
-    iframe.src = 'ifcontent.html';
+    iframe.style.width = '100%'; // Adjust width as needed
+    iframe.style.height = '100%'; // Adjust height as needed
+    iframe.style.border = '0';    // Remove border
+    iframe.style.objectFit = 'cover';
+    // iframe.style.transform = 'scale(0.0001)'
+    iframe.src = 'http://localhost:8000/index.html';
 
     // const cssElement = document.getElementById('test-element') as HTMLElement;
-    const cssObject = new CSS3DObject(iframe);
-    cssObject.position.set(0, 0, 0);
-    cssObject.rotation.set(0,Math.PI/2, 0)
-    sceneCss.add(cssObject);
+    cssHolder = new CSS3DObject(iframe);
+    cssHolder.position.set(0, 0, 0);
+    cssHolder.rotation.set(0,Math.PI/2, 0)
+    cssHolder.visible = false
+    sceneCss.add(cssHolder);
     sceneCss.rotateY(Math.PI)
 }
 // -----------------------------------------------------------------------
