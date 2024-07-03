@@ -1,0 +1,91 @@
+/* @tailwind base;
+@tailwind components;
+@tailwind utilities; */
+
+@font-face {
+    font-family: 'Bebas Neue';
+    src: url('BebasNeue-Regular.woff2');
+  }
+  
+  * {
+    box-sizing: border-box;
+    margin: 0;
+  }
+  
+  html {
+    font-size: 16px;
+    font-family: 'Bebas Neue', Arial, Helvetica, sans-serif;
+  }
+
+  p {
+    font-size: 2px;
+  }
+  
+  body {
+    background-color: #faf4e7;
+    color: #000000;
+    overflow: hidden; /* Hide the default scrollbar */
+  }
+  
+  .App {
+    height: 100vh; /* Full viewport height */
+    overflow: hidden; /* Hide overflow for the main container */
+  }
+  
+  .wrapper {
+    height: 100%;
+    overflow: auto;
+    scroll-snap-type: y mandatory; /* Enable snapping */
+  }
+  
+  .Section {
+    position: relative;
+    height: 100vh; /* Full viewport height */
+    width: 100vw; /* Full viewport width */
+    display: flex;
+    align-items: center;
+    padding: 5rem 2rem;
+    transform: translateY(-10%); /* Overlapping effect */
+  }
+  
+  .justify-start {
+    justify-content: flex-start; /* Align items to the start */
+  }
+  
+  .justify-end {
+    justify-content: flex-end; /* Align items to the end */
+  }
+  
+  .bg-white {
+    background-color: #ffffff;
+    z-index: 1; /* Default z-index */
+  }
+  
+  
+  h1 {
+    font-size: 1rem;
+  }
+  
+  a {
+    color: currentColor;
+    text-decoration-color: #cd3c2f;
+    text-underline-offset: 4px;
+  }
+  
+  a:hover {
+    text-decoration-color: #000000;
+  }
+  
+  svg.squiggle {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 200vw;
+    z-index: 1;
+  }
+  
+  svg.squiggle path {
+    stroke-width: 0.5rem;
+  }
+  
