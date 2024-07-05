@@ -126,7 +126,7 @@ const colorStart = new THREE.Color("#046997"),
 function setupCamera(screenResolution: Vector2) {
     let aspectRatio = screenResolution.x / screenResolution.y
     camera = new THREE.OrthographicCamera(-aspectRatio, aspectRatio, 1, -1, 0.01, 2000);
-    camera.position.set(-200, 80, -8)
+    camera.position.set(-200, 80, 0)
     camera.zoom = 0.25
     camera.updateProjectionMatrix()
 }
@@ -739,7 +739,7 @@ function updateKelp() {
 function camReset() {
     
     new TWEEN.Tween(camera.position)
-        .to({ x: -200, y: 80, z: -8 }, 1500)
+        .to({ x: -200, y: 80, z: 0 }, 1500)
         .easing(TWEEN.Easing.Quadratic.Out)
         .start();
     new TWEEN.Tween(controls.target)
@@ -748,6 +748,28 @@ function camReset() {
         .start();
     new TWEEN.Tween({ zoom: camera.zoom })
         .to({ zoom: 0.25 }, 1500) 
+        .easing(TWEEN.Easing.Quadratic.InOut)
+        .onUpdate(function (object) {
+            camera.zoom = object.zoom;
+            camera.updateProjectionMatrix();
+        })
+        .start();
+    globalGroup.rotation.set(0,0,0)
+    velocity.set(0, 0, 0);
+    y_rotation = 0;
+}
+
+function camZOut() {
+    new TWEEN.Tween(camera.position)
+        .to({ x: -200, y: 80, z: 0 }, 1500)
+        .easing(TWEEN.Easing.Quadratic.Out)
+        .start();
+    new TWEEN.Tween(controls.target)
+        .to({ x: 0, y: 0, z: 0 }, 1500) 
+        .easing(TWEEN.Easing.Quadratic.Out)
+        .start();
+    new TWEEN.Tween({ zoom: camera.zoom })
+        .to({ zoom: 0.1 }, 1500) 
         .easing(TWEEN.Easing.Quadratic.InOut)
         .onUpdate(function (object) {
             camera.zoom = object.zoom;
@@ -768,27 +790,29 @@ function onKeyDown (event: any) {
             break;
         case 'KeyW':
         case 'ArrowUp':
-            moveUp = true;
+            if (controls.enabled) moveUp = true;
             break;
         case 'ArrowDown':
         case 'KeyS':
-            moveDown = true;
+            if (controls.enabled) moveDown = true;
             break;
         case 'KeyA':
         case 'ArrowLeft':
-            moveLeft = true;
+            if (controls.enabled) moveLeft = true;
             break;
         case 'KeyD':
         case 'ArrowRight':
-            moveRight = true;
+            if (controls.enabled) moveRight = true;
             break;
         case 'KeyE':
-            rotateRight = true;
+            if (controls.enabled) rotateRight = true;
             break;
         case 'KeyQ':
-            rotateLeft = true;
+            if (controls.enabled) rotateLeft = true;
             break;
         case 'KeyG':
+            if (!cssHolder.visible) camZOut()
+            controls.enabled = !controls.enabled
             cssHolder.visible = !cssHolder.visible
             break;
     }
@@ -850,8 +874,8 @@ function onWindowResize() {
 // HTML Render
 function renderHTML() {
     const iframe = document.createElement( 'iframe' );
-    iframe.style.width = '100%'; // Adjust width as needed
-    iframe.style.height = '100%'; // Adjust height as needed
+    iframe.style.width = '27%'; // Adjust width as needed
+    iframe.style.height = '53%'; // Adjust height as needed
     iframe.style.border = '0';    // Remove border
     iframe.style.objectFit = 'cover';
     // iframe.style.transform = 'scale(0.0001)'
@@ -895,6 +919,8 @@ function animate() {
     if ( rotateLeft ) y_rotation += 1.0 * delta;
     if ( rotateRight ) y_rotation -= 1.0 * delta;
     globalGroup.rotateY(y_rotation);
+    console.log(camera.position)
+    console.log(globalGroup.rotation)
 
     // object controls
     updateClouds(delta);
