@@ -137,7 +137,7 @@ function setupRenderers(screenResolution: Vector2) {
     renderer.toneMappingExposure = .75
     renderer.shadowMap.enabled = true
     renderer.setSize( screenResolution.x, screenResolution.y )
-    // renderer.debug.checkShaderErrors = false;
+    renderer.debug.checkShaderErrors = false;
     renderer.setPixelRatio(window.devicePixelRatio);
     document.body.appendChild( renderer.domElement )
 
@@ -776,10 +776,30 @@ function camZOut() {
             camera.updateProjectionMatrix();
         })
         .start();
+    setTimeout(()=>{controls.saveState();}, 1500)
     globalGroup.rotation.set(0,0,0)
     velocity.set(0, 0, 0);
     y_rotation = 0;
 }
+
+function preventEvent(event: any) {
+    event.stopPropagation();
+}
+
+function toggleControls(enable: boolean) {
+    controls.enabled = enable;
+    if (!enable) {
+      window.addEventListener('mousedown', preventEvent, true);
+      window.addEventListener('touchstart', preventEvent, true);
+      window.addEventListener('wheel', preventEvent, true);
+    } else {
+        setTimeout(()=> {
+            window.removeEventListener('mousedown', preventEvent, true);
+            window.removeEventListener('touchstart', preventEvent, true);
+            window.removeEventListener('wheel', preventEvent, true);
+        }, 1000)
+    }
+  }
 
 function onKeyDown (event: any) {
     switch (event.code) {
@@ -812,7 +832,7 @@ function onKeyDown (event: any) {
             break;
         case 'KeyG':
             if (!cssHolder.visible) camZOut()
-            controls.enabled = !controls.enabled
+            toggleControls(!controls.enabled)
             cssHolder.visible = !cssHolder.visible
             break;
     }
@@ -874,8 +894,8 @@ function onWindowResize() {
 // HTML Render
 function renderHTML() {
     const iframe = document.createElement( 'iframe' );
-    iframe.style.width = '27%'; // Adjust width as needed
-    iframe.style.height = '53%'; // Adjust height as needed
+    iframe.style.width = '24em'; // Adjust width as needed
+    iframe.style.height = '23em'; // Adjust height as needed
     iframe.style.border = '0';    // Remove border
     iframe.style.objectFit = 'cover';
     // iframe.style.transform = 'scale(0.0001)'
@@ -919,8 +939,6 @@ function animate() {
     if ( rotateLeft ) y_rotation += 1.0 * delta;
     if ( rotateRight ) y_rotation -= 1.0 * delta;
     globalGroup.rotateY(y_rotation);
-    console.log(camera.position)
-    console.log(globalGroup.rotation)
 
     // object controls
     updateClouds(delta);
