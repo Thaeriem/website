@@ -894,9 +894,9 @@ function onWindowResize() {
 // HTML Render
 function renderHTML() {
     const iframe = document.createElement( 'iframe' );
-    iframe.style.width = '24em'; // Adjust width as needed
-    iframe.style.height = '23em'; // Adjust height as needed
-    iframe.style.border = '0';    // Remove border
+    iframe.style.width = '24em'; 
+    iframe.style.height = '26em'; 
+    iframe.style.border = '0';   
     iframe.style.objectFit = 'cover';
     // iframe.style.transform = 'scale(0.0001)'
     iframe.src = 'http://localhost:8000/index.html';
