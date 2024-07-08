@@ -8,9 +8,30 @@
             margin: 0px;
             overflow: hidden;
         }
+        html.lenis, html.lenis body {
+          height: auto;
+        }
+
+        .lenis.lenis-smooth {
+          scroll-behavior: auto !important;
+        }
+
+        .lenis.lenis-smooth [data-lenis-prevent] {
+          overscroll-behavior: contain;
+        }
+
+        .lenis.lenis-stopped {
+          overflow: hidden;
+        }
+
+        .lenis.lenis-smooth iframe {
+          pointer-events: none;
+        }
     </style>
   </head>
   <body>
     <script type="module" src="src/index.ts"></script>
+    <script src="https://unpkg.com/lenis@1.1.5/dist/lenis.min.js"></script> 
+    <script src="sscroll.js"></script>
 </body>
 </html>

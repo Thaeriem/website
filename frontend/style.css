@@ -8,6 +8,10 @@
   margin: 0;
 }
 
+html {
+  scrollbar-width: none;
+}
+
 body {
   background-color: #faf4e7;
   color: #000000;
@@ -91,6 +95,7 @@ svg.squiggle {
   width: 100vw;
   height: 200vw;
   z-index: 1;
+  overflow: visible;
 }
 
 svg.squiggle path {

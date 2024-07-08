@@ -1,5 +1,6 @@
 const svg = document.querySelector('svg.squiggle')
 const path = svg.querySelector('path')
+let buffer = false;
 
 const scroll = () => {
   const distance = window.scrollY
@@ -12,6 +13,15 @@ const scroll = () => {
   path.style.strokeDasharray = `${pathLength}`
   path.style.strokeDashoffset = `${pathLength * (1 - percentage)}`
 }
+const updateScroll = () => {
+  if (!buffer) {
+    window.requestAnimationFrame(() => {
+      scroll();
+      buffer = false;
+    });
+    buffer = true;
+  }
+};
 
-scroll()
-window.addEventListener('scroll', scroll)
+updateScroll(); 
+window.addEventListener('scroll', updateScroll);
