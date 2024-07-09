@@ -125,8 +125,8 @@ const colorStart = new THREE.Color("#046997"),
 // SETUP
 function setupCamera(screenResolution: Vector2) {
     let aspectRatio = screenResolution.x / screenResolution.y
-    camera = new THREE.OrthographicCamera(-aspectRatio, aspectRatio, 1, -1, 0.01, 2000);
-    camera.position.set(-200, 80, 0)
+    camera = new THREE.OrthographicCamera(-aspectRatio, aspectRatio, 1, -1, 0, 2000);
+    camera.position.set(-200, 80, 0.000001)
     camera.zoom = 0.25
     camera.updateProjectionMatrix()
 }
@@ -730,52 +730,6 @@ function updateKelp() {
 }
 // -----------------------------------------------------------------------
 // Keyboard Controls
-function camReset() {
-    
-    new TWEEN.Tween(camera.position)
-        .to({ x: -200, y: 80, z: 0 }, 1500)
-        .easing(TWEEN.Easing.Quadratic.Out)
-        .start();
-    new TWEEN.Tween(controls.target)
-        .to({ x: 0, y: 0, z: 0 }, 1500) 
-        .easing(TWEEN.Easing.Quadratic.Out)
-        .start();
-    new TWEEN.Tween({ zoom: camera.zoom })
-        .to({ zoom: 0.25 }, 1500) 
-        .easing(TWEEN.Easing.Quadratic.InOut)
-        .onUpdate(function (object) {
-            camera.zoom = object.zoom;
-            camera.updateProjectionMatrix();
-        })
-        .start();
-    globalGroup.rotation.set(0,0,0)
-    velocity.set(0, 0, 0);
-    y_rotation = 0;
-}
-
-function camZOut() {
-    new TWEEN.Tween(camera.position)
-        .to({ x: -200, y: 80, z: 0 }, 1500)
-        .easing(TWEEN.Easing.Quadratic.Out)
-        .start();
-    new TWEEN.Tween(controls.target)
-        .to({ x: 0, y: 0, z: 0 }, 1500) 
-        .easing(TWEEN.Easing.Quadratic.Out)
-        .start();
-    new TWEEN.Tween({ zoom: camera.zoom })
-        .to({ zoom: 0.1 }, 1500) 
-        .easing(TWEEN.Easing.Quadratic.InOut)
-        .onUpdate(function (object) {
-            camera.zoom = object.zoom;
-            camera.updateProjectionMatrix();
-        })
-        .start();
-    setTimeout(()=>{controls.saveState(); anim = true; }, 1500)
-    globalGroup.rotation.set(0,0,0)
-    velocity.set(0, 0, 0);
-    y_rotation = 0;
-}
-
 function preventEvent(event: any) {
     event.stopPropagation();
 }
@@ -794,13 +748,14 @@ function toggleControls(enable: boolean) {
         }, 1000)
     }
   }
-
 function onKeyDown (event: any) {
     switch (event.code) {
         case 'KeyZ':
         case 'Escape':
-            moveUp = moveDown = moveLeft = moveRight = false;
-            camReset()
+            if (controls.enabled) {
+                moveUp = moveDown = moveLeft = moveRight = false;
+                camReset(0.25, false)
+            }
             break;
         case 'KeyW':
         case 'ArrowUp':
@@ -819,6 +774,7 @@ function onKeyDown (event: any) {
             if (controls.enabled) moveRight = true;
             break;
         case 'KeyE':
+            console.log(cssHolder)
             if (controls.enabled) rotateRight = true;
             break;
         case 'KeyQ':
@@ -826,7 +782,7 @@ function onKeyDown (event: any) {
             break;
         case 'KeyG':
             if (!anim) {
-                if (!cssHolder.visible) camZOut()
+                if (!cssHolder.visible) camReset(0.1, true)
                 toggleControls(!controls.enabled)
                 cssHolder.visible = !cssHolder.visible
             }
@@ -867,6 +823,33 @@ const nzoom = (z: number, pow: number, disp: number) => (pow ** (1-z)-disp)/(pow
 const ndrift = (val: number) => (6-1.5*val);
 const nskew = (z: number, l: number, h: number) => l+(z)*(h-l);
 
+function camReset(zlvl: any, ifAnim: boolean) {
+    
+    new TWEEN.Tween(camera.position)
+        .to({ x: -200, y: 80, z: 0.000001 }, 1500)
+        .easing(TWEEN.Easing.Quadratic.Out)
+        .start();
+    new TWEEN.Tween(controls.target)
+        .to({ x: 0, y: 0, z: 0 }, 1500) 
+        .easing(TWEEN.Easing.Quadratic.Out)
+        .start();
+    new TWEEN.Tween({ zoom: camera.zoom })
+        .to({ zoom: zlvl }, 1500) 
+        .easing(TWEEN.Easing.Quadratic.InOut)
+        .onUpdate(function (object) {
+            camera.zoom = object.zoom;
+            camera.updateProjectionMatrix();
+        })
+        .start();
+    if (ifAnim) {
+        anim = true;
+        setTimeout(()=>{controls.saveState(); anim=false; }, 1500)
+    }
+    globalGroup.rotation.set(0,0,0)
+    velocity.set(0, 0, 0);
+    y_rotation = 0;
+}
+
 function onWindowResize() {
 
     let screenResolution = new Vector2( window.innerWidth, window.innerHeight )
@@ -896,10 +879,10 @@ function renderHTML() {
     iframe.style.objectFit = 'cover';
     iframe.src = 'http://localhost:8000/index.html';
 
-    // const cssElement = document.getElementById('test-element') as HTMLElement;
     cssHolder = new CSS3DObject(iframe);
+    cssHolder.frustumCulled = false;
     cssHolder.position.set(0, 0, 0);
-    cssHolder.rotation.set(0,Math.PI/2, 0)
+    cssHolder.rotation.set(0,Math.PI/2, 0);
     cssHolder.visible = false
     sceneCss.add(cssHolder);
     sceneCss.rotateY(Math.PI)
@@ -949,9 +932,9 @@ function animate() {
     }
     stats.update();
     TWEEN.update();
-    requestAnimationFrame( animate )
     composer.render();
     rendererCss.render( sceneCss, camera );
+    requestAnimationFrame( animate )
 
     prevTime = time;
 }
