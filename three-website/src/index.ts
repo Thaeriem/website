@@ -25,7 +25,6 @@ import boatModelURL from '/boat.glb?url'
 // @ts-ignore  
 import debrisModelURL from '/debris.glb?url'
 
-
 let camera: THREE.OrthographicCamera, 
     scene: THREE.Scene, 
     sceneCss: THREE.Scene,
@@ -70,7 +69,8 @@ let geometry: THREE.PlaneGeometry,
     fireParticles: THREE.InstancedMesh,
     grass: THREE.Mesh,
     kelpArr: THREE.InstancedMesh[] = []
-let cssHolder: CSS3DObject;
+let cssHolder: CSS3DObject,
+    anim: boolean = false
 let dummy: THREE.Object3D = new THREE.Object3D(),
     dummyVec: THREE.Vector3 = new THREE.Vector3(),
     dummyMat: THREE.Matrix4 = new THREE.Matrix4(),
@@ -639,11 +639,8 @@ function updateSmoke() {
             if (Math.random() > pOptions.p) resetParticle(smokeParticles,i,false, pOptions);
             else smokeParticles.setMatrixAt(i, dummyMat);
         }
-        else {
-            smokeParticles.setMatrixAt(i, dummyMat);
-        }
+        else smokeParticles.setMatrixAt(i, dummyMat);
     }
-
     smokeParticles.instanceMatrix.needsUpdate = true;
 }
 function updateFire() {
@@ -658,11 +655,8 @@ function updateFire() {
             if (Math.random() > fOptions.p) resetParticle(fireParticles,i,false, fOptions);
             else fireParticles.setMatrixAt(i, dummyMat);
         }
-        else {
-            fireParticles.setMatrixAt(i, dummyMat);
-        }
+        else fireParticles.setMatrixAt(i, dummyMat);
     }
-
     fireParticles.instanceMatrix.needsUpdate = true;
 }
 // -----------------------------------------------------------------------
@@ -776,7 +770,7 @@ function camZOut() {
             camera.updateProjectionMatrix();
         })
         .start();
-    setTimeout(()=>{controls.saveState();}, 1500)
+    setTimeout(()=>{controls.saveState(); anim = true; }, 1500)
     globalGroup.rotation.set(0,0,0)
     velocity.set(0, 0, 0);
     y_rotation = 0;
@@ -831,9 +825,11 @@ function onKeyDown (event: any) {
             if (controls.enabled) rotateLeft = true;
             break;
         case 'KeyG':
-            if (!cssHolder.visible) camZOut()
-            toggleControls(!controls.enabled)
-            cssHolder.visible = !cssHolder.visible
+            if (!anim) {
+                if (!cssHolder.visible) camZOut()
+                toggleControls(!controls.enabled)
+                cssHolder.visible = !cssHolder.visible
+            }
             break;
     }
 };
@@ -898,7 +894,6 @@ function renderHTML() {
     iframe.style.height = '26em'; 
     iframe.style.border = '0';   
     iframe.style.objectFit = 'cover';
-    // iframe.style.transform = 'scale(0.0001)'
     iframe.src = 'http://localhost:8000/index.html';
 
     // const cssElement = document.getElementById('test-element') as HTMLElement;
@@ -916,40 +911,42 @@ function animate() {
     time = performance.now();
     const delta = ( time - prevTime ) / 1000;
 
-    grassUniforms.iTime.value = time - startTime;
-    const newZoom = nnorm(camera.zoom)
-    const coef = nzoom(newZoom, 200, 0.99);
-
-    velocity.z -= velocity.z * ndrift(coef) * delta;
-    velocity.x -= velocity.x * ndrift(coef) * delta;
-    if ( moveUp ) velocity.x += nskew(coef, 1.5,10) * delta;
-    if (moveDown )  velocity.x -= nskew(coef, 1.5,10) * delta;
-    if ( moveLeft ) velocity.z -= nskew(coef, 0.75,5) * delta;
-    if (moveRight ) velocity.z += nskew(coef, 0.75,5) * delta;
-    
-    const new_x = camera.position.x + velocity.x, new_z = camera.position.z + velocity.z;
-    if (new_x > cameraBounds.maxX) velocity.x = 0;
-    if (new_x < cameraBounds.minX) velocity.x = 0;
-    if (new_z > cameraBounds.maxZ) velocity.z = 0;
-    if (new_z < cameraBounds.minZ) velocity.z = 0;
-    camera.position.add(velocity);
-    controls.target.add(velocity);
-
-    y_rotation -= y_rotation * 10.0 * delta;
-    if ( rotateLeft ) y_rotation += 1.0 * delta;
-    if ( rotateRight ) y_rotation -= 1.0 * delta;
-    globalGroup.rotateY(y_rotation);
-
-    // object controls
-    updateClouds(delta);
-    updateBoat(time);
-    updateDebris();
     updateOcean(time * 0.0001,0.1,0.1);
-    updateSmoke();
-    updateFire();
-    updateKelp();
+    updateClouds(delta);
 
-    controls.update();
+    if (controls.enabled) {
+        grassUniforms.iTime.value = time - startTime;
+        const newZoom = nnorm(camera.zoom)
+        const coef = nzoom(newZoom, 200, 0.99);
+
+        velocity.z -= velocity.z * ndrift(coef) * delta;
+        velocity.x -= velocity.x * ndrift(coef) * delta;
+        if ( moveUp ) velocity.x += nskew(coef, 1.5,10) * delta;
+        if (moveDown )  velocity.x -= nskew(coef, 1.5,10) * delta;
+        if ( moveLeft ) velocity.z -= nskew(coef, 0.75,5) * delta;
+        if (moveRight ) velocity.z += nskew(coef, 0.75,5) * delta;
+        
+        const new_x = camera.position.x + velocity.x, new_z = camera.position.z + velocity.z;
+        if (new_x > cameraBounds.maxX) velocity.x = 0;
+        if (new_x < cameraBounds.minX) velocity.x = 0;
+        if (new_z > cameraBounds.maxZ) velocity.z = 0;
+        if (new_z < cameraBounds.minZ) velocity.z = 0;
+        camera.position.add(velocity);
+        controls.target.add(velocity);
+
+        y_rotation -= y_rotation * 10.0 * delta;
+        if ( rotateLeft ) y_rotation += 1.0 * delta;
+        if ( rotateRight ) y_rotation -= 1.0 * delta;
+        globalGroup.rotateY(y_rotation);
+
+        // object controls
+        updateBoat(time);
+        updateDebris();
+        updateSmoke();
+        updateFire();
+        updateKelp();
+        controls.update();
+    }
     stats.update();
     TWEEN.update();
     requestAnimationFrame( animate )
