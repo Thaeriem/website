@@ -9,25 +9,16 @@
             margin: 0px;
             overflow: hidden;
         }
-        html.lenis, html.lenis body {
-          height: auto;
+        html {
+            cursor: url(./cursor/default.png), auto;
+        }
+        html:active {
+          cursor: url(./cursor/point.png), pointer;
         }
 
-        .lenis.lenis-smooth {
-          scroll-behavior: auto !important;
-        }
-
-        .lenis.lenis-smooth [data-lenis-prevent] {
-          overscroll-behavior: contain;
-        }
-
-        .lenis.lenis-stopped {
-          overflow: hidden;
-        }
-
-        .lenis.lenis-smooth iframe {
-          pointer-events: none;
-        }
+        /* .pointer {
+            cursor: url(./cursor/astro_link.cur), pointer;
+        } */
     </style>
   </head>
   <body>

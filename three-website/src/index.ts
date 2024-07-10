@@ -877,6 +877,7 @@ function renderHTML() {
     iframe.style.height = '26em'; 
     iframe.style.border = '0';   
     iframe.style.objectFit = 'cover';
+    iframe.setAttribute('sandbox', 'allow-same-origin allow-scripts allow-popups allow-forms');
     iframe.src = 'http://localhost:8000/index.html';
 
     cssHolder = new CSS3DObject(iframe);
@@ -901,6 +902,7 @@ function animate() {
         grassUniforms.iTime.value = time - startTime;
         const newZoom = nnorm(camera.zoom)
         const coef = nzoom(newZoom, 200, 0.99);
+        
 
         velocity.z -= velocity.z * ndrift(coef) * delta;
         velocity.x -= velocity.x * ndrift(coef) * delta;
