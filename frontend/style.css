@@ -10,6 +10,11 @@
 
 html {
   scrollbar-width: none;
+  cursor: url(./cursor/default.png), auto;
+}
+
+html:active {
+cursor: url(./cursor/point.png), pointer;
 }
 
 body {

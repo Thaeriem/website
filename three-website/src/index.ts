@@ -25,6 +25,9 @@ import boatModelURL from '/boat.glb?url'
 // @ts-ignore  
 import debrisModelURL from '/debris.glb?url'
 
+// RENDERING
+let prevTime = performance.now(), 
+    time = performance.now()
 let camera: THREE.OrthographicCamera, 
     scene: THREE.Scene, 
     sceneCss: THREE.Scene,
@@ -38,22 +41,27 @@ const cameraBounds = {
     minZ: -50,
     maxZ: 45
 };
-let controls: MapControls
-let prevTime = performance.now(), 
-    time = performance.now()
 let velocity = new THREE.Vector3();
 let y_rotation: number = 0
 let globalGroup = new THREE.Group();
+// MOUSE CONTROLS
+let controls: MapControls
+let raycaster: THREE.Raycaster = new THREE.Raycaster(),
+    mouse: THREE.Vector2 = new THREE.Vector2(1,1),
+    intersects:Set<any> = new Set(),
+    interact: Array<any> = []
 let moveUp: boolean = false, 
     moveDown: boolean = false, 
     moveLeft: boolean = false, 
     moveRight: boolean = false, 
     rotateLeft: boolean = false, 
     rotateRight: boolean = false
+// MODELS
 let islandModel: THREE.Object3D, 
     cloudModel: THREE.Object3D, 
     boatModel: THREE.Object3D,
     debrisModel: THREE.Object3D
+// GEOMETRIES + MESHES
 let geometry: THREE.PlaneGeometry, 
     mesh: THREE.Mesh,
     outlineGeometry: THREE.PlaneGeometry, 
@@ -69,8 +77,10 @@ let geometry: THREE.PlaneGeometry,
     fireParticles: THREE.InstancedMesh,
     grass: THREE.Mesh,
     kelpArr: THREE.InstancedMesh[] = []
+// CSS OVERLAY
 let cssHolder: CSS3DObject,
     anim: boolean = false
+// DUMMY
 let dummy: THREE.Object3D = new THREE.Object3D(),
     dummyVec: THREE.Vector3 = new THREE.Vector3(),
     dummyMat: THREE.Matrix4 = new THREE.Matrix4(),
@@ -361,6 +371,7 @@ function init() {
                         instMesh.scale.set(0.4,0.4,0.4);
 
                     }
+                    if (child.name.slice(0,5) == "Chest") interact.push(child)
                 }
                 if (child) child.frustumCulled = false;
             });
@@ -551,6 +562,7 @@ function init() {
     window.addEventListener( 'resize', onWindowResize );
     document.addEventListener("keydown", onKeyDown, false);
     document.addEventListener("keyup", onKeyUp, false);
+    window.addEventListener('mousemove', onMouseMove, false);
 }
 // -----------------------------------------------------------------------
 // Ocean
@@ -747,7 +759,8 @@ function toggleControls(enable: boolean) {
             window.removeEventListener('wheel', preventEvent, true);
         }, 1000)
     }
-  }
+}
+
 function onKeyDown (event: any) {
     switch (event.code) {
         case 'KeyZ':
@@ -774,7 +787,6 @@ function onKeyDown (event: any) {
             if (controls.enabled) moveRight = true;
             break;
         case 'KeyE':
-            console.log(cssHolder)
             if (controls.enabled) rotateRight = true;
             break;
         case 'KeyQ':
@@ -816,6 +828,33 @@ function onKeyUp (event: any) {
             break;
     }
 };
+
+function onMouseMove(event: any) {
+    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+    mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
+}
+
+function mouseUpdate() {
+    raycaster.setFromCamera(mouse, camera);
+    intersects.clear();
+    interact.forEach((val) => {
+        const tmp = raycaster.intersectObject(val)
+        tmp.forEach((val)=> {
+            if (!intersects.has(val.object)) intersects.add(val.object)
+        })
+    })
+
+    // intersects.forEach((val) => {
+    //     val.material.color.set(0xffff00)
+    // })
+
+    // if (intersects.size > 0) { 
+    //     let obj = intersects[0].object;
+    //     console.log(obj.name)
+    //     obj.material.color.set(0xffff00);
+    // } 
+}
+
 // -----------------------------------------------------------------------
 // Camera Controls
 const nnorm = (z: number) => (z-0.03)/(1-0.03);
@@ -930,6 +969,7 @@ function animate() {
         updateSmoke();
         updateFire();
         updateKelp();
+        mouseUpdate();
         controls.update();
     }
     stats.update();
