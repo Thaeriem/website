@@ -4,7 +4,7 @@
     <meta charset="UTF-8" name="google" content="notranslate" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta http-equiv="Content-Security-Policy" content="frame-src http://localhost:8000;">
-    <style>
+    <style id="dyn-cursor">
         body {
             margin: 0px;
             overflow: hidden;
@@ -15,6 +15,10 @@
         html:active {
           cursor: url(./cursor/point.png), pointer;
         }
+        html.active {
+          cursor: url(./cursor/point.png), pointer;
+        }
+
     </style>
   </head>
   <body>

@@ -46,10 +46,16 @@ let y_rotation: number = 0
 let globalGroup = new THREE.Group();
 // MOUSE CONTROLS
 let controls: MapControls
+interface FuncList {
+    [key: string]: (param: any) => void;
+}
 let raycaster: THREE.Raycaster = new THREE.Raycaster(),
     mouse: THREE.Vector2 = new THREE.Vector2(1,1),
-    intersects:Set<any> = new Set(),
-    interact: Array<any> = []
+    intersects: Array<any>  = [],
+    interact: Set<any> = new Set(),
+    funcList: FuncList = {
+        "Chest": onClickChest 
+    }
 let moveUp: boolean = false, 
     moveDown: boolean = false, 
     moveLeft: boolean = false, 
@@ -79,7 +85,8 @@ let geometry: THREE.PlaneGeometry,
     kelpArr: THREE.InstancedMesh[] = []
 // CSS OVERLAY
 let cssHolder: CSS3DObject,
-    anim: boolean = false
+    anim: boolean = false,
+    hoverIcon: THREE.Mesh
 // DUMMY
 let dummy: THREE.Object3D = new THREE.Object3D(),
     dummyVec: THREE.Vector3 = new THREE.Vector3(),
@@ -126,7 +133,7 @@ const fOptions = {
 const boatv0 = new THREE.Vector3(0, 0, 0), boatv1 = new THREE.Vector3(0, 0, 0), 
       boatv2 = new THREE.Vector3(0, 0, 0), debrv0 = new THREE.Vector3(0, 0, 0),
       debrv1 = new THREE.Vector3(0, 0, 0), debrv2 = new THREE.Vector3(0, 0, 0)
-const bInd: number[] = [560, 561, 595], dInd: number[] = [560,595, 594]
+const bInd: number[] = [560, 561, 595], dInd: number[] = [560, 595, 594]
 const noise = SimplexNoise.createNoise2D();
 const colorStart = new THREE.Color("#046997"), 
       colorEnd = new THREE.Color("#30b1ce");
@@ -371,7 +378,12 @@ function init() {
                         instMesh.scale.set(0.4,0.4,0.4);
 
                     }
-                    if (child.name.slice(0,5) == "Chest") interact.push(child)
+                    if (child.name.slice(0,5) == "Chest" && !interact.has(child.parent) ) interact.add(child.parent)
+                    if (child.name == "Icon") {
+                        hoverIcon = child
+                        globalGroup.add(hoverIcon)
+                        toRem.push(child)
+                    }
                 }
                 if (child) child.frustumCulled = false;
             });
@@ -563,6 +575,7 @@ function init() {
     document.addEventListener("keydown", onKeyDown, false);
     document.addEventListener("keyup", onKeyUp, false);
     window.addEventListener('mousemove', onMouseMove, false);
+    window.addEventListener('mousedown', onMouseClick, false);
 }
 // -----------------------------------------------------------------------
 // Ocean
@@ -741,7 +754,7 @@ function updateKelp() {
     }
 }
 // -----------------------------------------------------------------------
-// Keyboard Controls
+// KEYBOARD + MOUSE
 function preventEvent(event: any) {
     event.stopPropagation();
 }
@@ -834,29 +847,46 @@ function onMouseMove(event: any) {
     mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
 }
 
-function mouseUpdate() {
-    raycaster.setFromCamera(mouse, camera);
-    intersects.clear();
-    interact.forEach((val) => {
-        const tmp = raycaster.intersectObject(val)
-        tmp.forEach((val)=> {
-            if (!intersects.has(val.object)) intersects.add(val.object)
-        })
-    })
-
-    // intersects.forEach((val) => {
-    //     val.material.color.set(0xffff00)
-    // })
-
-    // if (intersects.size > 0) { 
-    //     let obj = intersects[0].object;
-    //     console.log(obj.name)
-    //     obj.material.color.set(0xffff00);
-    // } 
+function onMouseClick() {
+    if (intersects.length > 0) {
+        let firstIntersect = intersects[0];
+        funcList[firstIntersect.name](firstIntersect.parent)
+    }
 }
 
+function mouseUpdate() {
+    raycaster.setFromCamera(mouse, camera);
+    intersects = []
+    interact.forEach((val) => {
+        const tmp = raycaster.intersectObject(val)
+        tmp.forEach((val)=> { intersects.push(val.object.parent) })
+    })
+
+    if (intersects.length > 0) {
+        let firstIntersect = intersects[0];
+        if (hoverIcon) {
+            hoverIcon.position.copy(firstIntersect.position);
+            hoverIcon.position.x += 0.1;
+            hoverIcon.position.y += 0.6; 
+            hoverIcon.rotation.y += 0.02; 
+            hoverIcon.visible = true;
+        }
+        document.querySelector('html')?.classList.add('active');
+    } else {
+        if (hoverIcon) hoverIcon.visible = false;
+        document.querySelector('html')?.classList.remove('active');
+    }
+}
 // -----------------------------------------------------------------------
-// Camera Controls
+// INTERACTIONS
+
+function onClickChest(obj:any) {
+    console.log(obj)
+}
+
+
+// -----------------------------------------------------------------------
+// CAMERA CONTROLS
 const nnorm = (z: number) => (z-0.03)/(1-0.03);
 const nzoom = (z: number, pow: number, disp: number) => (pow ** (1-z)-disp)/(pow-disp);
 const ndrift = (val: number) => (6-1.5*val);
