@@ -770,7 +770,7 @@ function toggleControls(enable: boolean) {
             window.removeEventListener('mousedown', preventEvent, true);
             window.removeEventListener('touchstart', preventEvent, true);
             window.removeEventListener('wheel', preventEvent, true);
-        }, 1000)
+        }, 100)
     }
 }
 
@@ -781,6 +781,10 @@ function onKeyDown (event: any) {
             if (controls.enabled) {
                 moveUp = moveDown = moveLeft = moveRight = false;
                 camReset(0.25, false)
+            }
+            else {
+                toggleControls(!controls.enabled)
+                cssHolder.visible = !cssHolder.visible
             }
             break;
         case 'KeyW':
@@ -800,17 +804,12 @@ function onKeyDown (event: any) {
             if (controls.enabled) moveRight = true;
             break;
         case 'KeyE':
+        case 'Period':
             if (controls.enabled) rotateRight = true;
             break;
         case 'KeyQ':
+        case 'Comma':
             if (controls.enabled) rotateLeft = true;
-            break;
-        case 'KeyG':
-            if (!anim) {
-                if (!cssHolder.visible) camReset(0.1, true)
-                toggleControls(!controls.enabled)
-                cssHolder.visible = !cssHolder.visible
-            }
             break;
     }
 };
@@ -834,9 +833,11 @@ function onKeyUp (event: any) {
             moveRight = false;
             break;
         case 'KeyE':
+        case 'Period':
             rotateRight = false;
             break;
         case 'KeyQ':
+        case 'Comma':
             rotateLeft = false;
             break;
     }
@@ -880,8 +881,12 @@ function mouseUpdate() {
 // -----------------------------------------------------------------------
 // INTERACTIONS
 
-function onClickChest(obj:any) {
-    console.log(obj)
+function onClickChest() {
+    if (!anim) {
+        if (!cssHolder.visible) camReset(0.1, true)
+        toggleControls(!controls.enabled)
+        cssHolder.visible = !cssHolder.visible
+    }
 }
 
 
@@ -940,12 +945,41 @@ function onWindowResize() {
 }
 // -----------------------------------------------------------------------
 // HTML Render
+function githubButton() {
+    const element = document.createElement('div');
+    element.style.cssText = 'position: absolute;';
+
+    const link = document.createElement('a');
+    link.className = 'github';
+    link.href = 'https://google.com';
+    link.style.cssText = 'pointer-events: auto;';
+    link.addEventListener('pointerdown', (event) => {
+        event.preventDefault(); 
+        window.location.href = link.href;
+    });
+    
+
+    const icon = document.createElement('i');
+    icon.className = 'fab fa-github';
+    icon.style.cssText = 'font-size: 3.1em;';
+    
+    link.appendChild(icon);
+    element.appendChild(link);
+    const cssObject = new CSS3DObject(element);
+    cssObject.position.set(0, 0, 0); 
+    cssObject.rotation.set(0,Math.PI/2, 0);
+    sceneCss.add(cssObject);
+}
+
+
 function renderHTML() {
+    // githubButton();
     const iframe = document.createElement( 'iframe' );
-    iframe.style.width = '24em'; 
-    iframe.style.height = '26em'; 
-    iframe.style.border = '0';   
-    iframe.style.objectFit = 'cover';
+    iframe.style.cssText = 'width: 24em; height: 26em; border: 0; objectFit: cover';
+    // iframe.style.width = '24em'; 
+    // iframe.style.height = '26em'; 
+    // iframe.style.border = '0';   
+    // iframe.style.objectFit = 'cover';
     iframe.setAttribute('sandbox', 'allow-same-origin allow-scripts allow-popups allow-forms');
     iframe.src = 'http://localhost:8000/index.html';
 
