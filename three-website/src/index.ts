@@ -10,6 +10,7 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer'
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass'
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass'
+import { OutlinePass } from 'three/examples/jsm/postprocessing/OutlinePass.js';
 import Stats from 'three/examples/jsm/libs/stats.module.js';
 const stats:Stats = Stats();
 
@@ -34,7 +35,8 @@ let camera: THREE.OrthographicCamera,
     renderer: THREE.WebGLRenderer, 
     rendererCss: CSS3DRenderer,
     composer: EffectComposer,
-    pixelPass: RenderPixelatedPass
+    pixelPass: RenderPixelatedPass,
+    outlinePass: OutlinePass
 const cameraBounds = {
     minX: -270,
     maxX: -140,
@@ -46,16 +48,10 @@ let y_rotation: number = 0
 let globalGroup = new THREE.Group();
 // MOUSE CONTROLS
 let controls: MapControls
-interface FuncList {
-    [key: string]: (param: any) => void;
-}
 let raycaster: THREE.Raycaster = new THREE.Raycaster(),
     mouse: THREE.Vector2 = new THREE.Vector2(1,1),
     intersects: Array<any>  = [],
-    interact: Set<any> = new Set(),
-    funcList: FuncList = {
-        "Chest": onClickChest 
-    }
+    interact: Set<any> = new Set()
 let moveUp: boolean = false, 
     moveDown: boolean = false, 
     moveLeft: boolean = false, 
@@ -94,6 +90,14 @@ let dummy: THREE.Object3D = new THREE.Object3D(),
     dummyPos: THREE.Vector3 = new THREE.Vector3(),
     dummyColor: THREE.Color = new THREE.Color(),
     dummyArr: number[] = []
+interface TList {
+    [key: string]: any;
+}
+let funcList: TList = {
+    "Chest": onClickChest,
+    "Github": onClickGithub
+    },
+    iconList: TList
 // -----------------------------------------------------------------------
 // TEXTURE LOADER
 const texLoader = new THREE.TextureLoader();
@@ -347,6 +351,8 @@ function init() {
     composer.addPass( pixelPass )
     let bloomPass = new UnrealBloomPass( screenResolution, .4, .1, .9 )
     composer.addPass( bloomPass )
+    outlinePass = new OutlinePass( renderResolution, scene, camera );
+	composer.addPass( outlinePass );
 
     setupControls();
 
@@ -391,6 +397,10 @@ function init() {
             islandModel.scale.set(1, 1, 1);
             islandModel.position.set(0, 0, 0); 
             globalGroup.add(islandModel);
+            iconList = {
+                "Chest": hoverIcon,
+                "Github": null
+            }
         }, undefined, (error) => {
             console.error('An error happened while loading the glb model', error);
         });
@@ -570,6 +580,14 @@ function init() {
         spotLight.target = targetObject;
     }
     renderHTML()
+    const bg = new THREE.BoxGeometry(1, 1, 1);
+    const mg = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+    const box = new THREE.Mesh(bg, mg);
+    box.position.set(-3,0,1)
+    box.name = 'Github'
+    interact.add(box)
+
+    globalGroup.add(box);
     // events
     window.addEventListener( 'resize', onWindowResize );
     document.addEventListener("keydown", onKeyDown, false);
@@ -850,8 +868,26 @@ function onMouseMove(event: any) {
 
 function onMouseClick() {
     if (intersects.length > 0) {
-        let firstIntersect = intersects[0];
-        funcList[firstIntersect.name](firstIntersect.parent)
+        const ele = intersects[0];
+        funcList[ele.name](ele)
+    }
+}
+
+function placeIcon() {
+    if (intersects.length > 0) {
+        const ele = intersects[0];
+        const icon = iconList[ele.name]
+        if (icon) {
+            icon.position.copy(ele.position);
+            icon.position.x += 0.1;
+            icon.position.y += 0.6; 
+            icon.rotation.y += 0.02; 
+            icon.visible = true;
+        }
+        document.querySelector('html')?.classList.add('active');
+    } else {
+        for (let key in iconList) { if (iconList[key]) iconList[key].visible = false}
+        document.querySelector('html')?.classList.remove('active');
     }
 }
 
@@ -860,23 +896,12 @@ function mouseUpdate() {
     intersects = []
     interact.forEach((val) => {
         const tmp = raycaster.intersectObject(val)
-        tmp.forEach((val)=> { intersects.push(val.object.parent) })
+        tmp.forEach((val)=> { 
+            if (val.object.parent?.name != "") intersects.push(val.object.parent)
+            else intersects.push(val.object) 
+        })
     })
-
-    if (intersects.length > 0) {
-        let firstIntersect = intersects[0];
-        if (hoverIcon) {
-            hoverIcon.position.copy(firstIntersect.position);
-            hoverIcon.position.x += 0.1;
-            hoverIcon.position.y += 0.6; 
-            hoverIcon.rotation.y += 0.02; 
-            hoverIcon.visible = true;
-        }
-        document.querySelector('html')?.classList.add('active');
-    } else {
-        if (hoverIcon) hoverIcon.visible = false;
-        document.querySelector('html')?.classList.remove('active');
-    }
+    placeIcon()
 }
 // -----------------------------------------------------------------------
 // INTERACTIONS
@@ -887,6 +912,10 @@ function onClickChest() {
         toggleControls(!controls.enabled)
         cssHolder.visible = !cssHolder.visible
     }
+}
+
+function onClickGithub() {
+    window.location.assign('https://github.com/Thaeriem')
 }
 
 
@@ -1038,6 +1067,7 @@ function animate() {
     }
     stats.update();
     TWEEN.update();
+    outlinePass.selectedObjects = intersects
     composer.render();
     rendererCss.render( sceneCss, camera );
     requestAnimationFrame( animate )
