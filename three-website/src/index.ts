@@ -345,14 +345,19 @@ function init() {
 
     setupRenderers(screenResolution);
 
-    pixelPass = new RenderPixelatedPass( renderResolution, scene, camera );
     composer = new EffectComposer( renderer )
     composer.addPass( new RenderPass( scene, camera ) )
+    pixelPass = new RenderPixelatedPass( renderResolution, scene, camera );
     composer.addPass( pixelPass )
-    let bloomPass = new UnrealBloomPass( screenResolution, .4, .1, .9 )
-    composer.addPass( bloomPass )
     outlinePass = new OutlinePass( renderResolution, scene, camera );
+    outlinePass.edgeStrength = 4.0
+    outlinePass.edgeGlow = 0.0
+    outlinePass.edgeThickness = 3.0
+    outlinePass.pulsePeriod = 0
 	composer.addPass( outlinePass );
+    let bloomPass = new UnrealBloomPass( screenResolution, .4, .1, .9 )
+    composer.addPass(bloomPass)
+    
 
     setupControls();
 
@@ -876,19 +881,31 @@ function onMouseClick() {
 function placeIcon() {
     if (intersects.length > 0) {
         const ele = intersects[0];
-        const icon = iconList[ele.name]
-        if (icon) {
-            icon.position.copy(ele.position);
-            icon.position.x += 0.1;
-            icon.position.y += 0.6; 
-            icon.rotation.y += 0.02; 
-            icon.visible = true;
+        if (ele) {
+            const icon = iconList[ele.name]
+            if (icon) {
+                icon.position.copy(ele.position);
+                icon.position.x += 0.1;
+                icon.position.y += 0.6; 
+                icon.rotation.y += 0.02; 
+                icon.visible = true;
+            }
+            document.querySelector('html')?.classList.add('active');
         }
-        document.querySelector('html')?.classList.add('active');
     } else {
         for (let key in iconList) { if (iconList[key]) iconList[key].visible = false}
         document.querySelector('html')?.classList.remove('active');
     }
+}
+
+function flattenMesh() {
+    let ret: any[] = []
+    intersects.forEach((val) => {
+        // console.log(val)
+        if (val.type != 'Mesh') ret = ret.concat(val.children)
+        else ret.push(val)
+    })
+    return [...new Set(ret)]
 }
 
 function mouseUpdate() {
@@ -1005,10 +1022,6 @@ function renderHTML() {
     // githubButton();
     const iframe = document.createElement( 'iframe' );
     iframe.style.cssText = 'width: 24em; height: 26em; border: 0; objectFit: cover';
-    // iframe.style.width = '24em'; 
-    // iframe.style.height = '26em'; 
-    // iframe.style.border = '0';   
-    // iframe.style.objectFit = 'cover';
     iframe.setAttribute('sandbox', 'allow-same-origin allow-scripts allow-popups allow-forms');
     iframe.src = 'http://localhost:8000/index.html';
 
@@ -1067,7 +1080,7 @@ function animate() {
     }
     stats.update();
     TWEEN.update();
-    outlinePass.selectedObjects = intersects
+    if (outlinePass) outlinePass.selectedObjects = flattenMesh()
     composer.render();
     rendererCss.render( sceneCss, camera );
     requestAnimationFrame( animate )
