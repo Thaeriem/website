@@ -10,7 +10,6 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer'
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass'
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass'
-import { OutlinePass } from 'three/examples/jsm/postprocessing/OutlinePass.js';
 import Stats from 'three/examples/jsm/libs/stats.module.js';
 const stats:Stats = Stats();
 
@@ -35,8 +34,7 @@ let camera: THREE.OrthographicCamera,
     renderer: THREE.WebGLRenderer, 
     rendererCss: CSS3DRenderer,
     composer: EffectComposer,
-    pixelPass: RenderPixelatedPass,
-    outlinePass: OutlinePass
+    pixelPass: RenderPixelatedPass
 const cameraBounds = {
     minX: -270,
     maxX: -140,
@@ -349,12 +347,6 @@ function init() {
     composer.addPass( new RenderPass( scene, camera ) )
     pixelPass = new RenderPixelatedPass( renderResolution, scene, camera );
     composer.addPass( pixelPass )
-    outlinePass = new OutlinePass( renderResolution, scene, camera );
-    outlinePass.edgeStrength = 4.0
-    outlinePass.edgeGlow = 0.0
-    outlinePass.edgeThickness = 3.0
-    outlinePass.pulsePeriod = 0
-	composer.addPass( outlinePass );
     let bloomPass = new UnrealBloomPass( screenResolution, .4, .1, .9 )
     composer.addPass(bloomPass)
     
@@ -404,7 +396,7 @@ function init() {
             globalGroup.add(islandModel);
             iconList = {
                 "Chest": hoverIcon,
-                "Github": null
+                "Github": undefined
             }
         }, undefined, (error) => {
             console.error('An error happened while loading the glb model', error);
@@ -879,33 +871,25 @@ function onMouseClick() {
 }
 
 function placeIcon() {
-    if (intersects.length > 0) {
-        const ele = intersects[0];
-        if (ele) {
-            const icon = iconList[ele.name]
-            if (icon) {
-                icon.position.copy(ele.position);
-                icon.position.x += 0.1;
-                icon.position.y += 0.6; 
-                icon.rotation.y += 0.02; 
-                icon.visible = true;
+    if (islandModel) {
+        if (intersects.length > 0) {
+            const ele = intersects[0];
+            if (ele) {
+                const icon = iconList[ele.name]
+                if (icon) {
+                    icon.position.copy(ele.position);
+                    icon.position.x += 0.1;
+                    icon.position.y += 0.6; 
+                    icon.rotation.y += 0.02; 
+                    icon.visible = true;
+                }
+                document.querySelector('html')?.classList.add('active');
             }
-            document.querySelector('html')?.classList.add('active');
+        } else {
+            for (let key in iconList) { if (iconList[key]) iconList[key].visible = false}
+            document.querySelector('html')?.classList.remove('active');
         }
-    } else {
-        for (let key in iconList) { if (iconList[key]) iconList[key].visible = false}
-        document.querySelector('html')?.classList.remove('active');
     }
-}
-
-function flattenMesh() {
-    let ret: any[] = []
-    intersects.forEach((val) => {
-        // console.log(val)
-        if (val.type != 'Mesh') ret = ret.concat(val.children)
-        else ret.push(val)
-    })
-    return [...new Set(ret)]
 }
 
 function mouseUpdate() {
@@ -991,31 +975,31 @@ function onWindowResize() {
 }
 // -----------------------------------------------------------------------
 // HTML Render
-function githubButton() {
-    const element = document.createElement('div');
-    element.style.cssText = 'position: absolute;';
+// function githubButton() {
+//     const element = document.createElement('div');
+//     element.style.cssText = 'position: absolute;';
 
-    const link = document.createElement('a');
-    link.className = 'github';
-    link.href = 'https://google.com';
-    link.style.cssText = 'pointer-events: auto;';
-    link.addEventListener('pointerdown', (event) => {
-        event.preventDefault(); 
-        window.location.href = link.href;
-    });
+//     const link = document.createElement('a');
+//     link.className = 'github';
+//     link.href = 'https://google.com';
+//     link.style.cssText = 'pointer-events: auto;';
+//     link.addEventListener('pointerdown', (event) => {
+//         event.preventDefault(); 
+//         window.location.href = link.href;
+//     });
     
 
-    const icon = document.createElement('i');
-    icon.className = 'fab fa-github';
-    icon.style.cssText = 'font-size: 3.1em;';
+//     const icon = document.createElement('i');
+//     icon.className = 'fab fa-github';
+//     icon.style.cssText = 'font-size: 3.1em;';
     
-    link.appendChild(icon);
-    element.appendChild(link);
-    const cssObject = new CSS3DObject(element);
-    cssObject.position.set(0, 0, 0); 
-    cssObject.rotation.set(0,Math.PI/2, 0);
-    sceneCss.add(cssObject);
-}
+//     link.appendChild(icon);
+//     element.appendChild(link);
+//     const cssObject = new CSS3DObject(element);
+//     cssObject.position.set(0, 0, 0); 
+//     cssObject.rotation.set(0,Math.PI/2, 0);
+//     sceneCss.add(cssObject);
+// }
 
 
 function renderHTML() {
@@ -1080,7 +1064,6 @@ function animate() {
     }
     stats.update();
     TWEEN.update();
-    if (outlinePass) outlinePass.selectedObjects = flattenMesh()
     composer.render();
     rendererCss.render( sceneCss, camera );
     requestAnimationFrame( animate )
