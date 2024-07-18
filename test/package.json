@@ -1,0 +1,17 @@
+{
+  "name": "test",
+  "version": "1.0.0",
+  "description": "A project to generate ASCII art using Simplex Noise",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "serve": "vite preview"
+  },
+  "dependencies": {
+    "perlin-noise": "^0.0.1",
+    "simplex-noise": "^4.0.2"
+  },
+  "devDependencies": {
+    "vite": "^4.0.0"
+  }
+}
