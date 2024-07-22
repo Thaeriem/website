@@ -27,11 +27,13 @@ const edges = [
     [0, 4], [1, 5], [2, 6], [3, 7]
 ];
 
+let lastTime = 0;
 let angleX = 0;
 let angleY = 0;
 let angleZ = 0;
 
-const chars = '@%#*+=-:...:-=+*#%@';
+const chars = '@#*••*#@';
+
 
 function getCharForDistance(distance) {
     return chars[Math.floor(distance * (chars.length - 1))];
@@ -117,11 +119,25 @@ function draw() {
     cubeElement.textContent = canvas.map(row => row.join('')).join('\n');
 }
 
+const fps = 60;
+const interval = 1000 / fps;
+
+
 function animate(time) {
-    angleX += 0.01;
-    angleY += 0.01;
-    angleZ += 0.01;
-    draw();
+    if (!lastTime) lastTime = time;
+    const deltaTime = time - lastTime;
+
+    if (deltaTime >= interval) {
+        lastTime = time - (deltaTime % interval);
+
+        const rotationSpeed = 0.02; 
+
+        angleX += rotationSpeed;
+        angleY += rotationSpeed;
+
+        draw();
+    }
+    
     requestAnimationFrame(animate);
 }
 
