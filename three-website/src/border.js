@@ -1,5 +1,4 @@
 (function() {
-    const borderElement = document.getElementById('border');
     const loading = '/ L O A D I N G /'
     const bchar = {
         tL: '┌',
@@ -11,12 +10,14 @@
     };
 
     class BorderDrawer {
-        constructor(gridHeight, gridWidth) {
+        constructor(ele, gridHeight, gridWidth, loading) {
+            this.ele = document.getElementById(ele);
             this.height = gridHeight;
             this.width = gridWidth;
             this.grid = this.initializeBorderGrid();
             this.prog = 0;
             this.textIndex = 0;
+            this.loading = loading
         }
 
         initializeBorderGrid() {
@@ -45,11 +46,20 @@
                 if (offsetR === this.width + 2) this.grid[0][offsetR] = bchar.tR;
                 else this.grid[0][offsetR] = bchar.h;
             } else if (this.prog <= this.width + this.height + 3) {
-                const offset = this.prog - (halfWidth + this.height + 1);
-                const offsetR = this.width + 2 - offset;
-                this.grid[0][offset] = loading[this.textIndex];
-                this.grid[0][offsetR] = loading[loading.length - this.textIndex - 1];
-                this.textIndex++
+                if (this.loading) {
+                    const offset = this.prog - (halfWidth + this.height + 1);
+                    const offsetR = this.width + 2 - offset;
+                    this.grid[0][offset] = loading[this.textIndex];
+                    this.grid[0][offsetR] = loading[loading.length - this.textIndex - 1];
+                    this.textIndex++
+                } else {
+                    const offset = this.prog - (halfWidth + this.height + 1);
+                    const offsetR = this.width + 2 - offset;
+                    if (offset === 0) this.grid[0][offset] = bchar.tL;
+                    else this.grid[0][offset] = bchar.h;
+                    if (offsetR === this.width + 2) this.grid[0][offsetR] = bchar.tR;
+                    else this.grid[0][offsetR] = bchar.h;
+                }
             }
             this.prog++;
             this.render();
@@ -57,10 +67,15 @@
 
         render() {
             const formattedBorder = this.grid.map(row => row.join('')).join('\n');
-            borderElement.textContent = formattedBorder;
+            this.ele.textContent = formattedBorder;
         }
     }
 
-    const borderDrawer = new BorderDrawer(15, 34);
-    setInterval(() => borderDrawer.drawBorder(), 20);
+    const borderDrawer = new BorderDrawer('border', 14, 34, true);
+    const buttonDrawer = new BorderDrawer('border2', 4, 34, false);
+    const border = document.getElementById('border2');
+    setInterval(() => {
+        borderDrawer.drawBorder();
+        if (border && border.style.display != "") buttonDrawer.drawBorder();
+    }, 20);
 })();

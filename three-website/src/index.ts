@@ -327,9 +327,8 @@ const kelpPos: Array<Array<number>> = [
 // -----------------------------------------------------------------------
 // STARTUP
 function loadNext() {
-    console.log("load")
     const grid = document.getElementById("grid")
-    grid?.click();
+    if (grid && grid.dataset["row"]) grid.dataset["row"] = String(parseInt(grid.dataset["row"]) + 1);
 }
 
 

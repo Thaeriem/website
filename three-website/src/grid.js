@@ -29,15 +29,7 @@ class MorphingGrid {
         this.points = this.initPoints();
         this.morphnum = 0;
         this.resolveTimes = Array(this.height).fill(false);
-        gridElement.style.whiteSpace = 'pre'; 
-        gridElement.style.fontFamily = 'monospace'; 
         this.currentLineToResolve = 0;
-        gridElement.addEventListener('click', () => {
-            if (this.currentLineToResolve < this.height) {
-                this.resolveTimes[this.currentLineToResolve] = true;
-                this.currentLineToResolve++;
-            }
-        });
     }
 
     rand(rows, cols) {
@@ -96,6 +88,10 @@ class MorphingGrid {
     }
 
     updateGrid() {
+        this.currentLineToResolve = parseInt(document.getElementById("grid").dataset["row"])
+        for (let i = 0; i < this.currentLineToResolve; i++) {
+            if (i < this.height) this.resolveTimes[i] = true;
+        }
         this.setSpaces();
         this.orderedMorph();
         this.render();
@@ -122,8 +118,10 @@ class MorphingGrid {
             .join('\n');
 
         if (this.checkGrid()) {
-            const button = document.getElementById('startButton')
+            const button = document.getElementById('start')
+            const border = document.getElementById('border2')
             if (button) button.style.display = 'block';
+            if (border) border.style.display = 'block';
             clearInterval(interval);
 
         }
@@ -144,4 +142,4 @@ const targetGrid = [
 ].map(row => row.split(''));
 
 const morphingGrid = new MorphingGrid(targetGrid);
-const interval = setInterval(() => morphingGrid.updateGrid(), 50);
+const interval = setInterval(() => morphingGrid.updateGrid(), 30);

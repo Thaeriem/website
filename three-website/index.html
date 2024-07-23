@@ -4,78 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Three.js Scene with Loading Screen</title>
-    <style>
-        body {
-            margin: 0;
-            overflow: hidden;
-            background-color: black;
-            color: white;
-            font-family: monospace;
-            display:block;
-        }
-        #loading {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            background-color: black;
-            position: absolute;
-            vertical-align: middle;
-            left: 3em;
-            top: -8em;
-        }
-        #borderContainer {
-            position: relative;
-        }
-        #border {
-            position: absolute;
-            top: 0;
-            left: 0;
-            line-height: 1;
-            font-size: 10px;
-        }
-        #grid {
-            position: absolute;
-            top: 1em;
-            left: 1em;
-            white-space: pre;
-            font-family: monospace;
-            color: white;
-            z-index: 1; 
-        }
-        .button {
-            display: none;
-            padding: 10px 20px;
-            font-size: 16px;
-            cursor: pointer;
-            text-align: center;
-            text-decoration: none;
-            outline: none;
-            color: #fff;
-            background-color: #4CAF50;
-            border: none;
-            border-radius: 15px;
-            box-shadow: 0 9px #999;
-            position: absolute;
-            top: 0;
-            left: 3em;
-        }
-        #scene {
-            display: none;
-            width: 100vw;
-            height: 100vh;
-        }
-        #screen {
-          width: 100vw;
-          height: 100vh;
-        }
-        html {
-            cursor: url(./cursor/default.png), auto;
-        }
-        html:active, html.active, a, button:active, .button:active {
-            cursor: url(./cursor/point.png), pointer;
-        }
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <!-- Loading Screen -->
@@ -83,10 +12,15 @@
       <div id="loading">
         <div id="borderContainer">
             <pre id="border"></pre>
-            <pre id="grid"></pre>
+            <pre id="grid" data-row="0"></pre>
+        </div>
+        <div id="borderContainer">
+          <pre id="border2"></pre>
+          <pre id="start">START</pre>
         </div>
       </div>
-      <button id="startButton" class="button">Start</button>
+      
+     
     </div>
    
 
@@ -97,15 +31,9 @@
         <script type="module" src="src/index.ts"></script>
     </div>
 
-    <script src="src/grid.js"></script>
-    <script src="src/border.js"></script>
-    <script>
-        document.getElementById('startButton').addEventListener('click', function() {
-          document.getElementById('borderContainer').style.display = 'none';
-          document.getElementById('loading').style.display = 'none';
-            document.getElementById('screen').style.display = 'none';
-            document.getElementById('scene').style.display = 'block';
-        });
+    <script type="module" src="src/grid.js"></script>
+    <script type="module" src="src/border.js"></script>
+    <script >
 
         function getBoundingBox(element) {
             const rect = element.getBoundingClientRect();
@@ -118,8 +46,13 @@
         }
 
         document.addEventListener('click', function(event) {
-            const startButton = document.getElementById('startButton');
-            if (startButton.style.display != "" && isMouseInElement(event.clientX, event.clientY, startButton)) startButton.click();
+            const startButton = document.getElementById('border2');
+            if (startButton.style.display != "" && isMouseInElement(event.clientX, event.clientY, startButton)) {
+              document.getElementById('borderContainer').style.display = 'none';
+              document.getElementById('loading').style.display = 'none';
+              document.getElementById('screen').style.display = 'none';
+              document.getElementById('scene').style.display = 'block';
+            }
         });
     </script>
 </body>
