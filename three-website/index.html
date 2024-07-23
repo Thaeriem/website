@@ -101,6 +101,8 @@
     <script src="./border.js"></script>
     <script>
         document.getElementById('startButton').addEventListener('click', function() {
+          document.getElementById('borderContainer').style.display = 'none';
+          document.getElementById('loading').style.display = 'none';
             document.getElementById('screen').style.display = 'none';
             document.getElementById('scene').style.display = 'block';
         });
