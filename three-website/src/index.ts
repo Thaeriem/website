@@ -143,6 +143,7 @@ const colorStart = new THREE.Color("#046997"),
 // -----------------------------------------------------------------------
 // SETUP
 function setupCamera(screenResolution: Vector2) {
+    loadNext();
     let aspectRatio = screenResolution.x / screenResolution.y
     camera = new THREE.OrthographicCamera(-aspectRatio, aspectRatio, 1, -1, 0, 2000);
     camera.position.set(-200, 80, 0.000001)
@@ -151,6 +152,7 @@ function setupCamera(screenResolution: Vector2) {
 }
 
 function setupRenderers(screenResolution: Vector2) {
+    loadNext();
     renderer = new THREE.WebGLRenderer( { antialias: false } )
     renderer.toneMapping = THREE.ACESFilmicToneMapping
     renderer.toneMappingExposure = .75
@@ -158,16 +160,17 @@ function setupRenderers(screenResolution: Vector2) {
     renderer.setSize( screenResolution.x, screenResolution.y )
     renderer.debug.checkShaderErrors = false;
     renderer.setPixelRatio(window.devicePixelRatio);
-    document.body.appendChild( renderer.domElement )
+    document.getElementById("scene")?.appendChild( renderer.domElement );
 
     rendererCss = new CSS3DRenderer();
     rendererCss.setSize( screenResolution.x, screenResolution.y )
     rendererCss.domElement.style.position = 'absolute';
     rendererCss.domElement.style.top = "0";
-    document.body.appendChild( rendererCss.domElement );
+    document.getElementById("scene")?.appendChild( rendererCss.domElement );
 }
 
 function setupControls() {
+    loadNext();
     controls = new MapControls( camera, rendererCss.domElement )
     // controls.enablePan = false //
     controls.target.set( 0, 0, 0 )
@@ -322,6 +325,14 @@ const kelpPos: Array<Array<number>> = [
     ]
 ]
 // -----------------------------------------------------------------------
+// STARTUP
+function loadNext() {
+    console.log("load")
+    const grid = document.getElementById("grid")
+    grid?.click();
+}
+
+
 init();
 function init() {
     stats.dom.style.width = '80px';
@@ -353,11 +364,12 @@ function init() {
 
     setupControls();
 
+    loadNext();
     const gltfLoader = new GLTFLoader()
 
     {
+        loadNext();
         gltfLoader.load(islandModelURL, (gltf) => {
-
             islandModel = gltf.scene;
             let toRem:THREE.Object3D[] = []
             islandModel.traverse((child) => {
@@ -444,6 +456,7 @@ function init() {
     }
 
     {
+        loadNext();
         gltfLoader.load(cloudModelURL, (gltf) => {
             cloudModel = gltf.scene;
             cloudModel.traverse((child) => {
@@ -476,6 +489,7 @@ function init() {
     }
 
     {
+        loadNext();
         gltfLoader.load(boatModelURL, (gltf) => {
             boatModel = gltf.scene;
             boatModel.traverse((child) => {
@@ -496,8 +510,11 @@ function init() {
             boatv1.set(pos.getX(bInd[1]), pos.getZ(bInd[1]), pos.getY(bInd[1]))
             boatv2.set(pos.getX(bInd[2]), pos.getZ(bInd[2]), pos.getY(bInd[2]))
             boatP = createPlane(boatv0, boatv1, boatv2);
+        }, undefined,  (error) => {
+            console.error('An error happened while loading the glb model', error);
         });
 
+        loadNext();
         gltfLoader.load(debrisModelURL, (gltf) => {
             debrisModel = gltf.scene;
             debrisModel.traverse((child) => {
@@ -516,6 +533,8 @@ function init() {
             debrv1.set(pos.getX(dInd[1]), pos.getZ(dInd[1]), pos.getY(dInd[1]))
             debrv2.set(pos.getX(dInd[2]), pos.getZ(dInd[2]), pos.getY(dInd[2]))
             debrP = createPlane(debrv0, debrv1, debrv2);
+        }, undefined,  (error) => {
+            console.error('An error happened while loading the glb model', error);
         });
     
     }
@@ -864,30 +883,34 @@ function onMouseMove(event: any) {
 }
 
 function onMouseClick() {
-    if (intersects.length > 0) {
-        const ele = intersects[0];
-        funcList[ele.name](ele)
+    if (document.getElementById('scene')?.style.display != "") {
+        if (intersects.length > 0) {
+            const ele = intersects[0];
+            funcList[ele.name](ele)
+        }
     }
 }
 
 function placeIcon() {
     if (islandModel) {
-        if (intersects.length > 0) {
-            const ele = intersects[0];
-            if (ele) {
-                const icon = iconList[ele.name]
-                if (icon) {
-                    icon.position.copy(ele.position);
-                    icon.position.x += 0.1;
-                    icon.position.y += 0.6; 
-                    icon.rotation.y += 0.02; 
-                    icon.visible = true;
+        if (document.getElementById('scene')?.style.display != "") {
+            if (intersects.length > 0) {
+                const ele = intersects[0];
+                if (ele) {
+                    const icon = iconList[ele.name]
+                    if (icon) {
+                        icon.position.copy(ele.position);
+                        icon.position.x += 0.1;
+                        icon.position.y += 0.6; 
+                        icon.rotation.y += 0.02; 
+                        icon.visible = true;
+                    }
+                    document.querySelector('html')?.classList.add('active');
                 }
-                document.querySelector('html')?.classList.add('active');
+            } else {
+                for (let key in iconList) { if (iconList[key]) iconList[key].visible = false}
+                document.querySelector('html')?.classList.remove('active');
             }
-        } else {
-            for (let key in iconList) { if (iconList[key]) iconList[key].visible = false}
-            document.querySelector('html')?.classList.remove('active');
         }
     }
 }

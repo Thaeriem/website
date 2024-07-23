@@ -61,6 +61,6 @@
         }
     }
 
-    const borderDrawer = new BorderDrawer(20, 30);
+    const borderDrawer = new BorderDrawer(15, 34);
     setInterval(() => borderDrawer.drawBorder(), 20);
 })();
