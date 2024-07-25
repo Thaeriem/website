@@ -938,7 +938,7 @@ function onClickChest() {
 }
 
 function onClickGithub() {
-    window.location.assign('https://github.com/Thaeriem')
+    window.open('https://github.com/Thaeriem', '_blank')?.focus();
 }
 
 
