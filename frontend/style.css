@@ -8,13 +8,9 @@
   margin: 0;
 }
 
-html {
+html, html:active, body, body:active {
   scrollbar-width: none;
   cursor: url(./cursor/default.png), auto;
-}
-
-html:active {
-cursor: url(./cursor/point.png), pointer;
 }
 
 body {
@@ -81,16 +77,6 @@ section.grid-container {
   grid-row: 3 / span 1;
   transform: translateY(100%);
   z-index: 1;
-}
-
-a {
-  color: currentColor;
-  text-decoration-color: #cd3c2f;
-  text-underline-offset: 4px;
-}
-
-a:hover {
-  text-decoration-color: #000000;
 }
 
 svg.squiggle {

@@ -9,7 +9,7 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer'
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass'
-import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass'
+import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass';
 import Stats from 'three/examples/jsm/libs/stats.module.js';
 const stats:Stats = Stats();
 
@@ -80,7 +80,7 @@ let geometry: THREE.PlaneGeometry,
 // CSS OVERLAY
 let cssHolder: CSS3DObject,
     anim: boolean = false,
-    hoverIcon: THREE.Mesh
+    hoverIcon: THREE.Group
 // DUMMY
 let dummy: THREE.Object3D = new THREE.Object3D(),
     dummyVec: THREE.Vector3 = new THREE.Vector3(),
@@ -392,12 +392,12 @@ function init() {
                         instMesh.scale.set(0.4,0.4,0.4);
 
                     }
-                    if (child.name.slice(0,5) == "Chest" && !interact.has(child.parent) ) interact.add(child.parent)
-                    if (child.name == "Icon") {
-                        hoverIcon = child
-                        globalGroup.add(hoverIcon)
-                        toRem.push(child)
-                    }
+                    if (child.name.slice(0,5) == "Chest" && !interact.has(child.parent)) interact.add(child.parent)
+                }
+                if (child.name == "Icon" && child instanceof THREE.Group) {
+                    hoverIcon = child
+                    globalGroup.add(hoverIcon)
+                    toRem.push(child)
                 }
                 if (child) child.frustumCulled = false;
             });
@@ -601,7 +601,6 @@ function init() {
     box.position.set(-3,0,1)
     box.name = 'Github'
     interact.add(box)
-
     globalGroup.add(box);
     // events
     window.addEventListener( 'resize', onWindowResize );
@@ -932,6 +931,7 @@ function mouseUpdate() {
 function onClickChest() {
     if (!anim) {
         if (!cssHolder.visible) camReset(0.1, true)
+        document.querySelector('html')?.classList.remove('active');
         toggleControls(!controls.enabled)
         cssHolder.visible = !cssHolder.visible
     }
