@@ -81,7 +81,7 @@ let cssHolder: CSS3DObject,
     hoverIcon: THREE.Group
 // DUMMY
 let dummy: THREE.Object3D = new THREE.Object3D(),
-    dummyVec: THREE.Vector3 = new THREE.Vector3(),
+    // dummyVec: THREE.Vector3 = new THREE.Vector3(),
     dummyMat: THREE.Matrix4 = new THREE.Matrix4(),
     dummyPos: THREE.Vector3 = new THREE.Vector3(),
     dummyColor: THREE.Color = new THREE.Color(),
@@ -96,15 +96,15 @@ let funcList: TList = {
     iconList: TList
 // -----------------------------------------------------------------------
 // TEXTURE LOADER
-const texLoader = new THREE.TextureLoader();
-function pixelTex( tex: THREE.Texture ) {
-    tex.minFilter = THREE.NearestFilter
-    tex.magFilter = THREE.NearestFilter
-    tex.generateMipmaps = false
-    tex.wrapS = THREE.RepeatWrapping
-    tex.wrapT = THREE.RepeatWrapping
-    return tex
-}
+// const texLoader = new THREE.TextureLoader();
+// function pixelTex( tex: THREE.Texture ) {
+//     tex.minFilter = THREE.NearestFilter
+//     tex.magFilter = THREE.NearestFilter
+//     tex.generateMipmaps = false
+//     tex.wrapS = THREE.RepeatWrapping
+//     tex.wrapT = THREE.RepeatWrapping
+//     return tex
+// }
 // -----------------------------------------------------------------------
 // SMOKE
 const pOptions = {
