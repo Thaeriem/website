@@ -14,7 +14,6 @@ import Stats from 'three/examples/jsm/libs/stats.module.js';
 const stats:Stats = Stats();
 
 import RenderPixelatedPass from "./shaders/pix-pass"
-import grassShader from './shaders/grass';
 
 // @ts-ignore  
 import islandModelURL from '/island.glb?url'
@@ -75,7 +74,6 @@ let geometry: THREE.PlaneGeometry,
     debrP: THREE.Plane,
     smokeParticles: THREE.InstancedMesh,
     fireParticles: THREE.InstancedMesh,
-    grass: THREE.Mesh,
     kelpArr: THREE.InstancedMesh[] = []
 // CSS OVERLAY
 let cssHolder: CSS3DObject,
@@ -187,130 +185,6 @@ function setupControls() {
     // controls.maxPolarAngle = controls.getPolarAngle() + (Math.PI / 24)
 }
 // -----------------------------------------------------------------------
-// GRASS
-const PLANE_SIZE = 3;
-const BLADE_COUNT = 1000;
-const BLADE_WIDTH = 0.1;
-const BLADE_HEIGHT = 0.3;
-const BLADE_HEIGHT_VARIATION = 0.4;
-
-const startTime = performance.now();
-const grassTexture = pixelTex(texLoader.load('grass.jpg'));
-
-const timeUniform = { type: 'f', value: 0.0 };
-
-// Grass Shader
-const grassUniforms = {
-  textures: { value: [grassTexture] },
-  iTime: timeUniform
-};
-
-const grassMaterial = new THREE.ShaderMaterial({
-  uniforms: grassUniforms,
-  vertexShader: grassShader.vert,
-  fragmentShader: grassShader.frag,
-  vertexColors: true,
-  side: THREE.DoubleSide
-});
-
-generateField();
-
-function convertRange (val: number, oldMin: number, 
-    oldMax: number, newMin: number, newMax: number) {
-    return (((val - oldMin) * (newMax - newMin)) / (oldMax - oldMin)) + newMin;
-}
-  
-function generateField () {
-    const positions: number[] = [];
-    const uvs: number[] = [];
-    const indices: number[] = [];
-    const colors: number[] = [];
-  
-    for (let i = 0; i < BLADE_COUNT; i++) {
-        const VERTEX_COUNT = 5;
-        const surfaceMin = PLANE_SIZE / 2 * -1;
-        const surfaceMax = PLANE_SIZE / 2;
-        const radius = PLANE_SIZE / 2;
-    
-        const r = radius * Math.sqrt(Math.random());
-        const theta = Math.random() * 2 * Math.PI;
-        const x = r * Math.cos(theta);
-        const y = r * Math.sin(theta);
-    
-        const pos = new THREE.Vector3(x, 0, y);
-    
-        const uv = [convertRange(pos.x, surfaceMin, surfaceMax, 0, 1), 
-                    convertRange(pos.z, surfaceMin, surfaceMax, 0, 1)];
-    
-        const blade = generateBlade(pos, i * VERTEX_COUNT, uv);
-        blade.verts.forEach(vert => {
-            positions.push(...vert.pos);
-            uvs.push(...vert.uv);
-            colors.push(...vert.color);
-        });
-        blade.indices.forEach(indice => indices.push(indice));
-    }
-  
-    const geom = new THREE.BufferGeometry();
-    geom.setAttribute('position', new THREE.BufferAttribute(new Float32Array(positions), 3));
-    geom.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(uvs), 2));
-    geom.setAttribute('color', new THREE.BufferAttribute(new Float32Array(colors), 3));
-    geom.setIndex(indices);
-    geom.computeVertexNormals();
-  
-    grass = new THREE.Mesh(geom, grassMaterial);
-    // globalGroup.add(grass);
-}
-  
-function generateBlade (center: THREE.Vector3, vArrOffset: number, uv: number[]) {
-    const MID_WIDTH = BLADE_WIDTH * 0.5;
-    const TIP_OFFSET = 0.1;
-    const height = BLADE_HEIGHT + (Math.random() * BLADE_HEIGHT_VARIATION);
-  
-    const yaw = Math.random() * Math.PI * 2;
-    const yawUnitVec = new THREE.Vector3(Math.sin(yaw), 0, -Math.cos(yaw));
-    const tipBend = Math.random() * Math.PI * 2;
-    const tipBendUnitVec = new THREE.Vector3(Math.sin(tipBend), 0, -Math.cos(tipBend));
-  
-    // Find the Bottom Left, Bottom Right, Top Left, Top right, Top Center vertex positions
-    const bl = new THREE.Vector3().addVectors(center, dummyVec.copy(yawUnitVec).multiplyScalar((BLADE_WIDTH / 2) * 1));
-    const br = new THREE.Vector3().addVectors(center, dummyVec.copy(yawUnitVec).multiplyScalar((BLADE_WIDTH / 2) * -1));
-    const tl = new THREE.Vector3().addVectors(center, dummyVec.copy(yawUnitVec).multiplyScalar((MID_WIDTH / 2) * 1));
-    const tr = new THREE.Vector3().addVectors(center, dummyVec.copy(yawUnitVec).multiplyScalar((MID_WIDTH / 2) * -1));
-    const tc = new THREE.Vector3().addVectors(center, dummyVec.copy(tipBendUnitVec).multiplyScalar(TIP_OFFSET));
-  
-    tl.y += height / 2;
-    tr.y += height / 2;
-    tc.y += height;
-  
-    // Vertex Colors
-    const black = [0, 0, 0];
-    const gray = [0.5, 0.5, 0.5];
-    const white = [1.0, 1.0, 1.0];
-  
-    const verts = [
-      { pos: bl.toArray(), uv: uv, color: black },
-      { pos: br.toArray(), uv: uv, color: black },
-      { pos: tr.toArray(), uv: uv, color: gray },
-      { pos: tl.toArray(), uv: uv, color: gray },
-      { pos: tc.toArray(), uv: uv, color: white }
-    ];
-  
-    const indices = [
-      vArrOffset,
-      vArrOffset + 1,
-      vArrOffset + 2,
-      vArrOffset + 2,
-      vArrOffset + 4,
-      vArrOffset + 3,
-      vArrOffset + 3,
-      vArrOffset,
-      vArrOffset + 2
-    ];
-  
-    return { verts, indices };
-}
-// -----------------------------------------------------------------------
 // KELP
 const kelpPos: Array<Array<number>> = [
     [
@@ -328,6 +202,7 @@ const kelpPos: Array<Array<number>> = [
 // STARTUP
 function loadNext() {
     const grid = document.getElementById("grid")
+    console.log("load")
     if (grid && grid.dataset["row"]) grid.dataset["row"] = String(parseInt(grid.dataset["row"]) + 1);
 }
 
@@ -367,7 +242,6 @@ function init() {
     const gltfLoader = new GLTFLoader()
 
     {
-        loadNext();
         gltfLoader.load(islandModelURL, (gltf) => {
             islandModel = gltf.scene;
             let toRem:THREE.Object3D[] = []
@@ -409,6 +283,7 @@ function init() {
                 "Chest": hoverIcon,
                 "Github": undefined
             }
+            loadNext();
         }, undefined, (error) => {
             console.error('An error happened while loading the glb model', error);
         });
@@ -455,7 +330,6 @@ function init() {
     }
 
     {
-        loadNext();
         gltfLoader.load(cloudModelURL, (gltf) => {
             cloudModel = gltf.scene;
             cloudModel.traverse((child) => {
@@ -481,14 +355,13 @@ function init() {
             cloudMesh.rotation.z = 15*Math.PI/11;
             cloudMesh.instanceMatrix.needsUpdate = true;
             globalGroup.add(cloudMesh);
-
+            loadNext();
         }, undefined, (error) => {
             console.error('An error happened while loading the glb model', error);
         });
     }
 
     {
-        loadNext();
         gltfLoader.load(boatModelURL, (gltf) => {
             boatModel = gltf.scene;
             boatModel.traverse((child) => {
@@ -509,11 +382,11 @@ function init() {
             boatv1.set(pos.getX(bInd[1]), pos.getZ(bInd[1]), pos.getY(bInd[1]))
             boatv2.set(pos.getX(bInd[2]), pos.getZ(bInd[2]), pos.getY(bInd[2]))
             boatP = createPlane(boatv0, boatv1, boatv2);
+            loadNext();
         }, undefined,  (error) => {
             console.error('An error happened while loading the glb model', error);
         });
 
-        loadNext();
         gltfLoader.load(debrisModelURL, (gltf) => {
             debrisModel = gltf.scene;
             debrisModel.traverse((child) => {
@@ -532,6 +405,7 @@ function init() {
             debrv1.set(pos.getX(dInd[1]), pos.getZ(dInd[1]), pos.getY(dInd[1]))
             debrv2.set(pos.getX(dInd[2]), pos.getZ(dInd[2]), pos.getY(dInd[2]))
             debrP = createPlane(debrv0, debrv1, debrv2);
+            loadNext();
         }, undefined,  (error) => {
             console.error('An error happened while loading the glb model', error);
         });
@@ -560,11 +434,6 @@ function init() {
         }
         fireParticles.instanceMatrix.needsUpdate = true;
         fireParticles.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
-    }
-
-    {
-        grass.position.set(0.2,0.3,0.2);
-        grass.rotation.set(0,Math.PI/2, 0);
     }
 
     // Lights
@@ -1050,7 +919,6 @@ function animate() {
     updateClouds(delta);
 
     if (controls.enabled) {
-        grassUniforms.iTime.value = time - startTime;
         const newZoom = nnorm(camera.zoom)
         const coef = nzoom(newZoom, 200, 0.99);
         
