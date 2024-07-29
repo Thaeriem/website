@@ -202,7 +202,6 @@ const kelpPos: Array<Array<number>> = [
 // STARTUP
 function loadNext() {
     const grid = document.getElementById("grid")
-    console.log("load")
     if (grid && grid.dataset["row"]) grid.dataset["row"] = String(parseInt(grid.dataset["row"]) + 1);
 }
 
@@ -800,9 +799,10 @@ function mouseUpdate() {
 function onClickChest() {
     if (!anim) {
         if (!cssHolder.visible) camReset(0.1, true)
+        else cssHolder.visible = !cssHolder.visible
         document.querySelector('html')?.classList.remove('active');
         toggleControls(!controls.enabled)
-        cssHolder.visible = !cssHolder.visible
+
     }
 }
 
@@ -834,6 +834,9 @@ function camReset(zlvl: any, ifAnim: boolean) {
         .onUpdate(function (object) {
             camera.zoom = object.zoom;
             camera.updateProjectionMatrix();
+        })
+        .onComplete(()=> {
+            cssHolder.visible = !cssHolder.visible
         })
         .start();
     if (ifAnim) {
@@ -896,6 +899,7 @@ function onWindowResize() {
 function renderHTML() {
     // githubButton();
     const iframe = document.createElement( 'iframe' );
+    iframe.id = 'iframeid';
     iframe.style.cssText = 'width: 24em; height: 26em; border: 0; objectFit: cover';
     iframe.setAttribute('sandbox', 'allow-same-origin allow-scripts allow-popups allow-forms');
     iframe.src = 'http://localhost:8000/index.html';

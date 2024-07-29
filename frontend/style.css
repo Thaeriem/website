@@ -29,6 +29,10 @@ html, html:active, body, body:active {
 }
 
 body {
+  overflow-x: hidden;
+}
+
+body {
   background-color: var(--c1);
   color: var(--c4);
   margin: 0;
@@ -41,7 +45,7 @@ body {
 svg.squiggle {
   position: absolute;
   top: 0;
-  left: 15vw;
+  left: 7.5vw;
   width: 100vw;
   height: 200vw;
   z-index: 1;
@@ -63,7 +67,6 @@ h1 {
   font-size: 1.4em;
 }
 p {
-  /* text-align:left; */
   font-size: 0.5em;
 }
 
@@ -74,6 +77,18 @@ section.grid-container {
   position: relative;
 }
 
+.title {
+  font-size: 3.3em;
+}
+
+.hidden {
+  visibility: hidden;
+}
+
+.grid-c {
+  padding-top: 1em;
+}
+
 .grid-item {
   display: flex;
   flex-direction: column;
@@ -82,29 +97,29 @@ section.grid-container {
 }
 
 .text-pos1 {
-  grid-column: 1 / 9;
+  grid-column: 1 / 10;
   grid-row: 1 / span 1;
   transform: translate(5%,3%);
   z-index: 1;
 }
 
 .text-pos2 {
-  grid-column: 7 / 13;
+  grid-column: 2 / 7;
   grid-row: 1 / span 1;
-  transform: translateY(50%);
+  transform: translate(10%,50%);
   z-index: 1;
 }
 
 .text-pos3 {
-  grid-column: 1 / 9;
+  grid-column: 6 / 11;
   grid-row: 2 / span 1;
-  transform: translate(5%,70%);
+  transform: translate(10%,0%);
   z-index: 1;
 }
 
 .text-pos4 {
   grid-column: 5 / 13; 
   grid-row: 3 / span 1;
-  transform: translateY(100%);
+  transform: translate(-5%,100%);
   z-index: 1;
 }
