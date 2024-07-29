@@ -1,10 +1,18 @@
 const svg = document.querySelector('svg.squiggle')
 const path = svg.querySelector('path')
 let buffer = false;
+const documentHeight = Math.max(
+  document.body.scrollHeight, 
+  document.documentElement.scrollHeight
+);
+const offset = 2.5 * window.innerHeight;
+const amph = 0.3;
+const thr = 350;
+const totalDistance = documentHeight - offset;
 
 const scroll = () => {
-  const distance = window.scrollY
-  const totalDistance = svg.clientHeight - window.innerHeight
+  let distance = window.scrollY
+  if (distance >= thr) distance = (distance - thr)*amph + thr;
 
   const percentage = distance / totalDistance
 

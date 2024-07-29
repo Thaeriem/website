@@ -77,6 +77,14 @@ section.grid-container {
   position: relative;
 }
 
+.gif-container {
+  text-align: center;
+}
+img {
+  max-width: 50%;
+  height: auto;
+}
+
 .title {
   font-size: 3.3em;
 }
@@ -111,23 +119,29 @@ section.grid-container {
 }
 
 .text-pos3 {
-  grid-column: 4 / 11;
+  grid-column: 1 / 10;
   grid-row: 2 / span 1;
-  transform: translate(10%,10%);
-  z-index: 1;
-}
-
-.grid-image {
-  border-radius: 10px;
-  grid-column: 1 / 4;
-  grid-row: 2 / span 1;
-  transform: translate(10%,40%);
+  transform: translate(10%,5%);
   z-index: 1;
 }
 
 .text-pos4 {
+  grid-column: 2 / 9; 
+  grid-row: 3 / span 1;
+  transform: translate(15%,-28%);
+  z-index: 1;
+}
+
+.text-pos5 {
+  grid-column: 2 / 10; 
+  grid-row: 4 / span 1;
+  transform: translate(15%,-28%);
+  z-index: 1;
+}
+
+.gif-pos1 {
   grid-column: 5 / 13; 
   grid-row: 3 / span 1;
-  transform: translate(-5%,100%);
+  transform: translate(30%,-14%);
   z-index: 1;
 }
