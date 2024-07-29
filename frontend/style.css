@@ -1,9 +1,4 @@
 @font-face {
-  font-family: 'pirate';
-  src: url('./fonts/pixel_musketeer/Pixel\ Musketeer.ttf') format('truetype');
-}
-
-@font-face {
   font-family: 'homevideo';
   src: url('./fonts/home-video-font/HomeVideo-BLG6G.ttf') format('truetype');
 }
@@ -76,15 +71,10 @@ section.grid-container {
   grid-auto-rows: 100vh; 
   position: relative;
 }
-
-.gif-container {
-  text-align: center;
+section.grid-container > :last-child {
+  grid-row: auto;
+  height: max-content
 }
-img {
-  max-width: 50%;
-  height: auto;
-}
-
 .title {
   font-size: 3.3em;
 }
@@ -114,7 +104,7 @@ img {
 .text-pos2 {
   grid-column: 2 / 10;
   grid-row: 1 / span 1;
-  transform: translate(15%,46%);
+  transform: translate(13%,46%);
   z-index: 1;
 }
 
@@ -128,20 +118,34 @@ img {
 .text-pos4 {
   grid-column: 2 / 9; 
   grid-row: 3 / span 1;
-  transform: translate(15%,-28%);
+  transform: translate(13%,-28%);
   z-index: 1;
 }
 
 .text-pos5 {
-  grid-column: 2 / 10; 
+  grid-column: 1 / 10;
   grid-row: 4 / span 1;
-  transform: translate(15%,-28%);
+  transform: translate(10%,-30%);
   z-index: 1;
 }
 
-.gif-pos1 {
+.img-container {
+  position: relative;
+}
+.img-container img {
+  max-width: 45%;
+  height: auto;
+}
+
+.img-pos1 {
   grid-column: 5 / 13; 
   grid-row: 3 / span 1;
-  transform: translate(30%,-14%);
+  transform: translate(51%,-6%);
+  z-index: 1;
+}
+.img-pos2 {
+  grid-column: 5 / 13; 
+  grid-row: 3 / span 1;
+  transform: translate(51%,35%);
   z-index: 1;
 }

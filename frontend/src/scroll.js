@@ -14,7 +14,8 @@ const scroll = () => {
   let distance = window.scrollY
   if (distance >= thr) distance = (distance - thr)*amph + thr;
 
-  const percentage = distance / totalDistance
+  let percentage = distance / totalDistance
+  if (percentage >= 0.99) percentage = 1;
 
   const pathLength = path.getTotalLength()
 
