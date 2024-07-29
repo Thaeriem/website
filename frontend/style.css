@@ -3,6 +3,21 @@
   src: url('./fonts/pixel_musketeer/Pixel\ Musketeer.ttf') format('truetype');
 }
 
+@font-face {
+  font-family: 'homevideo';
+  src: url('./fonts/home-video-font/HomeVideo-BLG6G.ttf') format('truetype');
+}
+
+:root {
+  --c1: #ede5cf;
+  --c2: #e0c2a2;
+  --c3: #d39c83;
+  --c4: #c1766f;
+  --c5: #a65461;
+  --c6: #813753;
+  --c7: #541f3f;
+}
+
 * {
   box-sizing: border-box;
   margin: 0;
@@ -14,14 +29,30 @@ html, html:active, body, body:active {
 }
 
 body {
-  background-color: #faf4e7;
-  color: #000000;
+  background-color: var(--c1);
+  color: var(--c4);
   margin: 0;
   padding: 0;
-  font-family: 'pirate', sans-serif; 
+  font-family: 'homevideo'; 
   scrollbar-width: none; /* Firefox */
   -ms-overflow-style: none;  /* Internet Explorer 10+ */
 }
+
+svg.squiggle {
+  position: absolute;
+  top: 0;
+  left: 15vw;
+  width: 100vw;
+  height: 200vw;
+  z-index: 1;
+  overflow: visible;
+}
+
+svg.squiggle path {
+  stroke-width: 1.8em;
+  stroke: var(--c5);
+}
+
 /* Hide scrollbar for Chrome, Safari and Opera */
 ::-webkit-scrollbar {
   width: 0;
@@ -33,7 +64,7 @@ h1 {
 }
 p {
   /* text-align:left; */
-  font-size: 0.7em;
+  font-size: 0.5em;
 }
 
 section.grid-container {
@@ -46,49 +77,34 @@ section.grid-container {
 .grid-item {
   display: flex;
   flex-direction: column;
-  justify-content: left;
-  padding: 2em;
+  padding: 0.5em;
   box-sizing: border-box;
-  /* background-color: #ffffff; */
 }
 
 .text-pos1 {
-  grid-column: 1 / 7;
+  grid-column: 1 / 9;
   grid-row: 1 / span 1;
+  transform: translate(5%,3%);
   z-index: 1;
 }
 
 .text-pos2 {
   grid-column: 7 / 13;
   grid-row: 1 / span 1;
-  transform: translateY(30%);
+  transform: translateY(50%);
   z-index: 1;
 }
 
 .text-pos3 {
-  grid-column: 1 / 7;
+  grid-column: 1 / 9;
   grid-row: 2 / span 1;
-  transform: translateY(70%);
+  transform: translate(5%,70%);
   z-index: 1;
 }
 
 .text-pos4 {
-  grid-column: 7 / 13; 
+  grid-column: 5 / 13; 
   grid-row: 3 / span 1;
   transform: translateY(100%);
   z-index: 1;
-}
-
-svg.squiggle {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 200vw;
-  z-index: 1;
-  overflow: visible;
-}
-
-svg.squiggle path {
-  stroke-width: 1.8em;
 }
