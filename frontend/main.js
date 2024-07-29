@@ -15,18 +15,21 @@ document.addEventListener("DOMContentLoaded", function () {
     
     // Define transition characters
     const transitionChars = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '!', '@', '#', '$', '&', '*', '(', ')', '-', '_', '+', '=', '/', '[', ']', '{', '}', ';', ':', '<', '>', ',', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
-    const amph = 8;
-    const elen = 20;
+    const amph = 30;
+    const elen = 200;
     const div = 6;
+    const off = 1.9;
+    const yoff = -100;
+    let elementTop;
 
     function updateTextOnScroll() {
         const scrollY = window.scrollY;
         const windowHeight = window.innerHeight;
-        const offset = windowHeight / 2; 
-        const maxScrollY = documentHeight - windowHeight;
+        const offset = windowHeight / off; 
         elements.forEach((element, i) => {
             const chars = element.querySelectorAll(".char");
-            const elementTop = element.getBoundingClientRect().top + scrollY;
+            if (i < 3) elementTop = element.getBoundingClientRect().top + scrollY;
+            else elementTop = element.getBoundingClientRect().top + scrollY + yoff;
             const elementHeight = element.offsetHeight;
             const length = text[i].length;
 
@@ -41,12 +44,8 @@ document.addEventListener("DOMContentLoaded", function () {
                 const charPosition = elementTop + (index / chars.length) * elementHeight;
                 const relativePosition = scrollY + windowHeight - offset;
                 
-                const scrollPercentage = Math.max(0, Math.min(1, amph*(relativePosition - charPosition) / windowHeight));
-                const totalChars = transitionChars.length;
-                // Calculate number of characters to show based on scroll percentage
-                
+                const scrollPercentage = Math.max(0, Math.min(1, amph*(relativePosition - charPosition)/ windowHeight));
                 const numCharsToShow = Math.floor(scrollPercentage * (chars.length+elen)) - elen;
-                // let newText = text[i].substring(0, numCharsToShow)
                 if (index < numCharsToShow) {
                     char.style.visibility = "visible"
                     char.style.color = 'var(--c4)';
