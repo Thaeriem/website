@@ -6,6 +6,7 @@
     "dependencies": {
         "@tweenjs/tween.js": "^23.1.2",
         "create-vite": "^5.2.3",
+        "dotenv": "^16.4.5",
         "simplex-noise": "^4.0.1",
         "three": "^0.144.0"
     },
@@ -23,6 +24,7 @@
         "preview": "vite preview"
     },
     "devDependencies": {
+        "@types/node": "^22.0.0",
         "@types/three": "^0.130.2",
         "typescript": "^5.2.2",
         "vite": "^5.3.1"

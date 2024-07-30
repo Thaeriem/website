@@ -13,6 +13,8 @@ import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPa
 import Stats from 'three/examples/jsm/libs/stats.module.js';
 const stats:Stats = Stats();
 
+const IFRAME_PAGE = import.meta.env.VITE_IFRAME_PAGE;
+
 import RenderPixelatedPass from "./shaders/pix-pass"
 
 // @ts-ignore  
@@ -902,7 +904,7 @@ function renderHTML() {
     iframe.id = 'iframeid';
     iframe.style.cssText = 'width: 24em; height: 26em; border: 0; objectFit: cover';
     iframe.setAttribute('sandbox', 'allow-same-origin allow-scripts allow-popups allow-forms');
-    iframe.src = 'http://localhost:8000/index.html';
+    iframe.src = IFRAME_PAGE;
 
     cssHolder = new CSS3DObject(iframe);
     cssHolder.frustumCulled = false;
