@@ -104,7 +104,7 @@ section.grid-container > :last-child {
 .text-pos2 {
   grid-column: 2 / 10;
   grid-row: 1 / span 1;
-  transform: translate(13%,46%);
+  transform: translate(13%,43%);
   z-index: 1;
 }
 
