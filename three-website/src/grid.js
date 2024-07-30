@@ -135,10 +135,10 @@ const targetGrid = [
     "LOADED WebGLRenderer",
     "LOADED MapControls",
     "LOADED GLTFLoader",
-    "LOADED islandModel",
     "LOADED cloudModel",
     "LOADED boatModel",
     "LOADED debrisModel",
+    "LOADED islandModel",
 ].map(row => row.split(''));
 
 const morphingGrid = new MorphingGrid(targetGrid);
