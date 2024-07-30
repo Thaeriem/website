@@ -19,8 +19,6 @@
           <pre id="start">START</pre>
         </div>
       </div>
-      
-     
     </div>
    
 
@@ -34,6 +32,14 @@
     <script type="module" src="src/grid.js"></script>
     <script type="module" src="src/border.js"></script>
     <script >
+        const links = { 
+          "resume":"https://thaeriem.github.io/thaeriem/YashKaul_Resume.pdf",
+          "art2ascii": "https://github.com/Thaeriem/art2ascii",
+          "pictoplan": "https://github.com/crizbae/PictoPlan",
+          "github": "https://github.com/Thaeriem",
+          "linkedin": "https://www.linkedin.com/in/yash-kaul/",
+          "twitter": "https://x.com/thaeriem"
+        }
 
         function getBoundingBox(element) {
             const rect = element.getBoundingClientRect();
@@ -45,13 +51,26 @@
             return mouseX >= box.left && mouseX <= box.left + box.width && mouseY >= box.top && mouseY <= box.top + box.height;
         }
 
+        window.onmessage = function(e) {
+          if (e.data in links) {
+            window.open(links[e.data], '_blank');
+          }
+        };
+
         document.addEventListener('click', function(event) {
             const startButton = document.getElementById('border2');
-            if (startButton.style.display != "" && isMouseInElement(event.clientX, event.clientY, startButton)) {
+            if (startButton && startButton.style.display != "" && isMouseInElement(event.clientX, event.clientY, startButton)) {
               document.getElementById('borderContainer').style.display = 'none';
               document.getElementById('loading').style.display = 'none';
               document.getElementById('screen').style.display = 'none';
               document.getElementById('scene').style.display = 'block';
+            }
+            const iframe = document.getElementById('iframeid');
+            if (iframe) {
+              const rect = iframe.getBoundingClientRect();
+              const msgX = (event.clientX - rect.left) / rect.width;
+              const msgY = (event.clientY - rect.top) / rect.height;
+              iframe.contentWindow.postMessage(msgX + " " + msgY, '*');
             }
         });
     </script>
