@@ -85,7 +85,7 @@
           return mouseX >= box.left && mouseX <= box.left + box.width && mouseY >= box.top + window.scrollY && mouseY <= box.top + window.scrollY + box.height;
       }
       window.onmessage = function(e) {
-          const tmp = e.data.split(" ");
+          const tmp = e.data.toString().split(" ");
           const mouseX = parseFloat(tmp[0]) * window.innerWidth
           const mouseY = parseFloat(tmp[1]) * window.innerHeight + window.scrollY
           const links = document.querySelectorAll('.link');
