@@ -3,8 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Three.js Scene with Loading Screen</title>
+    <title>Yash Kaul Portfolio</title>
     <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/splitting@1.1.0/dist/splitting.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/splitting@1.1.0/dist/splitting.min.css" rel="stylesheet">
 </head>
 <body>
     <!-- Loading Screen -->
@@ -26,12 +28,20 @@
     <div id="scene">
         <!-- icons -->
         <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"> -->
+        <div id="overlay">
+          <h1 class="animate ov ov-header" data-splitting="chars">Remote Island</h1>
+          <p class ="animate ov ov-child" data-splitting="chars">Movement - WASD / Arrow Keys</p>
+          <p class ="animate ov ov-child" data-splitting="chars">Rotate - QE / ,. </p>
+          <p class ="animate ov ov-child" data-splitting="chars">Reset - Esc</p>
+          <p class ="animate ov ov-child" data-splitting="chars">Hide - H</p>
+        </div>
         <script type="module" src="src/index.ts"></script>
     </div>
 
     <script type="module" src="src/grid.js"></script>
     <script type="module" src="src/border.js"></script>
-    <script >
+    <script type="module" src="src/overlay.js"></script>
+    <script>
         const links = { 
           "resume":"https://thaeriem.github.io/thaeriem/YashKaul_Resume.pdf",
           "art2ascii": "https://github.com/Thaeriem/art2ascii",

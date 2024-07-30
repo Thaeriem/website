@@ -9,6 +9,7 @@ const offset = 2.5 * window.innerHeight;
 const amph = 0.3;
 const thr = 350;
 const totalDistance = documentHeight - offset;
+svg.style.visibility = 'visible';
 
 const scroll = () => {
   let distance = window.scrollY

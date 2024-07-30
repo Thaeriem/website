@@ -10,12 +10,10 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer'
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass'
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass';
+import RenderPixelatedPass from "./shaders/pix-pass"
 import Stats from 'three/examples/jsm/libs/stats.module.js';
 const stats:Stats = Stats();
-
 const IFRAME_PAGE = import.meta.env.VITE_IFRAME_PAGE;
-
-import RenderPixelatedPass from "./shaders/pix-pass"
 
 // @ts-ignore  
 import islandModelURL from '/island.glb?url'
@@ -42,6 +40,8 @@ const cameraBounds = {
     minZ: -50,
     maxZ: 45
 };
+const animTime = 1200;
+const overlay = document.querySelectorAll('.ov');
 let velocity = new THREE.Vector3();
 let y_rotation: number = 0
 let globalGroup = new THREE.Group();
@@ -56,7 +56,8 @@ let moveUp: boolean = false,
     moveLeft: boolean = false, 
     moveRight: boolean = false, 
     rotateLeft: boolean = false, 
-    rotateRight: boolean = false
+    rotateRight: boolean = false,
+    hide: boolean = false
 // MODELS
 let islandModel: THREE.Object3D, 
     cloudModel: THREE.Object3D, 
@@ -83,7 +84,7 @@ let cssHolder: CSS3DObject,
     hoverIcon: THREE.Group
 // DUMMY
 let dummy: THREE.Object3D = new THREE.Object3D(),
-    // dummyVec: THREE.Vector3 = new THREE.Vector3(),
+    dummyVec: THREE.Vector3 = new THREE.Vector3(),
     dummyMat: THREE.Matrix4 = new THREE.Matrix4(),
     dummyPos: THREE.Vector3 = new THREE.Vector3(),
     dummyColor: THREE.Color = new THREE.Color(),
@@ -92,8 +93,7 @@ interface TList {
     [key: string]: any;
 }
 let funcList: TList = {
-    "Chest": onClickChest,
-    "Github": onClickGithub
+    "Chest": onClickChest
     },
     iconList: TList
 // -----------------------------------------------------------------------
@@ -147,7 +147,7 @@ function setupCamera(screenResolution: Vector2) {
     let aspectRatio = screenResolution.x / screenResolution.y
     camera = new THREE.OrthographicCamera(-aspectRatio, aspectRatio, 1, -1, 0, 2000);
     camera.position.set(-200, 80, 0.000001)
-    camera.zoom = 0.25
+    camera.zoom = 0.4
     camera.updateProjectionMatrix()
 }
 
@@ -173,7 +173,7 @@ function setupControls() {
     loadNext();
     controls = new MapControls( camera, rendererCss.domElement )
     // controls.enablePan = false //
-    controls.target.set( 0, 0, 0 )
+    controls.target.set( 0, 1, 0 )
     controls.maxZoom = 1
     controls.minZoom = 0.03
     controls.zoomSpeed = 2
@@ -281,8 +281,7 @@ function init() {
             islandModel.position.set(0, 0, 0); 
             globalGroup.add(islandModel);
             iconList = {
-                "Chest": hoverIcon,
-                "Github": undefined
+                "Chest": hoverIcon
             }
             loadNext();
         }, undefined, (error) => {
@@ -465,13 +464,6 @@ function init() {
         spotLight.target = targetObject;
     }
     renderHTML()
-    const bg = new THREE.BoxGeometry(1, 1, 1);
-    const mg = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
-    const box = new THREE.Mesh(bg, mg);
-    box.position.set(-3,0,1)
-    box.name = 'Github'
-    interact.add(box)
-    globalGroup.add(box);
     // events
     window.addEventListener( 'resize', onWindowResize );
     document.addEventListener("keydown", onKeyDown, false);
@@ -680,14 +672,8 @@ function onKeyDown (event: any) {
     switch (event.code) {
         case 'KeyZ':
         case 'Escape':
-            if (controls.enabled) {
-                moveUp = moveDown = moveLeft = moveRight = false;
-                camReset(0.25, false)
-            }
-            else {
-                toggleControls(!controls.enabled)
-                cssHolder.visible = !cssHolder.visible
-            }
+            moveUp = moveDown = moveLeft = moveRight = false;
+            camReset(0.4, false)
             break;
         case 'KeyW':
         case 'ArrowUp':
@@ -712,6 +698,13 @@ function onKeyDown (event: any) {
         case 'KeyQ':
         case 'Comma':
             if (controls.enabled) rotateLeft = true;
+            break;
+        case 'KeyH':
+            if (controls.enabled) {
+                hide = !hide;
+                if (!hide) overlay.forEach((item: any) => { item.style.display = 'block' })
+                else overlay.forEach((item: any) => { item.style.display = 'none' })
+            }
             break;
     }
 };
@@ -800,16 +793,9 @@ function mouseUpdate() {
 
 function onClickChest() {
     if (!anim) {
-        if (!cssHolder.visible) camReset(0.1, true)
-        else cssHolder.visible = !cssHolder.visible
+        camReset(0.1, true)
         document.querySelector('html')?.classList.remove('active');
-        toggleControls(!controls.enabled)
-
     }
-}
-
-function onClickGithub() {
-    window.open('https://github.com/Thaeriem', '_blank')?.focus();
 }
 
 
@@ -821,29 +807,47 @@ const ndrift = (val: number) => (6-1.5*val);
 const nskew = (z: number, l: number, h: number) => l+(z)*(h-l);
 
 function camReset(zlvl: any, ifAnim: boolean) {
-    
-    new TWEEN.Tween(camera.position)
-        .to({ x: -200, y: 80, z: 0.000001 }, 1500)
+    dummyVec.set(0,1,0);
+    if (ifAnim) {
+        overlay.forEach((item: any) => { item.style.display = 'none' })
+        dummyVec.set(0,0,0);
+    }
+    else {
+        cssHolder.visible = false;
+        controls.target.set(0,1,0)
+        controls.update()
+    }
+
+    new TWEEN.Tween(controls.target)
+        .to(dummyVec, animTime) 
         .easing(TWEEN.Easing.Quadratic.Out)
         .start();
-    new TWEEN.Tween(controls.target)
-        .to({ x: 0, y: 0, z: 0 }, 1500) 
+    new TWEEN.Tween(camera.position)
+        .to({ x: -200, y: 80, z: 0.000001 }, animTime)
         .easing(TWEEN.Easing.Quadratic.Out)
         .start();
     new TWEEN.Tween({ zoom: camera.zoom })
-        .to({ zoom: zlvl }, 1500) 
+        .to({ zoom: zlvl }, animTime) 
         .easing(TWEEN.Easing.Quadratic.InOut)
         .onUpdate(function (object) {
             camera.zoom = object.zoom;
             camera.updateProjectionMatrix();
         })
         .onComplete(()=> {
-            cssHolder.visible = !cssHolder.visible
+            if (ifAnim) {
+                cssHolder.visible = true
+                toggleControls(false)
+            } else {
+                if (!hide) overlay.forEach((item: any) => { item.style.display = 'block' })
+                if (!controls.enabled) toggleControls(!controls.enabled)
+            }
+            
+            
         })
         .start();
     if (ifAnim) {
         anim = true;
-        setTimeout(()=>{controls.saveState(); anim=false; }, 1500)
+        setTimeout(()=>{controls.saveState(); anim=false; }, animTime)
     }
     globalGroup.rotation.set(0,0,0)
     velocity.set(0, 0, 0);
@@ -857,6 +861,7 @@ function onWindowResize() {
     let renderResolution = screenResolution.clone().divideScalar( 4 )
     renderResolution.x |= 0
     renderResolution.y |= 0
+    document.body.style.fontSize = `${(screenResolution.x / 1152) * 100}%`;
 
     camera.left = -aspect;
     camera.right = aspect;
@@ -871,35 +876,7 @@ function onWindowResize() {
 }
 // -----------------------------------------------------------------------
 // HTML Render
-// function githubButton() {
-//     const element = document.createElement('div');
-//     element.style.cssText = 'position: absolute;';
-
-//     const link = document.createElement('a');
-//     link.className = 'github';
-//     link.href = 'https://google.com';
-//     link.style.cssText = 'pointer-events: auto;';
-//     link.addEventListener('pointerdown', (event) => {
-//         event.preventDefault(); 
-//         window.location.href = link.href;
-//     });
-    
-
-//     const icon = document.createElement('i');
-//     icon.className = 'fab fa-github';
-//     icon.style.cssText = 'font-size: 3.1em;';
-    
-//     link.appendChild(icon);
-//     element.appendChild(link);
-//     const cssObject = new CSS3DObject(element);
-//     cssObject.position.set(0, 0, 0); 
-//     cssObject.rotation.set(0,Math.PI/2, 0);
-//     sceneCss.add(cssObject);
-// }
-
-
 function renderHTML() {
-    // githubButton();
     const iframe = document.createElement( 'iframe' );
     iframe.id = 'iframeid';
     iframe.style.cssText = 'width: 24em; height: 26em; border: 0; objectFit: cover';

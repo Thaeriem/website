@@ -1,13 +1,35 @@
 @font-face {
     font-family: 'input';
     src: url('./fonts/Input-Font/InputMono-Light.ttf') format('truetype');
-  }
+}
+
+@font-face {
+    font-family: 'homevideo';
+    src: url('./fonts/home-video-font/HomeVideo-BLG6G.ttf') format('truetype');
+}
+  
+:root {
+    --c1: #F3F4F8;
+    --c2: #D2D4DA;
+}
 
 body {
     margin: 0;
     overflow: hidden;
     background-color: black;
     color: white;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+html {
+    cursor: url(./cursor/default.png), auto;
+}
+html:active, html.active, a, button:active, .button:active, #border2, #start {
+    cursor: url(./cursor/point.png), pointer;
 }
 pre {
     font-family: 'input', monospace;
@@ -66,9 +88,26 @@ pre {
   width: 100vw;
   height: 100vh;
 }
-html {
-    cursor: url(./cursor/default.png), auto;
+
+.animate {
+    font-family: 'homevideo'; 
 }
-html:active, html.active, a, button:active, .button:active, #border2, #start {
-    cursor: url(./cursor/point.png), pointer;
+
+#overlay {
+    position: absolute;
+    left: 1em;
+    top: 1em;
+    margin: 0;
 }
+
+.ov-header {
+    font-size: 3em;
+    margin: 0;
+    padding-bottom: 0.3em;
+}
+
+.ov-child {
+    margin: 0.2em;
+    font-size: 1em;
+}
+

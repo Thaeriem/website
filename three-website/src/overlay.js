@@ -15,43 +15,16 @@ document.addEventListener("DOMContentLoaded", function () {
     const yoff = -100;
     let elementTop;
 
-    function updateTextOnScroll() {
+    function animateDriver() {
         const scrollY = window.scrollY;
         const windowHeight = window.innerHeight;
-        const offset = windowHeight / off; 
         elements.forEach((element, i) => {
             const chars = element.querySelectorAll(".char");
             if (i < 3) elementTop = element.getBoundingClientRect().top + scrollY;
             else elementTop = element.getBoundingClientRect().top + scrollY + yoff;
             const elementHeight = element.offsetHeight;
             const length = text[i].length;
-
-            if (element.classList.contains('animate')) {
-                if (elementTop < (scrollY + windowHeight) && (elementTop + elementHeight) > scrollY) {
-                    if (!element.classList.contains('fin-animate')) animateTextOverTime(element, i, div);
-                }
-                return;
-            }
-
-            chars.forEach((char, index) => {
-                const charPosition = elementTop + (index / chars.length) * elementHeight;
-                const relativePosition = scrollY + windowHeight - offset;
-                
-                const scrollPercentage = Math.max(0, Math.min(1, amph*(relativePosition - charPosition)/ windowHeight));
-                const numCharsToShow = Math.floor(scrollPercentage * (chars.length+elen)) - elen;
-                if (index < numCharsToShow) {
-                    char.style.visibility = "visible"
-                    char.style.color = 'var(--c4)';
-                    char.textContent = text[i][index]
-                }
-                else if (index < numCharsToShow + elen && index < length) {
-                    char.style.visibility = "visible"
-                    char.style.color = 'var(--c3)';
-                    char.textContent = transitionChars[Math.floor(Math.random() * transitionChars.length)];
-                } 
-                else char.style.visibility = "hidden"
-                
-            });
+            if (!element.classList.contains('fin-animate')) animateTextOverTime(element, i, div);
         });
     }
 
@@ -68,11 +41,11 @@ document.addEventListener("DOMContentLoaded", function () {
             chars.forEach((char, charIndex) => {
                 if (charIndex < num) {
                     char.style.visibility = "visible";
-                    char.style.color = 'var(--c4)';
+                    char.style.color = 'var(--c1)';
                     char.textContent = text[index][charIndex];
                 } else if (charIndex < num + elen && charIndex < length) {
                     char.style.visibility = "visible";
-                    char.style.color = 'var(--c3)';
+                    char.style.color = 'var(--c2)';
                     char.textContent = transitionChars[Math.floor(Math.random() * transitionChars.length)];
                 } else char.style.visibility = "hidden";
             });
@@ -92,7 +65,12 @@ document.addEventListener("DOMContentLoaded", function () {
             }, wait);
         };
     }
-
-    window.addEventListener('scroll', throttle(updateTextOnScroll, 10)); 
-    updateTextOnScroll();
+    
+    const scene = document.getElementById('scene');
+    const tinterval = setInterval(() => {
+        if (scene.style.display != '') {
+            animateDriver();
+            clearInterval(tinterval);
+        }
+    }, 10);
 });
