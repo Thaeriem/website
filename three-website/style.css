@@ -1,9 +1,4 @@
 @font-face {
-    font-family: 'input';
-    src: url('./fonts/Input-Font/InputMono-Light.ttf') format('truetype');
-}
-
-@font-face {
     font-family: 'homevideo';
     src: url('./fonts/home-video-font/HomeVideo-BLG6G.ttf') format('truetype');
 }
@@ -32,7 +27,7 @@ html:active, html.active, a, button:active, .button:active, #border2, #start {
     cursor: url(./cursor/point.png), pointer;
 }
 pre {
-    font-family: 'input', monospace;
+    font-family: 'homevideo', monospace;
 }
 #loading {
   display: flex;
@@ -42,8 +37,8 @@ pre {
   width: 100vw;
   background-color: black;
   position: absolute;
-  top: -8em;
-  left: -8em;
+  top: -12em;
+  left: -13em;
 }
 #borderContainer {
     position: relative;
@@ -53,15 +48,15 @@ pre {
     top: 0;
     left: 0;
     line-height: 1;
-    font-size: 10px;
+    font-size: 1.14em;
 }
 #border2 {
   display: none;
   position: absolute;
-  top: 16em;
+  top: 13em;
   left: 0;
   line-height: 1;
-  font-size: 10px;
+  font-size: 1.14em;
 }
 #grid {
     position: absolute;
@@ -70,14 +65,14 @@ pre {
     white-space: pre;
     color: white;
     z-index: 1; 
-    font-size: 13px;
+    font-size: 1.5em;
 }
 #start {
     display: none;
     position: absolute;
-    top: 4.7em;
-    left: 2em;
-    font-size: 32px;
+    top: 3.4em;
+    left: 1.7em;
+    font-size: 4em;
 }
 #scene {
     display: none;

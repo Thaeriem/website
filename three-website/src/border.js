@@ -71,7 +71,7 @@
         }
     }
 
-    const borderDrawer = new BorderDrawer('border', 14, 34, true);
+    const borderDrawer = new BorderDrawer('border', 11, 34, true);
     const buttonDrawer = new BorderDrawer('border2', 4, 34, false);
     const border = document.getElementById('border2');
     setInterval(() => {
