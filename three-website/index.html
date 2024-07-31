@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Yash Kaul Portfolio</title>
+    <link rel="stylesheet" type="text/css" href="http://yui.yahooapis.com/3.18.1/build/cssreset/cssreset-min.css">
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/splitting@1.1.0/dist/splitting.min.js"></script>
     <link href="https://cdn.jsdelivr.net/npm/splitting@1.1.0/dist/splitting.min.css" rel="stylesheet">
@@ -13,12 +14,16 @@
     <div id="screen">
       <div id="loading">
         <div id="borderContainer">
-            <pre id="border"></pre>
-            <pre id="grid" data-row="0"></pre>
-        </div>
-        <div id="borderContainer">
-          <pre id="border2"></pre>
-          <pre id="start">START</pre>
+            <div id="borderdiv">
+              <pre id="border" class="input"></pre>
+              <pre id="grid" class="hvid" data-row="0"></pre>
+            </div>
+            <div id="borderContainer">
+              <div id="borderdiv">
+                <pre id="border2" class="input"></pre>
+                <pre id="start" class="hvid">START</pre>
+              </div>
+            </div>
         </div>
       </div>
     </div>
@@ -29,11 +34,11 @@
         <!-- icons -->
         <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"> -->
         <div id="overlay">
-          <h1 class="animate ov ov-header" data-splitting="chars">Remote Island</h1>
-          <p class ="animate ov ov-child" data-splitting="chars">Movement - WASD / Arrow Keys</p>
-          <p class ="animate ov ov-child" data-splitting="chars">Rotate - QE / ,. </p>
-          <p class ="animate ov ov-child" data-splitting="chars">Reset - Esc</p>
-          <p class ="animate ov ov-child" data-splitting="chars">Hide - H</p>
+          <h1 class="animate hvid ov ov-header" data-splitting="chars">Remote Island</h1>
+          <p class ="animate hvid ov ov-child" data-splitting="chars">Movement - WASD / Arrow Keys</p>
+          <p class ="animate hvid ov ov-child" data-splitting="chars">Rotate - QE / ,. </p>
+          <p class ="animate hvid ov ov-child" data-splitting="chars">Reset - Esc</p>
+          <p class ="animate hvid ov ov-child" data-splitting="chars">Hide - H</p>
         </div>
         <script type="module" src="src/index.ts"></script>
     </div>

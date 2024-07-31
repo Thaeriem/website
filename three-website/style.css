@@ -2,6 +2,11 @@
     font-family: 'homevideo';
     src: url('./fonts/home-video-font/HomeVideo-BLG6G.ttf') format('truetype');
 }
+
+@font-face {
+    font-family: 'input';
+    src: url('./fonts/Input-Font/InputMono-Bold.ttf') format('truetype');
+}
   
 :root {
     --c1: #F3F4F8;
@@ -10,9 +15,9 @@
 
 body {
     margin: 0;
+    height: 100%;
     overflow: hidden;
     background-color: black;
-    color: white;
     -webkit-touch-callout: none;
     -webkit-user-select: none;
     -khtml-user-select: none;
@@ -26,9 +31,7 @@ html {
 html:active, html.active, a, button:active, .button:active, #border2, #start {
     cursor: url(./cursor/point.png), pointer;
 }
-pre {
-    font-family: 'homevideo', monospace;
-}
+
 #loading {
   display: flex;
   justify-content: center;
@@ -36,43 +39,44 @@ pre {
   height: 100vh;
   width: 100vw;
   background-color: black;
-  position: absolute;
-  top: -12em;
-  left: -13em;
+  color: white;
 }
 #borderContainer {
-    position: relative;
+    position: absolute;
 }
 #border {
-    position: absolute;
-    top: 0;
-    left: 0;
+    position: relative;
     line-height: 1;
-    font-size: 1.14em;
+    margin: 0;
+    font-size: 1.5vw;
 }
 #border2 {
   display: none;
-  position: absolute;
-  top: 13em;
-  left: 0;
+  position: relative;
   line-height: 1;
-  font-size: 1.14em;
+  margin: 0;
+  font-size: 1.5vw;
 }
 #grid {
+    padding-top: 1vw;
     position: absolute;
-    top: 1em;
-    left: 1em;
+    line-height: 1;
+    top: 1vw;
+    left: 1vw;
     white-space: pre;
-    color: white;
     z-index: 1; 
-    font-size: 1.5em;
+    font-size: 1.9vw;
 }
+
 #start {
+    margin: 0;
+    line-height: 1;
+    white-space: pre;
     display: none;
     position: absolute;
-    top: 3.4em;
-    left: 1.7em;
-    font-size: 4em;
+    top: 2vw;
+    left: 10vw;
+    font-size: 5vw;
 }
 #scene {
     display: none;
@@ -84,25 +88,29 @@ pre {
   height: 100vh;
 }
 
-.animate {
-    font-family: 'homevideo'; 
+.input {
+    font-family: "input", monospace;
+}
+
+.hvid {
+    font-family: 'homevideo', monospace; 
 }
 
 #overlay {
     position: absolute;
-    left: 1em;
-    top: 1em;
+    left: 1vw;
+    top: 1vw;
     margin: 0;
 }
 
 .ov-header {
-    font-size: 3em;
+    font-size: 5vw;
     margin: 0;
-    padding-bottom: 0.3em;
+    padding-bottom: 0.3vw;
 }
 
 .ov-child {
-    margin: 0.2em;
-    font-size: 1em;
+    margin: 0.2vw;
+    font-size: 2vw;
 }
 

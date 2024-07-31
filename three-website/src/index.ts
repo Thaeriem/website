@@ -269,8 +269,13 @@ function init() {
                     }
                     if (child.name.slice(0,5) == "Chest" && !interact.has(child.parent)) interact.add(child.parent)
                 }
-                if (child.name == "Icon" && child instanceof THREE.Group) {
-                    hoverIcon = child
+                if (child.name == "Icon") {
+                    if (child instanceof THREE.Group) hoverIcon = child
+                    else {
+                        hoverIcon = new THREE.Group()
+                        hoverIcon.add(child)
+                    }
+                    hoverIcon.scale.set(1.2,1.2,1.2)
                     globalGroup.add(hoverIcon)
                     toRem.push(child)
                 }
@@ -761,9 +766,9 @@ function placeIcon() {
                     const icon = iconList[ele.name]
                     if (icon) {
                         icon.position.copy(ele.position);
-                        icon.position.x += 0.1;
-                        icon.position.y += 0.6; 
-                        icon.rotation.y += 0.02; 
+                        const height = oscillateValue(-0.05,0.05,3,time/3000);
+                        icon.position.y += height + 0.6;
+                        icon.rotation.y += 0.01; 
                         icon.visible = true;
                     }
                     document.querySelector('html')?.classList.add('active');
@@ -879,7 +884,7 @@ function onWindowResize() {
 function renderHTML() {
     const iframe = document.createElement( 'iframe' );
     iframe.id = 'iframeid';
-    iframe.style.cssText = 'width: 24em; height: 26em; border: 0; objectFit: cover';
+    iframe.style.cssText = 'width: 26.667vw; height: 40vh; border: 0; objectFit: cover';
     iframe.setAttribute('sandbox', 'allow-same-origin allow-scripts allow-popups allow-forms');
     iframe.src = IFRAME_PAGE;
 

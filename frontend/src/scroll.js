@@ -17,6 +17,7 @@ const scroll = () => {
 
   let percentage = distance / totalDistance
   if (percentage >= 0.99) percentage = 1;
+  if (percentage < 0) percentage = 0;
 
   const pathLength = path.getTotalLength()
 
