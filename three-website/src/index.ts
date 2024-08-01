@@ -81,7 +81,8 @@ let geometry: THREE.PlaneGeometry,
 // CSS OVERLAY
 let cssHolder: CSS3DObject,
     anim: boolean = false,
-    hoverIcon: THREE.Group
+    hoverIcon: THREE.Group,
+    hoverTarget: THREE.Object3D
 // DUMMY
 let dummy: THREE.Object3D = new THREE.Object3D(),
     dummyVec: THREE.Vector3 = new THREE.Vector3(),
@@ -94,8 +95,7 @@ interface TList {
 }
 let funcList: TList = {
     "Chest": onClickChest
-    },
-    iconList: TList
+    }
 // -----------------------------------------------------------------------
 // TEXTURE LOADER
 // const texLoader = new THREE.TextureLoader();
@@ -267,7 +267,10 @@ function init() {
                         instMesh.scale.set(0.4,0.4,0.4);
 
                     }
-                    if (child.name.slice(0,5) == "Chest" && !interact.has(child.parent)) interact.add(child.parent)
+                    if (child.name.slice(0,5) == "Chest" && !interact.has(child.parent)) {
+                        interact.add(child.parent)
+                        hoverTarget = child.parent as THREE.Object3D
+                    }
                 }
                 if (child.name == "Icon") {
                     if (child instanceof THREE.Group) hoverIcon = child
@@ -285,9 +288,6 @@ function init() {
             islandModel.scale.set(1, 1, 1);
             islandModel.position.set(0, 0, 0); 
             globalGroup.add(islandModel);
-            iconList = {
-                "Chest": hoverIcon
-            }
             loadNext();
         }, undefined, (error) => {
             console.error('An error happened while loading the glb model', error);
@@ -762,20 +762,14 @@ function placeIcon() {
         if (document.getElementById('scene')?.style.display != "") {
             if (intersects.length > 0) {
                 const ele = intersects[0];
-                if (ele) {
-                    const icon = iconList[ele.name]
-                    if (icon) {
-                        icon.position.copy(ele.position);
-                        const height = oscillateValue(-0.05,0.05,3,time/3000);
-                        icon.position.y += height + 0.6;
-                        icon.rotation.y += 0.01; 
-                        icon.visible = true;
-                    }
-                    document.querySelector('html')?.classList.add('active');
-                }
-            } else {
-                for (let key in iconList) { if (iconList[key]) iconList[key].visible = false}
-                document.querySelector('html')?.classList.remove('active');
+                if (ele) document.querySelector('html')?.classList.add('active');
+            } else document.querySelector('html')?.classList.remove('active');
+            if (hoverIcon) {
+                hoverIcon.position.copy(hoverTarget.position);
+                const height = oscillateValue(-0.05,0.05,3,time/3000);
+                hoverIcon.position.y += height + 0.6;
+                hoverIcon.rotation.y += 0.01; 
+                hoverIcon.visible = true;
             }
         }
     }
