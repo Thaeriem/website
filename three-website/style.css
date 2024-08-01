@@ -62,7 +62,7 @@ html:active, html.active, a, button:active, .button:active, #border2, #start {
     position: absolute;
     line-height: 1;
     top: 1vw;
-    left: 1vw;
+    left: 2vw;
     white-space: pre;
     z-index: 1; 
     font-size: 1.9vw;
@@ -104,13 +104,15 @@ html:active, html.active, a, button:active, .button:active, #border2, #start {
 }
 
 .ov-header {
-    font-size: 5vw;
+    white-space:nowrap;
+    font-size: 5vh;
     margin: 0;
     padding-bottom: 0.3vw;
 }
 
 .ov-child {
+    white-space:nowrap;
     margin: 0.2vw;
-    font-size: 2vw;
+    font-size: 2vh;
 }
 

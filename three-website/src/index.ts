@@ -866,7 +866,6 @@ function onWindowResize() {
     let renderResolution = screenResolution.clone().divideScalar( 4 )
     renderResolution.x |= 0
     renderResolution.y |= 0
-    document.body.style.fontSize = `${(screenResolution.x / 1152) * 100}%`;
 
     camera.left = -aspect;
     camera.right = aspect;
@@ -884,7 +883,7 @@ function onWindowResize() {
 function renderHTML() {
     const iframe = document.createElement( 'iframe' );
     iframe.id = 'iframeid';
-    iframe.style.cssText = 'width: 26.667vw; height: 40vh; border: 0; objectFit: cover';
+    iframe.style.cssText = 'width: 24em; height: 26em; border: 0; objectFit: cover';
     iframe.setAttribute('sandbox', 'allow-same-origin allow-scripts allow-popups allow-forms');
     iframe.src = IFRAME_PAGE;
 
