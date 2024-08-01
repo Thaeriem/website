@@ -58,6 +58,7 @@ html:active, html.active, a, button:active, .button:active, #border2, #start {
   font-size: 1.5vw;
 }
 #grid {
+    margin: 0;
     padding-top: 1vw;
     position: absolute;
     line-height: 1;
