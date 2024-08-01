@@ -56,9 +56,11 @@ svg.squiggle path {
 }
 
 h1 {
+  line-height: 1;
   font-size: 2em;
 }
 p {
+  line-height: 1;
   font-size: 1em;
 }
 
@@ -73,6 +75,7 @@ section.grid-container > :last-child {
   height: max-content
 }
 .title {
+  line-height: 1;
   font-size: 3.3em;
 }
 
