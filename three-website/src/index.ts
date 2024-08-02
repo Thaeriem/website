@@ -766,7 +766,7 @@ function placeIcon() {
             } else document.querySelector('html')?.classList.remove('active');
             if (hoverIcon) {
                 hoverIcon.position.copy(hoverTarget.position);
-                const height = oscillateValue(-0.05,0.05,3,time/3000);
+                const height = oscillateValue(-0.025,0.025,3,time/3000);
                 hoverIcon.position.y += height + 0.6;
                 hoverIcon.rotation.y += 0.01; 
                 hoverIcon.visible = true;
