@@ -183,7 +183,6 @@ function setupControls() {
         RIGHT: THREE.MOUSE.ROTATE //
     }
     controls.update()
-    console.log(controls.getPolarAngle())
     controls.minPolarAngle = 1.1946077121420944;
     controls.maxPolarAngle = 1.1946077121420944
     // controls.minPolarAngle = controls.getPolarAngle() - Math.PI
