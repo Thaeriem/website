@@ -172,7 +172,6 @@ function setupRenderers(screenResolution: Vector2) {
 function setupControls() {
     loadNext();
     controls = new MapControls( camera, rendererCss.domElement )
-    // controls.enablePan = false //
     controls.target.set( 0, 1, 0 )
     controls.maxZoom = 1
     controls.minZoom = 0.03
@@ -180,13 +179,9 @@ function setupControls() {
     controls.mouseButtons = {
         LEFT: THREE.MOUSE.PAN,
         MIDDLE: THREE.MOUSE.DOLLY,
-        RIGHT: THREE.MOUSE.ROTATE //
+        RIGHT: THREE.MOUSE.DOLLY 
     }
     controls.update()
-    controls.minPolarAngle = 1.1946077121420944;
-    controls.maxPolarAngle = 1.1946077121420944
-    // controls.minPolarAngle = controls.getPolarAngle() - Math.PI
-    // controls.maxPolarAngle = controls.getPolarAngle() + (Math.PI / 24)
 }
 // -----------------------------------------------------------------------
 // KELP
