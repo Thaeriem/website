@@ -178,11 +178,14 @@ function setupControls() {
     controls.minZoom = 0.03
     controls.zoomSpeed = 2
     controls.mouseButtons = {
-        LEFT: THREE.MOUSE.DOLLY,
+        LEFT: THREE.MOUSE.PAN,
         MIDDLE: THREE.MOUSE.DOLLY,
         RIGHT: THREE.MOUSE.ROTATE //
     }
     controls.update()
+    console.log(controls.getPolarAngle())
+    controls.minPolarAngle = 1.1946077121420944;
+    controls.maxPolarAngle = 1.1946077121420944
     // controls.minPolarAngle = controls.getPolarAngle() - Math.PI
     // controls.maxPolarAngle = controls.getPolarAngle() + (Math.PI / 24)
 }
@@ -916,6 +919,22 @@ function animate() {
         if (new_x < cameraBounds.minX) velocity.x = 0;
         if (new_z > cameraBounds.maxZ) velocity.z = 0;
         if (new_z < cameraBounds.minZ) velocity.z = 0;
+        if (camera.position.x > cameraBounds.maxX) {
+            controls.target.x = cameraBounds.maxX + 200
+            camera.position.x = cameraBounds.maxX
+        }
+        if (camera.position.x < cameraBounds.minX) {
+            controls.target.x = cameraBounds.minX+200
+            camera.position.x = cameraBounds.minX
+        }
+        if (camera.position.z > cameraBounds.maxZ) {
+            controls.target.z = cameraBounds.maxZ
+            camera.position.z = cameraBounds.maxZ
+        }
+        if (camera.position.z < cameraBounds.minZ) {
+            controls.target.z = cameraBounds.minZ
+            camera.position.z = cameraBounds.minZ
+        }
         camera.position.add(velocity);
         controls.target.add(velocity);
 
