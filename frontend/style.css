@@ -49,6 +49,17 @@ svg.squiggle path {
   stroke: var(--c5);
 }
 
+.arrow {
+  position: absolute;
+  color: var(--c4);
+  left: 50%;
+  bottom: 5%;
+  transform: translateX(-50%);
+  transition: opacity 0.3s;
+  font-size: 5em;
+  will-change: opacity;
+}
+
 /* Hide scrollbar for Chrome, Safari and Opera */
 ::-webkit-scrollbar {
   width: 0;
