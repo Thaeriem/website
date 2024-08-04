@@ -1,6 +1,6 @@
 @font-face {
   font-family: 'homevideo';
-  src: url('./fonts/home-video-font/HomeVideo-BLG6G.ttf') format('truetype');
+  src: url('./public/fonts/home-video-font/HomeVideo-BLG6G.ttf') format('truetype');
 }
 
 :root {
