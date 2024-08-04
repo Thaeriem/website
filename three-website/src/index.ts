@@ -677,8 +677,10 @@ function onKeyDown (event: any) {
     switch (event.code) {
         case 'KeyZ':
         case 'Escape':
-            moveUp = moveDown = moveLeft = moveRight = false;
-            camReset(0.4, false)
+            if (!anim) {
+                moveUp = moveDown = moveLeft = moveRight = false;
+                camReset(0.4, false)
+            }
             break;
         case 'KeyW':
         case 'ArrowUp':

@@ -1,11 +1,11 @@
 @font-face {
     font-family: 'homevideo';
-    src: url('./fonts/home-video-font/HomeVideo-BLG6G.ttf') format('truetype');
+    src: url('public/fonts/home-video-font/HomeVideo-BLG6G.ttf') format('truetype');
 }
 
 @font-face {
     font-family: 'input';
-    src: url('./fonts/Input-Font/InputMono-Bold.ttf') format('truetype');
+    src: url('public/fonts/Input-Font/InputMono-Bold.ttf') format('truetype');
 }
   
 :root {
