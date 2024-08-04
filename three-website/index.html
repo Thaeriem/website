@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Yash Kaul Portfolio</title>
+    <link rel="icon" href="./public/treasure.ico">
     <link rel="stylesheet" type="text/css" href="http://yui.yahooapis.com/3.18.1/build/cssreset/cssreset-min.css">
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/splitting@1.1.0/dist/splitting.min.js"></script>
@@ -31,17 +32,19 @@
 
     <!-- Three.js Scene -->
     <div id="scene">
-        <!-- icons -->
-        <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"> -->
-        <div id="overlay">
+       <div id="overlay">
           <h1 class="animate hvid ov ov-header" data-splitting="chars">Remote Island</h1>
-          <p class ="animate hvid ov ov-child" data-splitting="chars">Movement - WASD / Arrow Keys</p>
+          <p class ="animate hvid ov ov-child" data-splitting="chars">Movement - WASD or Arrow Keys / Mouse</p>
           <p class ="animate hvid ov ov-child" data-splitting="chars">Rotate - QE / ,. </p>
           <p class ="animate hvid ov ov-child" data-splitting="chars">Reset - Esc</p>
+          <p class ="animate hvid ov ov-child" data-splitting="chars">Mute - M</p>
           <p class ="animate hvid ov ov-child" data-splitting="chars">Hide - H</p>
         </div>
         <script type="module" src="src/index.ts"></script>
     </div>
+
+    <audio id="ocean" src="./audio/norwayjohn_ocean-crete-3.wav" autoplay></audio>
+    <!-- <audio id="jingle" src="audio/track2.mp3" loop></audio> -->
 
     <script type="module" src="src/grid.js"></script>
     <script type="module" src="src/border.js"></script>
@@ -79,6 +82,8 @@
               document.getElementById('loading').style.display = 'none';
               document.getElementById('screen').style.display = 'none';
               document.getElementById('scene').style.display = 'block';
+              ocean.muted = false;
+              ocean.play();
             }
             const iframe = document.getElementById('iframeid');
             if (iframe) {
@@ -88,6 +93,24 @@
               iframe.contentWindow.postMessage(msgX + " " + msgY, '*');
             }
         });
+
+        let ocean = document.getElementById('ocean');
+        ocean.volume = 0.03;
+        ocean.addEventListener('timeupdate', function(){
+            var buffer = .44
+            if(this.currentTime > this.duration - buffer){
+                this.currentTime = 0
+                this.play()
+            }
+        });
+
+        document.addEventListener("visibilitychange", event => {
+          if (document.visibilityState === "visible") {
+            ocean.play();
+          } else {
+            ocean && ocean.pause();
+          }
+        })
     </script>
     <script>
       window.si = window.si || function () { (window.siq = window.siq || []).push(arguments); };

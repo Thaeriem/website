@@ -42,6 +42,9 @@ const cameraBounds = {
 };
 const animTime = 1200;
 const overlay = document.querySelectorAll('.ov');
+const audOcean = document.getElementById('ocean') as HTMLAudioElement;
+audOcean.muted = true;
+const audJingle = document.getElementById('jingle') as HTMLAudioElement;
 let velocity = new THREE.Vector3();
 let y_rotation: number = 0
 let globalGroup = new THREE.Group();
@@ -708,6 +711,10 @@ function onKeyDown (event: any) {
                 else overlay.forEach((item: any) => { item.style.display = 'none' })
             }
             break;
+        case 'KeyM':
+            audOcean.muted = !audOcean.muted;
+            // audJingle.muted = !audJingle.muted;
+            break;
     }
 };
 
@@ -854,7 +861,7 @@ function onWindowResize() {
 
     let screenResolution = new Vector2( window.innerWidth, window.innerHeight )
     const aspect = screenResolution.x / screenResolution.y;
-    let renderResolution = screenResolution.clone().divideScalar( 4 )
+    let renderResolution = screenResolution.clone()
     renderResolution.x |= 0
     renderResolution.y |= 0
 
@@ -931,6 +938,7 @@ function animate() {
         }
         camera.position.add(velocity);
         controls.target.add(velocity);
+        controls.update();
 
         y_rotation -= y_rotation * 10.0 * delta;
         if ( rotateLeft ) y_rotation += 1.0 * delta;
@@ -944,7 +952,7 @@ function animate() {
         updateFire();
         updateKelp();
         mouseUpdate();
-        controls.update();
+
     }
     stats.update();
     TWEEN.update();
