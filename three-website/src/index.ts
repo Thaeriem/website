@@ -76,7 +76,7 @@ let geometry: THREE.PlaneGeometry,
     cloudMat: THREE.Material,
     boatMesh: THREE.Mesh,
     boatP: THREE.Plane, 
-    debrisMesh: THREE.Mesh,
+    debrisMesh: THREE.Mesh[] = [],
     debrP: THREE.Plane,
     smokeParticles: THREE.InstancedMesh,
     fireParticles: THREE.InstancedMesh,
@@ -102,15 +102,15 @@ let funcList: TList = {
     }
 // -----------------------------------------------------------------------
 // TEXTURE LOADER
-// const texLoader = new THREE.TextureLoader();
-// function pixelTex( tex: THREE.Texture ) {
-//     tex.minFilter = THREE.NearestFilter
-//     tex.magFilter = THREE.NearestFilter
-//     tex.generateMipmaps = false
-//     tex.wrapS = THREE.RepeatWrapping
-//     tex.wrapT = THREE.RepeatWrapping
-//     return tex
-// }
+const texLoader = new THREE.TextureLoader();
+function pixelTex( tex: THREE.Texture ) {
+    tex.minFilter = THREE.NearestFilter
+    tex.magFilter = THREE.NearestFilter
+    tex.generateMipmaps = false
+    tex.wrapS = THREE.RepeatWrapping
+    tex.wrapT = THREE.RepeatWrapping
+    return tex
+}
 // -----------------------------------------------------------------------
 // SMOKE
 const pOptions = {
@@ -400,13 +400,15 @@ function init() {
                 if (child instanceof THREE.Mesh) {
                     child.castShadow = true;
                     child.receiveShadow = true;
+                    if (child.material.map) child.material.map = pixelTex(child.material.map)
+                    debrisMesh.push(child)
                 }
                 child.frustumCulled = false;
             });
-            debrisMesh = debrisModel.getObjectByName('Debris') as THREE.Mesh
-            debrisMesh.position.set(0,2,-4);
-            debrisMesh.rotation.set(0,0.8,0)
-            globalGroup.add(debrisMesh);
+
+            debrisModel.position.set(3,0,-0.8);
+            debrisModel.rotation.set(0,0.8,0)
+            globalGroup.add(debrisModel);
             const pos = geometry.attributes.position
             debrv0.set(pos.getX(dInd[0]), pos.getZ(dInd[0]), pos.getY(dInd[0]))
             debrv1.set(pos.getX(dInd[1]), pos.getZ(dInd[1]), pos.getY(dInd[1]))
@@ -626,13 +628,19 @@ function oscillateValue(min:number, max:number, frequency:number, time:number) {
 }
 // DEBRIS
 function updateDebris() {
-    if (debrisMesh) {
+    if (debrisModel) {
         const pos = geometry.attributes.position
         debrv0.setY(pos.getZ(594)), debrv1.setY(pos.getZ(561)), debrv2.setY(pos.getZ(560))
         updatePlane(debrP, debrv0, debrv1, debrv2);
-        dummyPos.copy(debrisMesh.position);
-        dummyPos.copy(projPlane(dummyPos, debrP));
-        debrisMesh.position.copy(dummyPos);
+        for (let i = 0; i < debrisMesh.length; i++) {
+            dummyPos.copy(debrisMesh[i].position);
+            dummyPos.copy(projPlane(dummyPos, debrP));
+            debrisMesh[i].position.copy(dummyPos);
+
+        }
+        // dummyPos.copy(debrisModel.position);
+        // dummyPos.copy(projPlane(dummyPos, debrP));
+        // debrisModel.position.copy(dummyPos);
     }   
 }
 // -----------------------------------------------------------------------
@@ -777,11 +785,11 @@ function placeIcon() {
             }
             const child = hoverTarget.children[0] as THREE.Mesh
             const mat = child.material as THREE.MeshStandardMaterial
+            const amp = 1.5
             if (intersects.length > 0) {
                 const ele = intersects[0];
                 if (ele) {
                     if (ele.name == hoverTarget.name) {
-                        const amp = 1.5
                         dummyColor.setRGB(hoverColor.r*amp, hoverColor.g*amp, hoverColor.b*amp)
                         mat.color.set(dummyColor)
                     } 
@@ -859,9 +867,7 @@ function camReset(zlvl: any, ifAnim: boolean) {
             } else {
                 if (!hide) overlay.forEach((item: any) => { item.style.display = 'block' })
                 if (!controls.enabled) toggleControls(!controls.enabled)
-            }
-            
-            
+            }    
         })
         .start();
     if (ifAnim) {
