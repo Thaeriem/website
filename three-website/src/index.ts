@@ -102,7 +102,7 @@ let funcList: TList = {
     }
 // -----------------------------------------------------------------------
 // TEXTURE LOADER
-const texLoader = new THREE.TextureLoader();
+// const texLoader = new THREE.TextureLoader();
 function pixelTex( tex: THREE.Texture ) {
     tex.minFilter = THREE.NearestFilter
     tex.magFilter = THREE.NearestFilter
