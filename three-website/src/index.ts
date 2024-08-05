@@ -85,7 +85,8 @@ let geometry: THREE.PlaneGeometry,
 let cssHolder: CSS3DObject,
     anim: boolean = false,
     hoverIcon: THREE.Group,
-    hoverTarget: THREE.Object3D
+    hoverTarget: THREE.Object3D,
+    hoverColor: THREE.Color
 // DUMMY
 let dummy: THREE.Object3D = new THREE.Object3D(),
     dummyVec: THREE.Vector3 = new THREE.Vector3(),
@@ -270,6 +271,7 @@ function init() {
                     if (child.name.slice(0,5) == "Chest" && !interact.has(child.parent)) {
                         interact.add(child.parent)
                         hoverTarget = child.parent as THREE.Object3D
+                        hoverColor = (child.material as THREE.MeshStandardMaterial).color.clone()
                     }
                 }
                 if (child.name == "Icon") {
@@ -766,16 +768,28 @@ function onMouseClick() {
 function placeIcon() {
     if (islandModel) {
         if (document.getElementById('scene')?.style.display != "") {
-            if (intersects.length > 0) {
-                const ele = intersects[0];
-                if (ele) document.querySelector('html')?.classList.add('active');
-            } else document.querySelector('html')?.classList.remove('active');
             if (hoverIcon) {
                 hoverIcon.position.copy(hoverTarget.position);
                 const height = oscillateValue(-0.025,0.025,3,time/3000);
                 hoverIcon.position.y += height + 0.6;
                 hoverIcon.rotation.y += 0.01; 
                 hoverIcon.visible = true;
+            }
+            const child = hoverTarget.children[0] as THREE.Mesh
+            const mat = child.material as THREE.MeshStandardMaterial
+            if (intersects.length > 0) {
+                const ele = intersects[0];
+                if (ele) {
+                    if (ele.name == hoverTarget.name) {
+                        const amp = 1.5
+                        dummyColor.setRGB(hoverColor.r*amp, hoverColor.g*amp, hoverColor.b*amp)
+                        mat.color.set(dummyColor)
+                    } 
+                    document.querySelector('html')?.classList.add('active');
+                }
+            } else {
+                if (mat.color.r != hoverColor.r) mat.color.set(hoverColor)
+                document.querySelector('html')?.classList.remove('active');
             }
         }
     }
