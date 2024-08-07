@@ -100,6 +100,20 @@ interface TList {
 let funcList: TList = {
     "Chest": onClickChest
     }
+let icoList: TList = {
+    cube: new THREE.Mesh(
+        new THREE.BoxGeometry(1, 1, 1),
+        new THREE.MeshBasicMaterial({ color: 0x00ff00 })
+    ),
+    sphere: new THREE.Mesh(
+        new THREE.SphereGeometry(1, 32, 32),
+        new THREE.MeshBasicMaterial({ color: 0x0000ff })
+    ),
+    cone: new THREE.Mesh(
+        new THREE.ConeGeometry(1, 2, 32),
+        new THREE.MeshBasicMaterial({ color: 0xff0000 })
+    )
+};
 // -----------------------------------------------------------------------
 // TEXTURE LOADER
 // const texLoader = new THREE.TextureLoader();
@@ -444,6 +458,13 @@ function init() {
         fireParticles.instanceMatrix.needsUpdate = true;
         fireParticles.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
     }
+
+    Object.values(icoList).forEach(model => {
+        model.visible = false;
+        globalGroup.add(model);
+    });
+    animationManager();
+    
 
     // Lights
     // Ambient light for general illumination
@@ -825,7 +846,38 @@ function onClickChest() {
     }
 }
 
+function focus(model: any) {
+    model.position.set(0, 0, 0);
 
+    const targetPosition = { 
+        x: 0, 
+        y: 10, 
+        z: 0
+    };
+    
+    const duration = 2000;
+    const startTime = Date.now();
+
+    function animate() {
+        const elapsedTime = Date.now() - startTime;
+        const progress = Math.min(elapsedTime / duration, 1);
+
+        model.position.y = THREE.MathUtils.lerp(camera.position.y - 10, targetPosition.y, progress);
+
+        if (progress < 1) {
+            requestAnimationFrame(animate);
+        }
+    }
+
+    animate();
+}
+
+function animationManager(icon: string = "") {
+    if (icon == "") return
+    const model = icoList[icon];
+    model.visible = true;
+    focus(model);
+}
 // -----------------------------------------------------------------------
 // CAMERA CONTROLS
 const nnorm = (z: number) => (z-0.03)/(1-0.03);
