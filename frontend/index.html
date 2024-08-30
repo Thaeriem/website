@@ -25,7 +25,7 @@
         <p class="grid-c" data-splitting="chars">
           I have interned at two startups where I gained experience designing systems at scale, iterating and delivering solutions quickly, and testing / deploying microservices on AWS.
         </p>
-        <p class="grid-c link" data-splitting="chars" data-link="resume">-> resume</p>
+        <p class="grid-c link" data-splitting="chars" data-link="resume">resume</p>
       </div>
 
       <div class="grid-item text-pos4">
@@ -34,13 +34,13 @@
         <p class="grid-c" data-splitting="chars">
           VSCode extension to play ASCII GIF's in the explorer panel. You can find it on VScode Marketplace with 100+ users!
         </p>
-        <p class="grid-c link" data-splitting="chars" data-link="art2ascii">-> github</p>
+        <p class="grid-c link" data-splitting="chars" data-link="art2ascii">github</p>
         <h3 class="grid-c" data-splitting="chars">PictoPlan</h3>
         <p class="grid-c" data-splitting="chars">
           HackRPI Best First Hack Winner. <br>
           Web-platform for educators to turn pdf's into lessons. <br> Finished in 24 hrs!
         </p>
-        <p class="grid-c link" data-splitting="chars" data-link="pictoplan">-> github</p>
+        <p class="grid-c link" data-splitting="chars" data-link="pictoplan">github</p>
       </div>
         
       <div class="img-container img-pos1">
@@ -53,12 +53,12 @@
 
       <div class="grid-item text-pos5">
         <h1 data-splitting="chars">Contact</h1>
-        <p data-splitting="chars">
-          -> kauly.cs@gmail.com
-        </p>
-        <p class="link" data-splitting="chars" data-link="github">-> github</p>
-        <p class="link" data-splitting="chars" data-link="linkedin">-> linkedin</p>
-        <p class="link" data-splitting="chars" data-link="twitter">-> twitter</p>
+        <div>
+          <p class="link" data-splitting="chars" data-link="email">email</p>
+        </div>
+        
+        <p class="link" data-splitting="chars" data-link="github">github</p>
+        <p class="link" data-splitting="chars" data-link="linkedin">linkedin</p>
         <h1 style="padding-top: 0.5em;" data-splitting="chars">Credits</h1>
         <p data-splitting="chars">Models, scripting, music, and animations made from scratch, ocean wav from norwayjohn</p>
       </div>
@@ -89,7 +89,8 @@
           const mouseY = parseFloat(tmp[1]) * window.innerHeight + window.scrollY
           const links = document.querySelectorAll('.link');
             links.forEach(link => {
-              if (isMouseInElement(mouseX, mouseY, link)) {
+              const word = link.querySelector('.word');
+              if (word && isMouseInElement(mouseX, mouseY, word)) {
                 const linkUrl = link.getAttribute('data-link');
                 if (linkUrl) window.top.postMessage(linkUrl, '*')
               }

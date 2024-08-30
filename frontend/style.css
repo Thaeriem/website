@@ -75,6 +75,9 @@ p {
   font-size: 1em;
 }
 
+.link > .word {
+  border-bottom: solid 0.1em;
+}
 section.grid-container {
   display: grid;
   grid-template-columns: repeat(12, 1fr);

@@ -12,7 +12,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const elen = 200;
     const div = 6;
     const off = 1.9;
-    const yoff = -100;
+    const yoff = -150;
     let elementTop;
 
     function updateTextOnScroll() {
