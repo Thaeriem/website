@@ -45,6 +45,7 @@ const overlay = document.querySelectorAll('.ov');
 const audOcean = document.getElementById('ocean') as HTMLAudioElement;
 audOcean.muted = true;
 // const audJingle = document.getElementById('jingle') as HTMLAudioElement;
+const dZoom = 0.3;
 let velocity = new THREE.Vector3();
 let y_rotation: number = 0
 let globalGroup = new THREE.Group();
@@ -61,16 +62,25 @@ let moveUp: boolean = false,
     rotateLeft: boolean = false, 
     rotateRight: boolean = false,
     hide: boolean = false
+// LIGHTS
+let ambL: THREE.AmbientLight,
+    dirL: THREE.DirectionalLight,
+    sptL: THREE.SpotLight,
+    pntL: THREE.PointLight,
+    hmiL: THREE.HemisphereLight,
+    trgO: THREE.Object3D = new THREE.Object3D(),
+    lightdark: boolean = false
 // MODELS
 let islandModel: THREE.Object3D, 
     cloudModel: THREE.Object3D, 
     boatModel: THREE.Object3D,
     debrisModel: THREE.Object3D
 // GEOMETRIES + MESHES
-let geometry: THREE.PlaneGeometry, 
-    mesh: THREE.Mesh,
-    outlineGeometry: THREE.PlaneGeometry, 
-    outline: THREE.Mesh,
+let oceanGeo: THREE.PlaneGeometry, 
+    oceanMesh: THREE.Mesh,
+    outlineGeo: THREE.PlaneGeometry, 
+    outlineMesh: THREE.Mesh,
+    waterPlane: THREE.Mesh,
     cloudAmt: number = 10,
     cloudMesh: THREE.InstancedMesh,
     cloudMat: THREE.Material,
@@ -79,7 +89,9 @@ let geometry: THREE.PlaneGeometry,
     debrisMesh: THREE.Mesh[] = [],
     debrP: THREE.Plane,
     smokeParticles: THREE.InstancedMesh,
+    osp: THREE.BufferGeometry,
     fireParticles: THREE.InstancedMesh,
+    ofp: THREE.BufferGeometry,
     kelpArr: THREE.InstancedMesh[] = []
 // CSS OVERLAY
 let cssHolder: CSS3DObject,
@@ -98,7 +110,8 @@ interface TList {
     [key: string]: any;
 }
 let funcList: TList = {
-    "Chest": onClickChest
+    "Chest": onClickChest,
+    "Camp": onClickCamp
     }
 let icoList: TList = {
     cube: new THREE.Mesh(
@@ -165,7 +178,7 @@ function setupCamera(screenResolution: Vector2) {
     let aspectRatio = screenResolution.x / screenResolution.y
     camera = new THREE.OrthographicCamera(-aspectRatio, aspectRatio, 1, -1, 0, 2000);
     camera.position.set(-200, 80, 0.000001)
-    camera.zoom = 0.4
+    camera.zoom = dZoom
     camera.updateProjectionMatrix()
 }
 
@@ -201,12 +214,85 @@ function setupControls() {
     }
     controls.update()
 }
+
+function setupDayLight() {
+    globalGroup.remove(ambL);
+    globalGroup.remove(dirL);
+    globalGroup.remove(sptL);
+    globalGroup.remove(trgO);
+    globalGroup.remove(pntL);
+    globalGroup.remove(hmiL);
+    // LIGHTS
+    ambL = new THREE.AmbientLight(0x2d3645, 8);
+    dirL = new THREE.DirectionalLight(0xff6900, 4.5)
+    dirL.position.set(-200, 80, -1000);
+    dirL.castShadow = true;
+    dirL.shadow.mapSize.set(4000, 4000);
+    sptL = new THREE.SpotLight(0xffffff);
+    sptL.position.set(0, 300, 0);
+    sptL.angle = Math.PI / 6; 
+    sptL.penumbra = 0.1; 
+    sptL.decay = 1;
+    sptL.distance = 400;
+    trgO.position.set(0, 0, 0);
+    sptL.target = trgO;
+    pntL = new THREE.PointLight(0x7d5ba6, 0, 300);
+    pntL.position.set(100, 150, -50);
+    hmiL = new THREE.HemisphereLight(0x003366, 0x1a1a2e, 0);
+    globalGroup.add(ambL);
+    globalGroup.add(dirL);
+    globalGroup.add(sptL);
+    globalGroup.add(trgO);
+    globalGroup.add(pntL);
+    globalGroup.add(hmiL);
+    // OCEAN
+    const mat = (oceanMesh.material as THREE.MeshBasicMaterial)
+    mat.color.set(0x046997)
+    const mat2 = (outlineMesh.material as THREE.MeshBasicMaterial)
+    mat2.opacity = 0.03
+
+}
+
+function setupNightLight() {
+    globalGroup.remove(ambL);
+    globalGroup.remove(dirL);
+    globalGroup.remove(sptL);
+    globalGroup.remove(trgO);
+    globalGroup.remove(pntL);
+    globalGroup.remove(hmiL);
+    ambL = new THREE.AmbientLight(0x1a2b3c, 2)
+    dirL = new THREE.DirectionalLight(0x8a47ff, 2);
+    dirL.position.set(-200, 80, -1000);
+    dirL.castShadow = true;
+    dirL.shadow.mapSize.set(4000, 4000);
+    sptL = new THREE.SpotLight(0x4a90e2, 0.5);
+    sptL.position.set(50, 200, 100);
+    sptL.angle = Math.PI / 4;
+    sptL.penumbra = 0.3;
+    sptL.decay = 1.2;
+    sptL.distance = 500;
+    trgO.position.set(0, 50, 0);
+    sptL.target = trgO;
+    pntL = new THREE.PointLight(0x7d5ba6, 1.8, 300);
+    pntL.position.set(100, 150, -50);
+    hmiL = new THREE.HemisphereLight(0x003366, 0x1a1a2e, 0.5);
+    globalGroup.add(ambL);
+    globalGroup.add(dirL);
+    globalGroup.add(sptL);
+    globalGroup.add(trgO);
+    globalGroup.add(pntL);
+    globalGroup.add(hmiL);
+    // OCEAN
+    const mat = (oceanMesh.material as THREE.MeshBasicMaterial)
+    mat.color.set(0x1a2b3c)
+    const mat2 = (outlineMesh.material as THREE.MeshBasicMaterial)
+    mat2.opacity = 0.01
+}
 // -----------------------------------------------------------------------
 // KELP
 const kelpPos: Array<Array<number>> = [
     [
         -1,-1.3,-8,-2,-1.4,-12
-        
     ],
     [
         -4,-1.4,-9, 2, -1.3, -8, 0, -1.4, -10, 2, -1.5, -12
@@ -287,6 +373,9 @@ function init() {
                         hoverTarget = child.parent as THREE.Object3D
                         hoverColor = (child.material as THREE.MeshStandardMaterial).color.clone()
                     }
+                    if (child.name.slice(0,4) == "Camp" && !interact.has(child.parent)) {
+                        interact.add(child.parent)
+                    }
                 }
                 if (child.name == "Icon") {
                     if (child instanceof THREE.Group) hoverIcon = child
@@ -312,7 +401,7 @@ function init() {
      // Geometry setup
      {
         const width = 400, height = 400, segmentsX = Math.floor(width / 12), segmentsY = Math.floor(height / 12);
-        geometry = outlineGeometry = new THREE.PlaneGeometry(width, height, segmentsX, segmentsY);
+        oceanGeo = outlineGeo = new THREE.PlaneGeometry(width, height, segmentsX, segmentsY);
     
         // Create the material for the plane
         const material = new THREE.MeshBasicMaterial({
@@ -321,30 +410,30 @@ function init() {
             opacity: 0.85,
             side: THREE.DoubleSide
         });
-        // Create the material for the outline with gradient
+    
         const material2 = new THREE.MeshBasicMaterial({
             wireframe: true,
             vertexColors: true,
-            transparent:true,
-            opacity:0.05
+            transparent: true,
+            opacity: 0.05
         });
+    
         const material3 = new THREE.MeshBasicMaterial({
-            color: 0x046997,
+            color: 0x4a90e2, // Cool blue for the water plane
             side: THREE.DoubleSide
         });
         // Create the mesh for the plane
-        mesh = new THREE.Mesh(geometry, material);
-        mesh.rotation.x = -Math.PI / 2;
-        globalGroup.add(mesh);
+        oceanMesh = new THREE.Mesh(oceanGeo, material);
+        oceanMesh.rotation.x = -Math.PI / 2;
+        globalGroup.add(oceanMesh);
         // Create the mesh for the outline
-        outline = new THREE.Mesh(outlineGeometry, material2);
-        outline.rotation.x = -Math.PI / 2;
-        globalGroup.add(outline);
-        const waterPlane = new THREE.Mesh(new THREE.PlaneGeometry(width, height), material3);
+        outlineMesh = new THREE.Mesh(outlineGeo, material2);
+        outlineMesh.rotation.x = -Math.PI / 2;
+        globalGroup.add(outlineMesh);
+        waterPlane = new THREE.Mesh(new THREE.PlaneGeometry(width, height), material3);
         waterPlane.rotation.x = -Math.PI / 2;
         waterPlane.position.y = -0.5;
         globalGroup.add(waterPlane);
-
 
         // Adjust the vertices with noise
         updateOcean(0,0.1,0.1);
@@ -365,6 +454,7 @@ function init() {
             cloudMat = cloud.material as THREE.Material
             cloudMat.transparent = true;
             cloudMat.opacity = 0.65;
+            cloud.geometry.rotateY(- Math.PI / 2);
             cloudMesh = new THREE.InstancedMesh(cloud.geometry, cloud.material, cloudAmt);
             cloudMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
             for (let i = 0; i < cloudAmt; i++) {
@@ -398,7 +488,7 @@ function init() {
             boatMesh.position.set(-1,0,3.5);
             boatMesh.rotation.set(0,-0.8,0)
             globalGroup.add(boatMesh);
-            const pos = geometry.attributes.position
+            const pos = oceanGeo.attributes.position
             boatv0.set(pos.getX(bInd[0]), pos.getZ(bInd[0]), pos.getY(bInd[0]))
             boatv1.set(pos.getX(bInd[1]), pos.getZ(bInd[1]), pos.getY(bInd[1]))
             boatv2.set(pos.getX(bInd[2]), pos.getZ(bInd[2]), pos.getY(bInd[2]))
@@ -423,7 +513,7 @@ function init() {
             debrisModel.position.set(3,0,-0.8);
             debrisModel.rotation.set(0,0.8,0)
             globalGroup.add(debrisModel);
-            const pos = geometry.attributes.position
+            const pos = oceanGeo.attributes.position
             debrv0.set(pos.getX(dInd[0]), pos.getZ(dInd[0]), pos.getY(dInd[0]))
             debrv1.set(pos.getX(dInd[1]), pos.getZ(dInd[1]), pos.getY(dInd[1]))
             debrv2.set(pos.getX(dInd[2]), pos.getZ(dInd[2]), pos.getY(dInd[2]))
@@ -436,8 +526,13 @@ function init() {
     }
 
     {
-        const geo = new THREE.SphereGeometry(pOptions.size, 8, 8);
-        const mat = new THREE.MeshBasicMaterial({ color: 0x555555, transparent: true, opacity: pOptions.opacity });
+        const geo = new THREE.CircleGeometry(pOptions.size, 32);
+        const mat = new THREE.MeshBasicMaterial({
+            color: 0x555555,
+            transparent: true,
+            opacity: pOptions.opacity,
+            side: THREE.DoubleSide,
+        });
         smokeParticles = new THREE.InstancedMesh(geo, mat, pOptions.count);
         globalGroup.add(smokeParticles);
 
@@ -447,8 +542,13 @@ function init() {
         smokeParticles.instanceMatrix.needsUpdate = true;
         smokeParticles.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
 
-        const fgeo = new THREE.SphereGeometry(pOptions.size, 8, 8);
-        const fmat = new THREE.MeshBasicMaterial({ color: 0x737373, transparent: true, opacity: fOptions.opacity });
+        const fgeo = new THREE.CircleGeometry(pOptions.size, 32);
+        const fmat = new THREE.MeshBasicMaterial({
+            color: 0x737373,
+            transparent: true,
+            opacity: fOptions.opacity,
+            side: THREE.DoubleSide,
+        });
         fireParticles = new THREE.InstancedMesh(fgeo, fmat, fOptions.count);
         globalGroup.add(fireParticles);
 
@@ -457,6 +557,10 @@ function init() {
         }
         fireParticles.instanceMatrix.needsUpdate = true;
         fireParticles.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+        osp = new THREE.BufferGeometry()
+        ofp = new THREE.BufferGeometry()
+        ofp.copy(fireParticles.geometry)
+        osp.copy(smokeParticles.geometry)
     }
 
     Object.values(icoList).forEach(model => {
@@ -464,35 +568,12 @@ function init() {
         globalGroup.add(model);
     });
     animationManager();
-    
 
     // Lights
-    // Ambient light for general illumination
     {
-        globalGroup.add(new THREE.AmbientLight(0x2d3645, 8));
-
-        // Directional light for strong, directional lighting
-        let directionalLight = new THREE.DirectionalLight(0xff6900, 4.5);
-        directionalLight.position.set(-200, 80, -1000);
-        directionalLight.castShadow = true;
-        directionalLight.shadow.mapSize.set(4000, 4000);
-        globalGroup.add(directionalLight);
-
-        const spotLight = new THREE.SpotLight(0xffffff);
-        spotLight.position.set(0, 300, 0);
-        spotLight.angle = Math.PI / 6; 
-        spotLight.penumbra = 0.1; 
-        spotLight.decay = 1;
-        spotLight.distance = 400;
-        globalGroup.add(spotLight);
-        spotLight.target = islandModel;
-
-        // Add a target for the spotlight to look at
-        const targetObject = new THREE.Object3D();
-        targetObject.position.set(0, 0, 0);
-        globalGroup.add(targetObject);
-        spotLight.target = targetObject;
+        setupDayLight();
     }
+    
     renderHTML()
     // events
     window.addEventListener( 'resize', onWindowResize );
@@ -504,7 +585,7 @@ function init() {
 // -----------------------------------------------------------------------
 // Ocean
 function updateOcean(time: number, scale: number, amplitude: number) {
-    const positionAttribute = geometry.attributes.position;
+    const positionAttribute = oceanGeo.attributes.position;
     dummyArr = [];
     let z = 0, zNorm = 0;
 
@@ -520,7 +601,7 @@ function updateOcean(time: number, scale: number, amplitude: number) {
         dummyArr.push(dummyColor.r, dummyColor.g, dummyColor.b)
     }
     positionAttribute.needsUpdate = true;
-    outlineGeometry.setAttribute('color', new THREE.Float32BufferAttribute(dummyArr, 3));
+    outlineGeo.setAttribute('color', new THREE.Float32BufferAttribute(dummyArr, 3));
 
 }
 // -----------------------------------------------------------------------
@@ -549,19 +630,19 @@ function updateClouds(delta: number) {
 // -----------------------------------------------------------------------
 // Smoke
 function resetParticle(mesh: THREE.InstancedMesh, index: number, init: boolean, opt: any) {
-    const scale = opt.width
     if (init) {
+        dummyMat.makeRotationY(Math.PI / 2);
         dummyPos.set(
-            (Math.random()-0.5)*scale + opt.pos.x,
+            (Math.random()-0.5)*opt.width + opt.pos.x,           
             (Math.random() * opt.maxHeight/2) + opt.pos.y,
-            (Math.random()-0.5)*scale + opt.pos.z
+            (Math.random()-0.5)*opt.width + opt.pos.z
         )
     }
     else {
-        dummyPos.set(
-            (Math.random()-0.5)*scale + opt.pos.x,           
-            opt.pos.y,
-            (Math.random()-0.5)*scale + opt.pos.z
+         dummyPos.set(
+        (Math.random()-0.5)*opt.width + opt.pos.x,           
+        opt.pos.y,
+        (Math.random()-0.5)*opt.width + opt.pos.z
         )
     }
     dummyMat.setPosition(dummyPos)
@@ -576,43 +657,37 @@ function smokeDrift(y: number, d: number, opt: any): number {
     return d*Math.log(y - opt.pos.y + 1);
 }
 
-function updateSmoke() {
-    for (let i = 0; i < pOptions.count; i++) {
-        smokeParticles.getMatrixAt(i, dummyMat);
-        dummyPos.setFromMatrixPosition(dummyMat);
-        dummyPos.y += 0.01 * smokeSpeed(dummyPos.y, pOptions);
-        dummyPos.x += Math.sin(time/500)*pOptions.scale;
-        dummyPos.z += Math.cos(time/500)*pOptions.scale+smokeDrift(dummyPos.y, 0.005, pOptions);
-        dummyMat.setPosition(dummyPos);
-        if (dummyPos.y > (pOptions.pos.y + pOptions.maxHeight/3)) {
-            if (Math.random() > pOptions.p) resetParticle(smokeParticles,i,false, pOptions);
-            else smokeParticles.setMatrixAt(i, dummyMat);
+function updateSmoke(opt: any, particles: any) {
+    const sint = Math.sin(time / 500);
+    const cost = Math.cos(time / 500);
+    const xval = sint * opt.scale;
+    const zval = cost * opt.scale;
+    const sceneDiv = document.querySelector('body #scene');
+    if (sceneDiv && getComputedStyle(sceneDiv).display === 'block') {
+        for (let i = 0; i < opt.count; i++) {
+            particles.getMatrixAt(i, dummyMat);
+            dummyPos.setFromMatrixPosition(dummyMat);
+            dummyPos.y += 0.01 * smokeSpeed(dummyPos.y, opt);
+            dummyPos.x += xval;
+            dummyPos.z += zval+smokeDrift(dummyPos.y, 0.005, opt);
+            dummyMat.setPosition(dummyPos);
+            if (dummyPos.y > (opt.pos.y + opt.maxHeight/3)) {
+                if (Math.random() > opt.p) resetParticle(particles, i, false, opt);
+                else particles.setMatrixAt(i, dummyMat);
+            }
+            else particles.setMatrixAt(i, dummyMat);
         }
-        else smokeParticles.setMatrixAt(i, dummyMat);
     }
-    smokeParticles.instanceMatrix.needsUpdate = true;
-}
-function updateFire() {
-    for (let i = 0; i < fOptions.count; i++) {
-        fireParticles.getMatrixAt(i, dummyMat);
-        dummyPos.setFromMatrixPosition(dummyMat);
-        dummyPos.y += 0.01 * smokeSpeed(dummyPos.y, fOptions);
-        dummyPos.x += Math.sin(time/500)*fOptions.scale;
-        dummyPos.z += Math.cos(time/500)*fOptions.scale+smokeDrift(dummyPos.y, 0.005, fOptions);
-        dummyMat.setPosition(dummyPos);
-        if (dummyPos.y > (fOptions.pos.y + fOptions.maxHeight/3)) {
-            if (Math.random() > fOptions.p) resetParticle(fireParticles,i,false, fOptions);
-            else fireParticles.setMatrixAt(i, dummyMat);
-        }
-        else fireParticles.setMatrixAt(i, dummyMat);
+    else {
+        for (let i = 0; i < opt.count; i++) resetParticle(particles, i, true, opt);
     }
-    fireParticles.instanceMatrix.needsUpdate = true;
+    particles.instanceMatrix.needsUpdate = true;
 }
 // -----------------------------------------------------------------------
 // BOAT
 function updateBoat(time: number) {
     if (boatMesh) {
-        const pos = geometry.attributes.position
+        const pos = oceanGeo.attributes.position
         boatv0.setY(pos.getZ(594)), boatv1.setY(pos.getZ(595)), boatv2.setY(pos.getZ(560))
         updatePlane(boatP, boatv0, boatv1, boatv2);
         dummyPos.copy(boatMesh.position);
@@ -650,7 +725,7 @@ function oscillateValue(min:number, max:number, frequency:number, time:number) {
 // DEBRIS
 function updateDebris() {
     if (debrisModel) {
-        const pos = geometry.attributes.position
+        const pos = oceanGeo.attributes.position
         debrv0.setY(pos.getZ(594)), debrv1.setY(pos.getZ(561)), debrv2.setY(pos.getZ(560))
         updatePlane(debrP, debrv0, debrv1, debrv2);
         for (let i = 0; i < debrisMesh.length; i++) {
@@ -692,12 +767,10 @@ function preventEvent(event: any) {
 function toggleControls(enable: boolean) {
     controls.enabled = enable;
     if (!enable) {
-      window.addEventListener('mousedown', preventEvent, true);
       window.addEventListener('touchstart', preventEvent, true);
       window.addEventListener('wheel', preventEvent, true);
     } else {
         setTimeout(()=> {
-            window.removeEventListener('mousedown', preventEvent, true);
             window.removeEventListener('touchstart', preventEvent, true);
             window.removeEventListener('wheel', preventEvent, true);
         }, 100)
@@ -710,7 +783,7 @@ function onKeyDown (event: any) {
         case 'Escape':
             if (!anim) {
                 moveUp = moveDown = moveLeft = moveRight = false;
-                camReset(0.4, false)
+                camReset(dZoom, false)
             }
             break;
         case 'KeyW':
@@ -785,15 +858,31 @@ function onMouseMove(event: any) {
     mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
 }
 
-function onMouseClick() {
+function onMouseClick(event: MouseEvent) {
+    const iframe = document.getElementById('iframeid');
     if (document.getElementById('scene')?.style.display != "") {
         if (intersects.length > 0) {
             const ele = intersects[0];
-            funcList[ele.name](ele)
+            funcList[ele.name](ele);
+        }
+
+        if (!controls.enabled && iframe) {
+            const rect = iframe.getBoundingClientRect();
+            const mouseX = event.clientX;
+            const mouseY = event.clientY;
+            if (
+                mouseX <= rect.left ||
+                mouseX >= rect.right ||
+                mouseY <= rect.top ||
+                mouseY >= rect.bottom
+            ) {
+                camReset(dZoom, false)
+            } 
         }
     }
 }
 
+// refactor into two functionality, one as hovermodel and on hover effect
 function placeIcon() {
     if (islandModel) {
         if (document.getElementById('scene')?.style.display != "") {
@@ -846,30 +935,37 @@ function onClickChest() {
     }
 }
 
+function onClickCamp() {
+    if (lightdark) setupDayLight();
+    else setupNightLight();
+    lightdark = !lightdark;
+}
+
+// code for future iframe animation
 function focus(model: any) {
-    model.position.set(0, 0, 0);
+    model.position.set(0, 2, 0);
 
     const targetPosition = { 
         x: 0, 
-        y: 10, 
+        y: 0, 
         z: 0
     };
     
     const duration = 2000;
     const startTime = Date.now();
 
-    function animate() {
+    function runlerp() {
         const elapsedTime = Date.now() - startTime;
         const progress = Math.min(elapsedTime / duration, 1);
 
         model.position.y = THREE.MathUtils.lerp(camera.position.y - 10, targetPosition.y, progress);
 
         if (progress < 1) {
-            requestAnimationFrame(animate);
+            requestAnimationFrame(runlerp);
         }
     }
 
-    animate();
+    runlerp();
 }
 
 function animationManager(icon: string = "") {
@@ -887,6 +983,8 @@ const nskew = (z: number, l: number, h: number) => l+(z)*(h-l);
 
 function camReset(zlvl: any, ifAnim: boolean) {
     dummyVec.set(0,1,0);
+    anim = true;
+    setTimeout(()=>{controls.saveState(); anim=false; }, animTime)
     if (ifAnim) {
         overlay.forEach((item: any) => { item.style.display = 'none' })
         dummyVec.set(0,0,0);
@@ -922,12 +1020,12 @@ function camReset(zlvl: any, ifAnim: boolean) {
             }    
         })
         .start();
-    if (ifAnim) {
-        anim = true;
-        setTimeout(()=>{controls.saveState(); anim=false; }, animTime)
-    }
     globalGroup.rotation.set(0,0,0)
     velocity.set(0, 0, 0);
+    smokeParticles.geometry.copy(osp);
+    fireParticles.geometry.copy(ofp);
+    smokeParticles.instanceMatrix.needsUpdate = true;
+    fireParticles.instanceMatrix.needsUpdate = true;
     y_rotation = 0;
 }
 
@@ -977,7 +1075,7 @@ function animate() {
     updateOcean(time * 0.0001,0.1,0.1);
     updateClouds(delta);
 
-    if (controls.enabled) {
+    if (controls.enabled || anim) {
         const newZoom = nnorm(camera.zoom)
         const coef = nzoom(newZoom, 200, 0.99);
         
@@ -999,7 +1097,7 @@ function animate() {
             camera.position.x = cameraBounds.maxX
         }
         if (camera.position.x < cameraBounds.minX) {
-            controls.target.x = cameraBounds.minX+200
+            controls.target.x = cameraBounds.minX + 200
             camera.position.x = cameraBounds.minX
         }
         if (camera.position.z > cameraBounds.maxZ) {
@@ -1019,11 +1117,17 @@ function animate() {
         if ( rotateRight ) y_rotation -= 1.0 * delta;
         globalGroup.rotateY(y_rotation);
 
+        dummyMat = new THREE.Matrix4().makeRotationY(-1.0 * y_rotation);
+        smokeParticles.geometry.applyMatrix4(dummyMat);
+        fireParticles.geometry.applyMatrix4(dummyMat);
+        smokeParticles.geometry.computeVertexNormals();
+        fireParticles.geometry.computeVertexNormals();
+
         // object controls
         updateBoat(time);
         updateDebris();
-        updateSmoke();
-        updateFire();
+        updateSmoke(pOptions, smokeParticles);
+        updateSmoke(fOptions, fireParticles);
         updateKelp();
         mouseUpdate();
 
