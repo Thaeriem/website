@@ -14,106 +14,56 @@ import RenderPixelatedPass from "./shaders/pix-pass"
 import Stats from 'three/examples/jsm/libs/stats.module.js';
 const stats:Stats = Stats();
 const IFRAME_PAGE = import.meta.env.VITE_IFRAME_PAGE;
+import { ctx } from "./rendererContext";
 
-// @ts-ignore  
-import islandModelURL from '/island.glb?url'
-// @ts-ignore  
-import cloudModelURL from '/cloud.glb?url'
-// @ts-ignore  
-import boatModelURL from '/boat.glb?url'
-// @ts-ignore  
-import debrisModelURL from '/debris.glb?url'
-
+ctx.islandModelURL = '/island.glb?url';
+ctx.cloudModelURL = '/cloud.glb?url';
+ctx.boatModelURL = '/boat.glb?url';
+ctx.debrisModelURL = '/debris.glb?url';
 // RENDERING
-let prevTime = performance.now(), 
-    time = performance.now()
-let camera: THREE.OrthographicCamera, 
-    scene: THREE.Scene, 
-    sceneCss: THREE.Scene,
-    renderer: THREE.WebGLRenderer, 
-    rendererCss: CSS3DRenderer,
-    composer: EffectComposer,
-    pixelPass: RenderPixelatedPass
-const cameraBounds = {
+ctx.prevTime = performance.now();
+ctx.time = performance.now();
+ctx.cameraBounds = {
     minX: -270,
     maxX: -140,
     minZ: -50,
     maxZ: 45
-};
-const animTime = 1200;
-const overlay = document.querySelectorAll('.ov');
-const audOcean = document.getElementById('ocean') as HTMLAudioElement;
-audOcean.muted = true;
-// const audJingle = document.getElementById('jingle') as HTMLAudioElement;
-const dZoom = 0.3;
-let velocity = new THREE.Vector3();
-let y_rotation: number = 0
-let globalGroup = new THREE.Group();
-// MOUSE CONTROLS
-let controls: MapControls
-let raycaster: THREE.Raycaster = new THREE.Raycaster(),
-    mouse: THREE.Vector2 = new THREE.Vector2(1,1),
-    intersects: Array<any>  = [],
-    interact: Set<any> = new Set()
-let moveUp: boolean = false, 
-    moveDown: boolean = false, 
-    moveLeft: boolean = false, 
-    moveRight: boolean = false, 
-    rotateLeft: boolean = false, 
-    rotateRight: boolean = false,
-    hide: boolean = false
-// LIGHTS
-let ambL: THREE.AmbientLight,
-    dirL: THREE.DirectionalLight,
-    sptL: THREE.SpotLight,
-    pntL: THREE.PointLight,
-    hmiL: THREE.HemisphereLight,
-    trgO: THREE.Object3D = new THREE.Object3D(),
-    lightdark: boolean = false
-// MODELS
-let islandModel: THREE.Object3D, 
-    cloudModel: THREE.Object3D, 
-    boatModel: THREE.Object3D,
-    debrisModel: THREE.Object3D
-// GEOMETRIES + MESHES
-let oceanGeo: THREE.PlaneGeometry, 
-    oceanMesh: THREE.Mesh,
-    outlineGeo: THREE.PlaneGeometry, 
-    outlineMesh: THREE.Mesh,
-    waterPlane: THREE.Mesh,
-    cloudAmt: number = 10,
-    cloudMesh: THREE.InstancedMesh,
-    cloudMat: THREE.Material,
-    boatMesh: THREE.Mesh,
-    boatP: THREE.Plane, 
-    debrisMesh: THREE.Mesh[] = [],
-    debrP: THREE.Plane,
-    smokeParticles: THREE.InstancedMesh,
-    osp: THREE.BufferGeometry,
-    fireParticles: THREE.InstancedMesh,
-    ofp: THREE.BufferGeometry,
-    kelpArr: THREE.InstancedMesh[] = []
-// CSS OVERLAY
-let cssHolder: CSS3DObject,
-    anim: boolean = false,
-    hoverIcon: THREE.Group,
-    hoverTarget: THREE.Object3D,
-    hoverColor: THREE.Color
-// DUMMY
-let dummy: THREE.Object3D = new THREE.Object3D(),
-    dummyVec: THREE.Vector3 = new THREE.Vector3(),
-    dummyMat: THREE.Matrix4 = new THREE.Matrix4(),
-    dummyPos: THREE.Vector3 = new THREE.Vector3(),
-    dummyColor: THREE.Color = new THREE.Color(),
-    dummyArr: number[] = []
-interface TList {
-    [key: string]: any;
 }
-let funcList: TList = {
+ctx.animTime = 1200;
+ctx.overlay = document.querySelectorAll('.ov');
+ctx.audOcean = document.getElementById('ocean') as HTMLAudioElement;
+ctx.audOcean.muted = true;
+// const audJingle = document.getElementById('jingle') as HTMLAudioElement;
+ctx.dZoom = 0.3;
+// MOUSE CONTROLS
+ctx.velocity = new THREE.Vector3();
+ctx.y_rotation = 0;
+ctx.globalGroup = new THREE.Group();
+ctx.raycaster = new THREE.Raycaster();
+ctx.mouse = new THREE.Vector2(1, 1);
+ctx.intersects = [];
+ctx.interact = new Set();
+ctx.moveUp = ctx.moveDown = ctx.moveLeft = ctx.moveRight = ctx.rotateLeft = ctx.rotateRight = ctx.hide = ctx.lightdark = ctx.anim = false; 
+// LIGHTS
+ctx.trgO = new THREE.Object3D();
+// MODELS
+// GEOMETRIES + MESHES
+ctx.cloudAmt = 10;
+ctx.debrisMesh = [], ctx.kelpArr = [];
+// CSS OVERLAY
+// DUMMY
+ctx.dummy = new THREE.Object3D(),
+ctx.dummyVec = new THREE.Vector3(),
+ctx.dummyMat = new THREE.Matrix4(),
+ctx.dummyPos = new THREE.Vector3(),
+ctx.dummyColor = new THREE.Color(),
+ctx.dummyArr = []
+
+ctx.funcList = {
     "Chest": onClickChest,
     "Camp": onClickCamp
     }
-let icoList: TList = {
+ctx.icoList = {
     cube: new THREE.Mesh(
         new THREE.BoxGeometry(1, 1, 1),
         new THREE.MeshBasicMaterial({ color: 0x00ff00 })
@@ -140,7 +90,7 @@ function pixelTex( tex: THREE.Texture ) {
 }
 // -----------------------------------------------------------------------
 // SMOKE
-const pOptions = {
+ctx.pOptions = {
     count: 20,
     opacity: 0.8,
     size: 0.075,
@@ -151,7 +101,7 @@ const pOptions = {
     pos: new THREE.Vector3(0.1, 0.8, 0.95)
 }
 // FIRE
-const fOptions = {
+ctx.fOptions = {
     count: 20,
     opacity: 0.8,
     size: 0.075,
@@ -163,129 +113,128 @@ const fOptions = {
 }
 // -----------------------------------------------------------------------
 // BOAT + OCEAN
-const boatv0 = new THREE.Vector3(0, 0, 0), boatv1 = new THREE.Vector3(0, 0, 0), 
-      boatv2 = new THREE.Vector3(0, 0, 0), debrv0 = new THREE.Vector3(0, 0, 0),
-      debrv1 = new THREE.Vector3(0, 0, 0), debrv2 = new THREE.Vector3(0, 0, 0)
-const bInd: number[] = [560, 561, 595], dInd: number[] = [560, 595, 594]
-const noise = SimplexNoise.createNoise2D();
-const colorStart = new THREE.Color("#046997"), 
-      colorEnd = new THREE.Color("#30b1ce");
+ctx.boatv0 = new THREE.Vector3(0, 0, 0), ctx.boatv1 = new THREE.Vector3(0, 0, 0), 
+ctx.boatv2 = new THREE.Vector3(0, 0, 0), ctx.debrv0 = new THREE.Vector3(0, 0, 0),
+ctx.debrv1 = new THREE.Vector3(0, 0, 0), ctx.debrv2 = new THREE.Vector3(0, 0, 0)
+ctx.bInd = [560, 561, 595], ctx.dInd = [560, 595, 594]
+ctx.noise = SimplexNoise.createNoise2D();
+ctx.colorStart = new THREE.Color("#046997"), ctx.colorEnd = new THREE.Color("#30b1ce");
 
 // -----------------------------------------------------------------------
 // SETUP
 function setupCamera(screenResolution: Vector2) {
     loadNext();
     let aspectRatio = screenResolution.x / screenResolution.y
-    camera = new THREE.OrthographicCamera(-aspectRatio, aspectRatio, 1, -1, 0, 2000);
-    camera.position.set(-200, 80, 0.000001)
-    camera.zoom = dZoom
-    camera.updateProjectionMatrix()
+    ctx.camera = new THREE.OrthographicCamera(-aspectRatio, aspectRatio, 1, -1, 0, 2000);
+    ctx.camera.position.set(-200, 80, 0.000001)
+    ctx.camera.zoom = ctx.dZoom
+    ctx.camera.updateProjectionMatrix()
 }
 
 function setupRenderers(screenResolution: Vector2) {
     loadNext();
-    renderer = new THREE.WebGLRenderer( { antialias: false } )
-    renderer.toneMapping = THREE.ACESFilmicToneMapping
-    renderer.toneMappingExposure = .75
-    renderer.shadowMap.enabled = true
-    renderer.setSize( screenResolution.x, screenResolution.y )
-    renderer.debug.checkShaderErrors = false;
-    renderer.setPixelRatio(window.devicePixelRatio);
-    document.getElementById("scene")?.appendChild( renderer.domElement );
+    ctx.renderer = new THREE.WebGLRenderer( { antialias: false } )
+    ctx.renderer.toneMapping = THREE.ACESFilmicToneMapping
+    ctx.renderer.toneMappingExposure = .75
+    ctx.renderer.shadowMap.enabled = true
+    ctx.renderer.setSize( screenResolution.x, screenResolution.y )
+    ctx.renderer.debug.checkShaderErrors = false;
+    ctx.renderer.setPixelRatio(window.devicePixelRatio);
+    document.getElementById("scene")?.appendChild( ctx.renderer.domElement );
 
-    rendererCss = new CSS3DRenderer();
-    rendererCss.setSize( screenResolution.x, screenResolution.y )
-    rendererCss.domElement.style.position = 'absolute';
-    rendererCss.domElement.style.top = "0";
-    document.getElementById("scene")?.appendChild( rendererCss.domElement );
+    ctx.rendererCss = new CSS3DRenderer();
+    ctx.rendererCss.setSize( screenResolution.x, screenResolution.y )
+    ctx.rendererCss.domElement.style.position = 'absolute';
+    ctx.rendererCss.domElement.style.top = "0";
+    document.getElementById("scene")?.appendChild( ctx.rendererCss.domElement );
 }
 
 function setupControls() {
     loadNext();
-    controls = new MapControls( camera, rendererCss.domElement )
-    controls.target.set( 0, 1, 0 )
-    controls.maxZoom = 1
-    controls.minZoom = 0.03
-    controls.zoomSpeed = 2
-    controls.mouseButtons = {
+    ctx.controls = new MapControls( ctx.camera, ctx.rendererCss.domElement )
+    ctx.controls.target.set( 0, 1, 0 )
+    ctx.controls.maxZoom = 1
+    ctx.controls.minZoom = 0.03
+    ctx.controls.zoomSpeed = 2
+    ctx.controls.mouseButtons = {
         LEFT: THREE.MOUSE.PAN,
         MIDDLE: THREE.MOUSE.DOLLY,
         RIGHT: THREE.MOUSE.DOLLY 
     }
-    controls.update()
+    ctx.controls.update()
 }
 
 function setupDayLight() {
-    globalGroup.remove(ambL);
-    globalGroup.remove(dirL);
-    globalGroup.remove(sptL);
-    globalGroup.remove(trgO);
-    globalGroup.remove(pntL);
-    globalGroup.remove(hmiL);
+    ctx.globalGroup.remove(ctx.ambL);
+    ctx.globalGroup.remove(ctx.dirL);
+    ctx.globalGroup.remove(ctx.sptL);
+    ctx.globalGroup.remove(ctx.trgO);
+    ctx.globalGroup.remove(ctx.pntL);
+    ctx.globalGroup.remove(ctx.hmiL);
     // LIGHTS
-    ambL = new THREE.AmbientLight(0x2d3645, 8);
-    dirL = new THREE.DirectionalLight(0xff6900, 4.5)
-    dirL.position.set(-200, 80, -1000);
-    dirL.castShadow = true;
-    dirL.shadow.mapSize.set(4000, 4000);
-    sptL = new THREE.SpotLight(0xffffff);
-    sptL.position.set(0, 300, 0);
-    sptL.angle = Math.PI / 6; 
-    sptL.penumbra = 0.1; 
-    sptL.decay = 1;
-    sptL.distance = 400;
-    trgO.position.set(0, 0, 0);
-    sptL.target = trgO;
-    pntL = new THREE.PointLight(0x7d5ba6, 0, 300);
-    pntL.position.set(100, 150, -50);
-    hmiL = new THREE.HemisphereLight(0x003366, 0x1a1a2e, 0);
-    globalGroup.add(ambL);
-    globalGroup.add(dirL);
-    globalGroup.add(sptL);
-    globalGroup.add(trgO);
-    globalGroup.add(pntL);
-    globalGroup.add(hmiL);
+    ctx.ambL = new THREE.AmbientLight(0x2d3645, 8);
+    ctx.dirL = new THREE.DirectionalLight(0xff6900, 4.5)
+    ctx.dirL.position.set(-200, 80, -1000);
+    ctx.dirL.castShadow = true;
+    ctx.dirL.shadow.mapSize.set(4000, 4000);
+    ctx.sptL = new THREE.SpotLight(0xffffff);
+    ctx.sptL.position.set(0, 300, 0);
+    ctx.sptL.angle = Math.PI / 6; 
+    ctx.sptL.penumbra = 0.1; 
+    ctx.sptL.decay = 1;
+    ctx.sptL.distance = 400;
+    ctx.trgO.position.set(0, 0, 0);
+    ctx.sptL.target = ctx.trgO;
+    ctx.pntL = new THREE.PointLight(0x7d5ba6, 0, 300);
+    ctx.pntL.position.set(100, 150, -50);
+    ctx.hmiL = new THREE.HemisphereLight(0x003366, 0x1a1a2e, 0);
+    ctx.globalGroup.add(ctx.ambL);
+    ctx.globalGroup.add(ctx.dirL);
+    ctx.globalGroup.add(ctx.sptL);
+    ctx.globalGroup.add(ctx.trgO);
+    ctx.globalGroup.add(ctx.pntL);
+    ctx.globalGroup.add(ctx.hmiL);
     // OCEAN
-    const mat = (oceanMesh.material as THREE.MeshBasicMaterial)
+    const mat = (ctx.oceanMesh.material as THREE.MeshBasicMaterial)
     mat.color.set(0x046997)
-    const mat2 = (outlineMesh.material as THREE.MeshBasicMaterial)
+    const mat2 = (ctx.outlineMesh.material as THREE.MeshBasicMaterial)
     mat2.opacity = 0.03
 
 }
 
 function setupNightLight() {
-    globalGroup.remove(ambL);
-    globalGroup.remove(dirL);
-    globalGroup.remove(sptL);
-    globalGroup.remove(trgO);
-    globalGroup.remove(pntL);
-    globalGroup.remove(hmiL);
-    ambL = new THREE.AmbientLight(0x1a2b3c, 2)
-    dirL = new THREE.DirectionalLight(0x8a47ff, 2);
-    dirL.position.set(-200, 80, -1000);
-    dirL.castShadow = true;
-    dirL.shadow.mapSize.set(4000, 4000);
-    sptL = new THREE.SpotLight(0x4a90e2, 0.5);
-    sptL.position.set(50, 200, 100);
-    sptL.angle = Math.PI / 4;
-    sptL.penumbra = 0.3;
-    sptL.decay = 1.2;
-    sptL.distance = 500;
-    trgO.position.set(0, 50, 0);
-    sptL.target = trgO;
-    pntL = new THREE.PointLight(0x7d5ba6, 1.8, 300);
-    pntL.position.set(100, 150, -50);
-    hmiL = new THREE.HemisphereLight(0x003366, 0x1a1a2e, 0.5);
-    globalGroup.add(ambL);
-    globalGroup.add(dirL);
-    globalGroup.add(sptL);
-    globalGroup.add(trgO);
-    globalGroup.add(pntL);
-    globalGroup.add(hmiL);
+    ctx.globalGroup.remove(ctx.ambL);
+    ctx.globalGroup.remove(ctx.dirL);
+    ctx.globalGroup.remove(ctx.sptL);
+    ctx.globalGroup.remove(ctx.trgO);
+    ctx.globalGroup.remove(ctx.pntL);
+    ctx.globalGroup.remove(ctx.hmiL);
+    ctx.ambL = new THREE.AmbientLight(0x1a2b3c, 2)
+    ctx.dirL = new THREE.DirectionalLight(0x8a47ff, 2);
+    ctx.dirL.position.set(-200, 80, -1000);
+    ctx.dirL.castShadow = true;
+    ctx.dirL.shadow.mapSize.set(4000, 4000);
+    ctx.sptL = new THREE.SpotLight(0x4a90e2, 0.5);
+    ctx.sptL.position.set(50, 200, 100);
+    ctx.sptL.angle = Math.PI / 4;
+    ctx.sptL.penumbra = 0.3;
+    ctx.sptL.decay = 1.2;
+    ctx.sptL.distance = 500;
+    ctx.trgO.position.set(0, 50, 0);
+    ctx.sptL.target = ctx.trgO;
+    ctx.pntL = new THREE.PointLight(0x7d5ba6, 1.8, 300);
+    ctx.pntL.position.set(100, 150, -50);
+    ctx.hmiL = new THREE.HemisphereLight(0x003366, 0x1a1a2e, 0.5);
+    ctx.globalGroup.add(ctx.ambL);
+    ctx.globalGroup.add(ctx.dirL);
+    ctx.globalGroup.add(ctx.sptL);
+    ctx.globalGroup.add(ctx.trgO);
+    ctx.globalGroup.add(ctx.pntL);
+    ctx.globalGroup.add(ctx.hmiL);
     // OCEAN
-    const mat = (oceanMesh.material as THREE.MeshBasicMaterial)
+    const mat = (ctx.oceanMesh.material as THREE.MeshBasicMaterial)
     mat.color.set(0x1a2b3c)
-    const mat2 = (outlineMesh.material as THREE.MeshBasicMaterial)
+    const mat2 = (ctx.outlineMesh.material as THREE.MeshBasicMaterial)
     mat2.opacity = 0.01
 }
 // -----------------------------------------------------------------------
@@ -322,20 +271,20 @@ function init() {
 
     setupCamera(screenResolution);
 
-    scene = new THREE.Scene()
-    scene.background = new THREE.Color( 0x151729 )
-    scene.add(globalGroup);
-    sceneCss = new THREE.Scene();
-    sceneCss.scale.set(0.05, 0.05, 0.05);
+    ctx.scene = new THREE.Scene()
+    ctx.scene.background = new THREE.Color( 0x151729 )
+    ctx.scene.add(ctx.globalGroup);
+    ctx.sceneCss = new THREE.Scene();
+    ctx.sceneCss.scale.set(0.05, 0.05, 0.05);
 
     setupRenderers(screenResolution);
 
-    composer = new EffectComposer( renderer )
-    composer.addPass( new RenderPass( scene, camera ) )
-    pixelPass = new RenderPixelatedPass( renderResolution, scene, camera );
-    composer.addPass( pixelPass )
-    let bloomPass = new UnrealBloomPass( screenResolution, .4, .1, .9 )
-    composer.addPass(bloomPass)
+    ctx.composer = new EffectComposer( ctx.renderer )
+    ctx.composer.addPass( new RenderPass( ctx.scene, ctx.camera ) )
+    ctx.pixelPass = new RenderPixelatedPass( renderResolution, ctx.scene, ctx.camera );
+    ctx.composer.addPass( ctx.pixelPass )
+    const bloomPass = new UnrealBloomPass( screenResolution, .4, .1, .9 )
+    ctx.composer.addPass(bloomPass)
     
 
     setupControls();
@@ -344,55 +293,55 @@ function init() {
     const gltfLoader = new GLTFLoader()
 
     {
-        gltfLoader.load(islandModelURL, (gltf) => {
-            islandModel = gltf.scene;
+        gltfLoader.load(ctx.islandModelURL, (gltf) => {
+            ctx.islandModel = gltf.scene;
             let toRem:THREE.Object3D[] = []
-            islandModel.traverse((child) => {
+            ctx.islandModel.traverse((child) => {
                 if (child instanceof THREE.Mesh) {
                     child.castShadow = true;
                     child.receiveShadow = true;
                     if (child.name.slice(0,4) == "Kelp") {
                         const ind = parseInt(child.name.slice(4)) - 1
-                        const kelp = islandModel.getObjectByName(child.name) as THREE.Mesh
+                        const kelp = ctx.islandModel.getObjectByName(child.name) as THREE.Mesh
                         const instMesh = new THREE.InstancedMesh(kelp.geometry, kelp.material, kelpPos[ind].length);
-                        globalGroup.add(instMesh)
+                        ctx.globalGroup.add(instMesh)
                         for (let i = 0; i < kelpPos[ind].length*3; i+= 3) {
-                            dummyPos.set(kelpPos[ind][i], kelpPos[ind][i+1], kelpPos[ind][i+2]);
-                            dummyMat.setPosition(dummyPos);
-                            instMesh.setMatrixAt(i, dummyMat);
+                            ctx.dummyPos.set(kelpPos[ind][i], kelpPos[ind][i+1], kelpPos[ind][i+2]);
+                            ctx.dummyMat.setPosition(ctx.dummyPos);
+                            instMesh.setMatrixAt(i, ctx.dummyMat);
                         }
                         instMesh.instanceMatrix.needsUpdate = true;
                         instMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
-                        kelpArr.push(instMesh)
+                        ctx.kelpArr.push(instMesh)
                         toRem.push(child)
                         instMesh.scale.set(0.4,0.4,0.4);
 
                     }
-                    if (child.name.slice(0,5) == "Chest" && !interact.has(child.parent)) {
-                        interact.add(child.parent)
-                        hoverTarget = child.parent as THREE.Object3D
-                        hoverColor = (child.material as THREE.MeshStandardMaterial).color.clone()
+                    if (child.name.slice(0,5) == "Chest" && !ctx.interact.has(child.parent)) {
+                        ctx.interact.add(child.parent)
+                        ctx.hoverTarget = child.parent as THREE.Object3D
+                        ctx.hoverColor = (child.material as THREE.MeshStandardMaterial).color.clone()
                     }
-                    if (child.name.slice(0,4) == "Camp" && !interact.has(child.parent)) {
-                        interact.add(child.parent)
+                    if (child.name.slice(0,4) == "Camp" && !ctx.interact.has(child.parent)) {
+                        ctx.interact.add(child.parent)
                     }
                 }
                 if (child.name == "Icon") {
-                    if (child instanceof THREE.Group) hoverIcon = child
+                    if (child instanceof THREE.Group) ctx.hoverIcon = child
                     else {
-                        hoverIcon = new THREE.Group()
-                        hoverIcon.add(child)
+                        ctx.hoverIcon = new THREE.Group()
+                        ctx.hoverIcon.add(child)
                     }
-                    hoverIcon.scale.set(1.2,1.2,1.2)
-                    globalGroup.add(hoverIcon)
+                    ctx.hoverIcon.scale.set(1.2,1.2,1.2)
+                    ctx.globalGroup.add(ctx.hoverIcon)
                     toRem.push(child)
                 }
                 if (child) child.frustumCulled = false;
             });
-            toRem.forEach((val) => { islandModel.remove(val) })
-            islandModel.scale.set(1, 1, 1);
-            islandModel.position.set(0, 0, 0); 
-            globalGroup.add(islandModel);
+            toRem.forEach((val) => { ctx.islandModel.remove(val) })
+            ctx.islandModel.scale.set(1, 1, 1);
+            ctx.islandModel.position.set(0, 0, 0); 
+            ctx.globalGroup.add(ctx.islandModel);
             loadNext();
         }, undefined, (error) => {
             console.error('An error happened while loading the glb model', error);
@@ -401,7 +350,7 @@ function init() {
      // Geometry setup
      {
         const width = 400, height = 400, segmentsX = Math.floor(width / 12), segmentsY = Math.floor(height / 12);
-        oceanGeo = outlineGeo = new THREE.PlaneGeometry(width, height, segmentsX, segmentsY);
+        ctx.oceanGeo = ctx.outlineGeo = new THREE.PlaneGeometry(width, height, segmentsX, segmentsY);
     
         // Create the material for the plane
         const material = new THREE.MeshBasicMaterial({
@@ -423,26 +372,26 @@ function init() {
             side: THREE.DoubleSide
         });
         // Create the mesh for the plane
-        oceanMesh = new THREE.Mesh(oceanGeo, material);
-        oceanMesh.rotation.x = -Math.PI / 2;
-        globalGroup.add(oceanMesh);
+        ctx.oceanMesh = new THREE.Mesh(ctx.oceanGeo, material);
+        ctx.oceanMesh.rotation.x = -Math.PI / 2;
+        ctx.globalGroup.add(ctx.oceanMesh);
         // Create the mesh for the outline
-        outlineMesh = new THREE.Mesh(outlineGeo, material2);
-        outlineMesh.rotation.x = -Math.PI / 2;
-        globalGroup.add(outlineMesh);
-        waterPlane = new THREE.Mesh(new THREE.PlaneGeometry(width, height), material3);
-        waterPlane.rotation.x = -Math.PI / 2;
-        waterPlane.position.y = -0.5;
-        globalGroup.add(waterPlane);
+        ctx.outlineMesh = new THREE.Mesh(ctx.outlineGeo, material2);
+        ctx.outlineMesh.rotation.x = -Math.PI / 2;
+        ctx.globalGroup.add(ctx.outlineMesh);
+        ctx.waterPlane = new THREE.Mesh(new THREE.PlaneGeometry(width, height), material3);
+        ctx.waterPlane.rotation.x = -Math.PI / 2;
+        ctx.waterPlane.position.y = -0.5;
+        ctx.globalGroup.add(ctx.waterPlane);
 
         // Adjust the vertices with noise
         updateOcean(0,0.1,0.1);
     }
 
     {
-        gltfLoader.load(cloudModelURL, (gltf) => {
-            cloudModel = gltf.scene;
-            cloudModel.traverse((child) => {
+        gltfLoader.load(ctx.cloudModelURL, (gltf) => {
+            ctx.cloudModel = gltf.scene;
+            ctx.cloudModel.traverse((child) => {
                 if (child instanceof THREE.Mesh) {
                     child.castShadow = true;
                     child.receiveShadow = true;
@@ -450,22 +399,22 @@ function init() {
                 child.frustumCulled = false;
             });
             // Create InstancedMesh
-            const cloud = cloudModel.getObjectByName('Cloud') as THREE.Mesh
-            cloudMat = cloud.material as THREE.Material
-            cloudMat.transparent = true;
-            cloudMat.opacity = 0.65;
+            const cloud = ctx.cloudModel.getObjectByName('Cloud') as THREE.Mesh
+            ctx.cloudMat = cloud.material as THREE.Material
+            ctx.cloudMat.transparent = true;
+            ctx.cloudMat.opacity = 0.65;
             cloud.geometry.rotateY(- Math.PI / 2);
-            cloudMesh = new THREE.InstancedMesh(cloud.geometry, cloud.material, cloudAmt);
-            cloudMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
-            for (let i = 0; i < cloudAmt; i++) {
-                dummyPos.set(Math.floor(Math.random() * 400), Math.floor(Math.random() * 50-25), 10)
-                dummyMat.setPosition(dummyPos);
-                cloudMesh.setMatrixAt(i, dummyMat);
+            ctx.cloudMesh = new THREE.InstancedMesh(cloud.geometry, cloud.material, ctx.cloudAmt);
+            ctx.cloudMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+            for (let i = 0; i < ctx.cloudAmt; i++) {
+                ctx.dummyPos.set(Math.floor(Math.random() * 400), Math.floor(Math.random() * 50-25), 10)
+                ctx.dummyMat.setPosition(ctx.dummyPos);
+                ctx.cloudMesh.setMatrixAt(i, ctx.dummyMat);
             }
-            cloudMesh.rotation.x = -Math.PI / 2;
-            cloudMesh.rotation.z = 15*Math.PI/11;
-            cloudMesh.instanceMatrix.needsUpdate = true;
-            globalGroup.add(cloudMesh);
+            ctx.cloudMesh.rotation.x = -Math.PI / 2;
+            ctx.cloudMesh.rotation.z = 15*Math.PI/11;
+            ctx.cloudMesh.instanceMatrix.needsUpdate = true;
+            ctx.globalGroup.add(ctx.cloudMesh);
             loadNext();
         }, undefined, (error) => {
             console.error('An error happened while loading the glb model', error);
@@ -473,51 +422,51 @@ function init() {
     }
 
     {
-        gltfLoader.load(boatModelURL, (gltf) => {
-            boatModel = gltf.scene;
-            boatModel.traverse((child) => {
+        gltfLoader.load(ctx.boatModelURL, (gltf) => {
+            ctx.boatModel = gltf.scene;
+            ctx.boatModel.traverse((child) => {
                 if (child instanceof THREE.Mesh) {
                     child.castShadow = true;
                     child.receiveShadow = true;
                 }
                 child.frustumCulled = false;
             });
-            const boat = boatModel.getObjectByName('Boat') as THREE.Mesh
-            boatMesh = new THREE.Mesh(boat.geometry, boat.material);
-            boatMesh.scale.set(0.3,0.3,0.3);
-            boatMesh.position.set(-1,0,3.5);
-            boatMesh.rotation.set(0,-0.8,0)
-            globalGroup.add(boatMesh);
-            const pos = oceanGeo.attributes.position
-            boatv0.set(pos.getX(bInd[0]), pos.getZ(bInd[0]), pos.getY(bInd[0]))
-            boatv1.set(pos.getX(bInd[1]), pos.getZ(bInd[1]), pos.getY(bInd[1]))
-            boatv2.set(pos.getX(bInd[2]), pos.getZ(bInd[2]), pos.getY(bInd[2]))
-            boatP = createPlane(boatv0, boatv1, boatv2);
+            const boat = ctx.boatModel.getObjectByName('Boat') as THREE.Mesh
+            ctx.boatMesh = new THREE.Mesh(boat.geometry, boat.material);
+            ctx.boatMesh.scale.set(0.3,0.3,0.3);
+            ctx.boatMesh.position.set(-1,0,3.5);
+            ctx.boatMesh.rotation.set(0,-0.8,0)
+            ctx.globalGroup.add(ctx.boatMesh);
+            const pos = ctx.oceanGeo.attributes.position
+            ctx.boatv0.set(pos.getX(ctx.bInd[0]), pos.getZ(ctx.bInd[0]), pos.getY(ctx.bInd[0]))
+            ctx.boatv1.set(pos.getX(ctx.bInd[1]), pos.getZ(ctx.bInd[1]), pos.getY(ctx.bInd[1]))
+            ctx.boatv2.set(pos.getX(ctx.bInd[2]), pos.getZ(ctx.bInd[2]), pos.getY(ctx.bInd[2]))
+            ctx.boatP = createPlane(ctx.boatv0, ctx.boatv1, ctx.boatv2);
             loadNext();
         }, undefined,  (error) => {
             console.error('An error happened while loading the glb model', error);
         });
 
-        gltfLoader.load(debrisModelURL, (gltf) => {
-            debrisModel = gltf.scene;
-            debrisModel.traverse((child) => {
+        gltfLoader.load(ctx.debrisModelURL, (gltf) => {
+            ctx.debrisModel = gltf.scene;
+            ctx.debrisModel.traverse((child) => {
                 if (child instanceof THREE.Mesh) {
                     child.castShadow = true;
                     child.receiveShadow = true;
                     if (child.material.map) child.material.map = pixelTex(child.material.map)
-                    debrisMesh.push(child)
+                    ctx.debrisMesh.push(child)
                 }
                 child.frustumCulled = false;
             });
 
-            debrisModel.position.set(3,0,-0.8);
-            debrisModel.rotation.set(0,0.8,0)
-            globalGroup.add(debrisModel);
-            const pos = oceanGeo.attributes.position
-            debrv0.set(pos.getX(dInd[0]), pos.getZ(dInd[0]), pos.getY(dInd[0]))
-            debrv1.set(pos.getX(dInd[1]), pos.getZ(dInd[1]), pos.getY(dInd[1]))
-            debrv2.set(pos.getX(dInd[2]), pos.getZ(dInd[2]), pos.getY(dInd[2]))
-            debrP = createPlane(debrv0, debrv1, debrv2);
+            ctx.debrisModel.position.set(3,0,-0.8);
+            ctx.debrisModel.rotation.set(0,0.8,0)
+            ctx.globalGroup.add(ctx.debrisModel);
+            const pos = ctx.oceanGeo.attributes.position
+            ctx.debrv0.set(pos.getX(ctx.dInd[0]), pos.getZ(ctx.dInd[0]), pos.getY(ctx.dInd[0]))
+            ctx.debrv1.set(pos.getX(ctx.dInd[1]), pos.getZ(ctx.dInd[1]), pos.getY(ctx.dInd[1]))
+            ctx.debrv2.set(pos.getX(ctx.dInd[2]), pos.getZ(ctx.dInd[2]), pos.getY(ctx.dInd[2]))
+            ctx.debrP = createPlane(ctx.debrv0, ctx.debrv1, ctx.debrv2);
             loadNext();
         }, undefined,  (error) => {
             console.error('An error happened while loading the glb model', error);
@@ -526,46 +475,46 @@ function init() {
     }
 
     {
-        const geo = new THREE.CircleGeometry(pOptions.size, 32);
+        const geo = new THREE.CircleGeometry(ctx.pOptions.size, 32);
         const mat = new THREE.MeshBasicMaterial({
             color: 0x555555,
             transparent: true,
-            opacity: pOptions.opacity,
+            opacity: ctx.pOptions.opacity,
             side: THREE.DoubleSide,
         });
-        smokeParticles = new THREE.InstancedMesh(geo, mat, pOptions.count);
-        globalGroup.add(smokeParticles);
+        ctx.smokeParticles = new THREE.InstancedMesh(geo, mat, ctx.pOptions.count);
+        ctx.globalGroup.add(ctx.smokeParticles);
 
-        for (let i = 0; i < pOptions.count; i++) {
-            resetParticle(smokeParticles, i, true, pOptions);
+        for (let i = 0; i < ctx.pOptions.count; i++) {
+            resetParticle(ctx.smokeParticles, i, true, ctx.pOptions);
         }
-        smokeParticles.instanceMatrix.needsUpdate = true;
-        smokeParticles.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+        ctx.smokeParticles.instanceMatrix.needsUpdate = true;
+        ctx.smokeParticles.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
 
-        const fgeo = new THREE.CircleGeometry(pOptions.size, 32);
+        const fgeo = new THREE.CircleGeometry(ctx.pOptions.size, 32);
         const fmat = new THREE.MeshBasicMaterial({
             color: 0x737373,
             transparent: true,
-            opacity: fOptions.opacity,
+            opacity: ctx.fOptions.opacity,
             side: THREE.DoubleSide,
         });
-        fireParticles = new THREE.InstancedMesh(fgeo, fmat, fOptions.count);
-        globalGroup.add(fireParticles);
+        ctx.fireParticles = new THREE.InstancedMesh(fgeo, fmat, ctx.fOptions.count);
+        ctx.globalGroup.add(ctx.fireParticles);
 
-        for (let i = 0; i < fOptions.count; i++) {
-            resetParticle(fireParticles, i, true, fOptions);
+        for (let i = 0; i < ctx.fOptions.count; i++) {
+            resetParticle(ctx.fireParticles, i, true, ctx.fOptions);
         }
-        fireParticles.instanceMatrix.needsUpdate = true;
-        fireParticles.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
-        osp = new THREE.BufferGeometry()
-        ofp = new THREE.BufferGeometry()
-        ofp.copy(fireParticles.geometry)
-        osp.copy(smokeParticles.geometry)
+        ctx.fireParticles.instanceMatrix.needsUpdate = true;
+        ctx.fireParticles.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+        ctx.osp = new THREE.BufferGeometry()
+        ctx.ofp = new THREE.BufferGeometry()
+        ctx.ofp.copy(ctx.fireParticles.geometry)
+        ctx.osp.copy(ctx.smokeParticles.geometry)
     }
 
-    Object.values(icoList).forEach(model => {
+    Object.values(ctx.icoList).forEach(model => {
         model.visible = false;
-        globalGroup.add(model);
+        ctx.globalGroup.add(model);
     });
     animationManager();
 
@@ -585,68 +534,68 @@ function init() {
 // -----------------------------------------------------------------------
 // Ocean
 function updateOcean(time: number, scale: number, amplitude: number) {
-    const positionAttribute = oceanGeo.attributes.position;
-    dummyArr = [];
+    const positionAttribute = ctx.oceanGeo.attributes.position;
+    ctx.dummyArr = [];
     let z = 0, zNorm = 0;
 
     for (let i = 0; i < positionAttribute.count; i++) {
-        z = noise(positionAttribute.getX(i) * scale + time, 
+        z = ctx.noise(positionAttribute.getX(i) * scale + time, 
                         positionAttribute.getY(i) * scale + time) 
                   * amplitude + 0.5;
         positionAttribute.setZ(i, z);
         
         zNorm = (z + 0.2) / 0.4;
 
-        dummyColor.lerpColors(colorStart, colorEnd, zNorm);
-        dummyArr.push(dummyColor.r, dummyColor.g, dummyColor.b)
+        ctx.dummyColor.lerpColors(ctx.colorStart, ctx.colorEnd, zNorm);
+        ctx.dummyArr.push(ctx.dummyColor.r, ctx.dummyColor.g, ctx.dummyColor.b)
     }
     positionAttribute.needsUpdate = true;
-    outlineGeo.setAttribute('color', new THREE.Float32BufferAttribute(dummyArr, 3));
+    ctx.outlineGeo.setAttribute('color', new THREE.Float32BufferAttribute(ctx.dummyArr, 3));
 
 }
 // -----------------------------------------------------------------------
 // Clouds
 function updateClouds(delta: number) {
-    if (cloudMesh) {
-        if (camera.zoom > 0.15) {
-            if (camera.zoom > 0.28) cloudMesh.visible = false
-            cloudMat.opacity = 0.2;
+    if (ctx.cloudMesh) {
+        if (ctx.camera.zoom > 0.15) {
+            if (ctx.camera.zoom > 0.28) ctx.cloudMesh.visible = false
+            ctx.cloudMat.opacity = 0.2;
         }
         else {
-            if (!cloudMesh.visible) cloudMesh.visible = true
-            cloudMat.opacity = 0.65
+            if (!ctx.cloudMesh.visible) ctx.cloudMesh.visible = true
+            ctx.cloudMat.opacity = 0.65
         }
-        for (let i = 0; i < cloudAmt; i++) {
-            cloudMesh.getMatrixAt(i, dummyMat);
-            dummyPos.setFromMatrixPosition(dummyMat);
-            dummyPos.x += delta * 10
-            if (dummyPos.x > 200) dummyPos.x -= 400;
-            dummyMat.setPosition(dummyPos);
-            cloudMesh.setMatrixAt(i, dummyMat);
+        for (let i = 0; i < ctx.cloudAmt; i++) {
+            ctx.cloudMesh.getMatrixAt(i, ctx.dummyMat);
+            ctx.dummyPos.setFromMatrixPosition(ctx.dummyMat);
+            ctx.dummyPos.x += delta * 10
+            if (ctx.dummyPos.x > 200) ctx.dummyPos.x -= 400;
+            ctx.dummyMat.setPosition(ctx.dummyPos);
+            ctx.cloudMesh.setMatrixAt(i, ctx.dummyMat);
         }
-        if (cloudMesh.visible) cloudMesh.instanceMatrix.needsUpdate = true;
+        if (ctx.cloudMesh.visible) ctx.cloudMesh.instanceMatrix.needsUpdate = true;
     }
 }
 // -----------------------------------------------------------------------
 // Smoke
 function resetParticle(mesh: THREE.InstancedMesh, index: number, init: boolean, opt: any) {
     if (init) {
-        dummyMat.makeRotationY(Math.PI / 2);
-        dummyPos.set(
+        ctx.dummyMat.makeRotationY(Math.PI / 2);
+        ctx.dummyPos.set(
             (Math.random()-0.5)*opt.width + opt.pos.x,           
             (Math.random() * opt.maxHeight/2) + opt.pos.y,
             (Math.random()-0.5)*opt.width + opt.pos.z
         )
     }
     else {
-         dummyPos.set(
+         ctx.dummyPos.set(
         (Math.random()-0.5)*opt.width + opt.pos.x,           
         opt.pos.y,
         (Math.random()-0.5)*opt.width + opt.pos.z
         )
     }
-    dummyMat.setPosition(dummyPos)
-    mesh.setMatrixAt(index, dummyMat);
+    ctx.dummyMat.setPosition(ctx.dummyPos)
+    mesh.setMatrixAt(index, ctx.dummyMat);
     mesh.instanceMatrix.needsUpdate = true;
 }
 
@@ -658,24 +607,24 @@ function smokeDrift(y: number, d: number, opt: any): number {
 }
 
 function updateSmoke(opt: any, particles: any) {
-    const sint = Math.sin(time / 500);
-    const cost = Math.cos(time / 500);
+    const sint = Math.sin(ctx.time / 500);
+    const cost = Math.cos(ctx.time / 500);
     const xval = sint * opt.scale;
     const zval = cost * opt.scale;
     const sceneDiv = document.querySelector('body #scene');
     if (sceneDiv && getComputedStyle(sceneDiv).display === 'block') {
         for (let i = 0; i < opt.count; i++) {
-            particles.getMatrixAt(i, dummyMat);
-            dummyPos.setFromMatrixPosition(dummyMat);
-            dummyPos.y += 0.01 * smokeSpeed(dummyPos.y, opt);
-            dummyPos.x += xval;
-            dummyPos.z += zval+smokeDrift(dummyPos.y, 0.005, opt);
-            dummyMat.setPosition(dummyPos);
-            if (dummyPos.y > (opt.pos.y + opt.maxHeight/3)) {
+            particles.getMatrixAt(i, ctx.dummyMat);
+            ctx.dummyPos.setFromMatrixPosition(ctx.dummyMat);
+            ctx.dummyPos.y += 0.01 * smokeSpeed(ctx.dummyPos.y, opt);
+            ctx.dummyPos.x += xval;
+            ctx.dummyPos.z += zval+smokeDrift(ctx.dummyPos.y, 0.005, opt);
+            ctx.dummyMat.setPosition(ctx.dummyPos);
+            if (ctx.dummyPos.y > (opt.pos.y + opt.maxHeight/3)) {
                 if (Math.random() > opt.p) resetParticle(particles, i, false, opt);
-                else particles.setMatrixAt(i, dummyMat);
+                else particles.setMatrixAt(i, ctx.dummyMat);
             }
-            else particles.setMatrixAt(i, dummyMat);
+            else particles.setMatrixAt(i, ctx.dummyMat);
         }
     }
     else {
@@ -686,15 +635,15 @@ function updateSmoke(opt: any, particles: any) {
 // -----------------------------------------------------------------------
 // BOAT
 function updateBoat(time: number) {
-    if (boatMesh) {
-        const pos = oceanGeo.attributes.position
-        boatv0.setY(pos.getZ(594)), boatv1.setY(pos.getZ(595)), boatv2.setY(pos.getZ(560))
-        updatePlane(boatP, boatv0, boatv1, boatv2);
-        dummyPos.copy(boatMesh.position);
-        dummyPos.copy(projPlane(dummyPos, boatP));
-        boatMesh.position.copy(dummyPos);
+    if (ctx.boatMesh) {
+        const pos = ctx.oceanGeo.attributes.position
+        ctx.boatv0.setY(pos.getZ(594)), ctx.boatv1.setY(pos.getZ(595)), ctx.boatv2.setY(pos.getZ(560))
+        updatePlane(ctx.boatP, ctx.boatv0, ctx.boatv1, ctx.boatv2);
+        ctx.dummyPos.copy(ctx.boatMesh.position);
+        ctx.dummyPos.copy(projPlane(ctx.dummyPos, ctx.boatP));
+        ctx.boatMesh.position.copy(ctx.dummyPos);
         const angle = oscillateValue(-0.2,0.2,1,time/3000);
-        boatMesh.rotation.z = angle
+        ctx.boatMesh.rotation.z = angle
     }   
 }
 
@@ -724,36 +673,36 @@ function oscillateValue(min:number, max:number, frequency:number, time:number) {
 }
 // DEBRIS
 function updateDebris() {
-    if (debrisModel) {
-        const pos = oceanGeo.attributes.position
-        debrv0.setY(pos.getZ(594)), debrv1.setY(pos.getZ(561)), debrv2.setY(pos.getZ(560))
-        updatePlane(debrP, debrv0, debrv1, debrv2);
-        for (let i = 0; i < debrisMesh.length; i++) {
-            dummyPos.copy(debrisMesh[i].position);
-            dummyPos.copy(projPlane(dummyPos, debrP));
-            debrisMesh[i].position.copy(dummyPos);
+    if (ctx.debrisModel) {
+        const pos = ctx.oceanGeo.attributes.position
+        ctx.debrv0.setY(pos.getZ(594)), ctx.debrv1.setY(pos.getZ(561)), ctx.debrv2.setY(pos.getZ(560))
+        updatePlane(ctx.debrP, ctx.debrv0, ctx.debrv1, ctx.debrv2);
+        for (let i = 0; i < ctx.debrisMesh.length; i++) {
+            ctx.dummyPos.copy(ctx.debrisMesh[i].position);
+            ctx.dummyPos.copy(projPlane(ctx.dummyPos, ctx.debrP));
+            ctx.debrisMesh[i].position.copy(ctx.dummyPos);
 
         }
-        // dummyPos.copy(debrisModel.position);
-        // dummyPos.copy(projPlane(dummyPos, debrP));
-        // debrisModel.position.copy(dummyPos);
+        // ctx.dummyPos.copy(ctx.debrisModel.position);
+        // ctx.dummyPos.copy(projPlane(ctx.dummyPos, ctx.debrP));
+        // ctx.debrisModel.position.copy(ctx.dummyPos);
     }   
 }
 // -----------------------------------------------------------------------
 // KELP
 function updateKelp() {
-    if (islandModel) {
-        const height = (debrv0.y + debrv1.y + debrv2.y)/3
+    if (ctx.islandModel) {
+        const height = (ctx.debrv0.y + ctx.debrv1.y + ctx.debrv2.y)/3
         const hnorm = (((height - 0.25) / (0.55 - 0.25)) - 0.5)
-        for (let i = 0; i < kelpArr.length; i++) {
-            for (let j = 0; j < kelpArr[i].count; j++) {
-                kelpArr[i].getMatrixAt(j, dummyMat);
-                dummyMat.decompose(dummy.position,dummy.quaternion,dummy.scale);
-                dummy.rotation.z = 0.2*(hnorm)+Math.PI
-                dummy.rotation.x = 0.5*(hnorm)+Math.PI
-                dummy.updateMatrix()
-                kelpArr[i].setMatrixAt(j, dummy.matrix);
-                kelpArr[i].instanceMatrix.needsUpdate = true;
+        for (let i = 0; i < ctx.kelpArr.length; i++) {
+            for (let j = 0; j < ctx.kelpArr[i].count; j++) {
+                ctx.kelpArr[i].getMatrixAt(j, ctx.dummyMat);
+                ctx.dummyMat.decompose(ctx.dummy.position,ctx.dummy.quaternion,ctx.dummy.scale);
+                ctx.dummy.rotation.z = 0.2*(hnorm)+Math.PI
+                ctx.dummy.rotation.x = 0.5*(hnorm)+Math.PI
+                ctx.dummy.updateMatrix()
+                ctx.kelpArr[i].setMatrixAt(j, ctx.dummy.matrix);
+                ctx.kelpArr[i].instanceMatrix.needsUpdate = true;
             }
         }
     }
@@ -765,7 +714,7 @@ function preventEvent(event: any) {
 }
 
 function toggleControls(enable: boolean) {
-    controls.enabled = enable;
+    ctx.controls.enabled = enable;
     if (!enable) {
       window.addEventListener('touchstart', preventEvent, true);
       window.addEventListener('wheel', preventEvent, true);
@@ -781,44 +730,44 @@ function onKeyDown (event: any) {
     switch (event.code) {
         case 'KeyZ':
         case 'Escape':
-            if (!anim) {
-                moveUp = moveDown = moveLeft = moveRight = false;
-                camReset(dZoom, false)
+            if (!ctx.anim) {
+                ctx.moveUp = ctx.moveDown = ctx.moveLeft = ctx.moveRight = false;
+                camReset(ctx.dZoom, false)
             }
             break;
         case 'KeyW':
         case 'ArrowUp':
-            if (controls.enabled) moveUp = true;
+            if (ctx.controls.enabled) ctx.moveUp = true;
             break;
         case 'ArrowDown':
         case 'KeyS':
-            if (controls.enabled) moveDown = true;
+            if (ctx.controls.enabled) ctx.moveDown = true;
             break;
         case 'KeyA':
         case 'ArrowLeft':
-            if (controls.enabled) moveLeft = true;
+            if (ctx.controls.enabled) ctx.moveLeft = true;
             break;
         case 'KeyD':
         case 'ArrowRight':
-            if (controls.enabled) moveRight = true;
+            if (ctx.controls.enabled) ctx.moveRight = true;
             break;
         case 'KeyE':
         case 'Period':
-            if (controls.enabled) rotateRight = true;
+            if (ctx.controls.enabled) ctx.rotateRight = true;
             break;
         case 'KeyQ':
         case 'Comma':
-            if (controls.enabled) rotateLeft = true;
+            if (ctx.controls.enabled) ctx.rotateLeft = true;
             break;
         case 'KeyH':
-            if (controls.enabled) {
-                hide = !hide;
-                if (!hide) overlay.forEach((item: any) => { item.style.display = 'block' })
-                else overlay.forEach((item: any) => { item.style.display = 'none' })
+            if (ctx.controls.enabled) {
+                ctx.hide = !ctx.hide;
+                if (!ctx.hide) ctx.overlay.forEach((item: any) => { item.style.display = 'block' })
+                else ctx.overlay.forEach((item: any) => { item.style.display = 'none' })
             }
             break;
         case 'KeyM':
-            audOcean.muted = !audOcean.muted;
+            ctx.audOcean.muted = !ctx.audOcean.muted;
             // audJingle.muted = !audJingle.muted;
             break;
     }
@@ -828,45 +777,45 @@ function onKeyUp (event: any) {
     switch (event.code) {
         case 'KeyW':
         case 'ArrowUp':
-            moveUp = false;
+            ctx.moveUp = false;
             break;
         case 'ArrowDown':
         case 'KeyS':
-            moveDown = false;
+            ctx.moveDown = false;
             break;
         case 'KeyA':
         case 'ArrowLeft':
-            moveLeft = false;
+            ctx.moveLeft = false;
             break;
         case 'KeyD':
         case 'ArrowRight':
-            moveRight = false;
+            ctx.moveRight = false;
             break;
         case 'KeyE':
         case 'Period':
-            rotateRight = false;
+            ctx.rotateRight = false;
             break;
         case 'KeyQ':
         case 'Comma':
-            rotateLeft = false;
+            ctx.rotateLeft = false;
             break;
     }
 };
 
 function onMouseMove(event: any) {
-    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-    mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
+    ctx.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+    ctx.mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
 }
 
 function onMouseClick(event: MouseEvent) {
     const iframe = document.getElementById('iframeid');
     if (document.getElementById('scene')?.style.display != "") {
-        if (intersects.length > 0) {
-            const ele = intersects[0];
-            funcList[ele.name](ele);
+        if (ctx.intersects.length > 0) {
+            const ele = ctx.intersects[0];
+            ctx.funcList[ele.name](ele);
         }
 
-        if (!controls.enabled && iframe) {
+        if (!ctx.controls.enabled && iframe) {
             const rect = iframe.getBoundingClientRect();
             const mouseX = event.clientX;
             const mouseY = event.clientY;
@@ -876,7 +825,7 @@ function onMouseClick(event: MouseEvent) {
                 mouseY <= rect.top ||
                 mouseY >= rect.bottom
             ) {
-                camReset(dZoom, false)
+                camReset(ctx.dZoom, false)
             } 
         }
     }
@@ -884,29 +833,29 @@ function onMouseClick(event: MouseEvent) {
 
 // refactor into two functionality, one as hovermodel and on hover effect
 function placeIcon() {
-    if (islandModel) {
+    if (ctx.islandModel) {
         if (document.getElementById('scene')?.style.display != "") {
-            if (hoverIcon) {
-                hoverIcon.position.copy(hoverTarget.position);
-                const height = oscillateValue(-0.025,0.025,3,time/3000);
-                hoverIcon.position.y += height + 0.6;
-                hoverIcon.rotation.y += 0.01; 
-                hoverIcon.visible = true;
+            if (ctx.hoverIcon) {
+                ctx.hoverIcon.position.copy(ctx.hoverTarget.position);
+                const height = oscillateValue(-0.025,0.025,3,ctx.time/3000);
+                ctx.hoverIcon.position.y += height + 0.6;
+                ctx.hoverIcon.rotation.y += 0.01; 
+                ctx.hoverIcon.visible = true;
             }
-            const child = hoverTarget.children[0] as THREE.Mesh
+            const child = ctx.hoverTarget.children[0] as THREE.Mesh
             const mat = child.material as THREE.MeshStandardMaterial
             const amp = 1.5
-            if (intersects.length > 0) {
-                const ele = intersects[0];
+            if (ctx.intersects.length > 0) {
+                const ele = ctx.intersects[0];
                 if (ele) {
-                    if (ele.name == hoverTarget.name) {
-                        dummyColor.setRGB(hoverColor.r*amp, hoverColor.g*amp, hoverColor.b*amp)
-                        mat.color.set(dummyColor)
+                    if (ele.name == ctx.hoverTarget.name) {
+                        ctx.dummyColor.setRGB(ctx.hoverColor.r*amp, ctx.hoverColor.g*amp, ctx.hoverColor.b*amp)
+                        mat.color.set(ctx.dummyColor)
                     } 
                     document.querySelector('html')?.classList.add('active');
                 }
             } else {
-                if (mat.color.r != hoverColor.r) mat.color.set(hoverColor)
+                if (mat.color.r != ctx.hoverColor.r) mat.color.set(ctx.hoverColor)
                 document.querySelector('html')?.classList.remove('active');
             }
         }
@@ -914,13 +863,13 @@ function placeIcon() {
 }
 
 function mouseUpdate() {
-    raycaster.setFromCamera(mouse, camera);
-    intersects = []
-    interact.forEach((val) => {
-        const tmp = raycaster.intersectObject(val)
+    ctx.raycaster.setFromCamera(ctx.mouse, ctx.camera);
+    ctx.intersects = []
+    ctx.interact.forEach((val) => {
+        const tmp = ctx.raycaster.intersectObject(val)
         tmp.forEach((val)=> { 
-            if (val.object.parent?.name != "") intersects.push(val.object.parent)
-            else intersects.push(val.object) 
+            if (val.object.parent?.name != "") ctx.intersects.push(val.object.parent)
+            else ctx.intersects.push(val.object) 
         })
     })
     placeIcon()
@@ -929,16 +878,16 @@ function mouseUpdate() {
 // INTERACTIONS
 
 function onClickChest() {
-    if (!anim) {
+    if (!ctx.anim) {
         camReset(0.1, true)
         document.querySelector('html')?.classList.remove('active');
     }
 }
 
 function onClickCamp() {
-    if (lightdark) setupDayLight();
+    if (ctx.lightdark) setupDayLight();
     else setupNightLight();
-    lightdark = !lightdark;
+    ctx.lightdark = !ctx.lightdark;
 }
 
 // code for future iframe animation
@@ -958,7 +907,7 @@ function focus(model: any) {
         const elapsedTime = Date.now() - startTime;
         const progress = Math.min(elapsedTime / duration, 1);
 
-        model.position.y = THREE.MathUtils.lerp(camera.position.y - 10, targetPosition.y, progress);
+        model.position.y = THREE.MathUtils.lerp(ctx.camera.position.y - 10, targetPosition.y, progress);
 
         if (progress < 1) {
             requestAnimationFrame(runlerp);
@@ -970,7 +919,7 @@ function focus(model: any) {
 
 function animationManager(icon: string = "") {
     if (icon == "") return
-    const model = icoList[icon];
+    const model = ctx.icoList[icon];
     model.visible = true;
     focus(model);
 }
@@ -982,51 +931,51 @@ const ndrift = (val: number) => (6-1.5*val);
 const nskew = (z: number, l: number, h: number) => l+(z)*(h-l);
 
 function camReset(zlvl: any, ifAnim: boolean) {
-    dummyVec.set(0,1,0);
-    anim = true;
-    setTimeout(()=>{controls.saveState(); anim=false; }, animTime)
+    ctx.dummyVec.set(0,1,0);
+    ctx.anim = true;
+    setTimeout(()=>{ctx.controls.saveState(); ctx.anim=false; }, ctx.animTime)
     if (ifAnim) {
-        overlay.forEach((item: any) => { item.style.display = 'none' })
-        dummyVec.set(0,0,0);
+        ctx.overlay.forEach((item: any) => { item.style.display = 'none' })
+        ctx.dummyVec.set(0,0,0);
     }
     else {
-        cssHolder.visible = false;
-        controls.target.set(0,1,0)
-        controls.update()
+        ctx.cssHolder.visible = false;
+        ctx.controls.target.set(0,1,0)
+        ctx.controls.update()
     }
 
-    new TWEEN.Tween(controls.target)
-        .to(dummyVec, animTime) 
+    new TWEEN.Tween(ctx.controls.target)
+        .to(ctx.dummyVec, ctx.animTime) 
         .easing(TWEEN.Easing.Quadratic.Out)
         .start();
-    new TWEEN.Tween(camera.position)
-        .to({ x: -200, y: 80, z: 0.000001 }, animTime)
+    new TWEEN.Tween(ctx.camera.position)
+        .to({ x: -200, y: 80, z: 0.000001 }, ctx.animTime)
         .easing(TWEEN.Easing.Quadratic.Out)
         .start();
-    new TWEEN.Tween({ zoom: camera.zoom })
-        .to({ zoom: zlvl }, animTime) 
+    new TWEEN.Tween({ zoom: ctx.camera.zoom })
+        .to({ zoom: zlvl }, ctx.animTime) 
         .easing(TWEEN.Easing.Quadratic.InOut)
         .onUpdate(function (object) {
-            camera.zoom = object.zoom;
-            camera.updateProjectionMatrix();
+            ctx.camera.zoom = object.zoom;
+            ctx.camera.updateProjectionMatrix();
         })
         .onComplete(()=> {
             if (ifAnim) {
-                cssHolder.visible = true
+                ctx.cssHolder.visible = true
                 toggleControls(false)
             } else {
-                if (!hide) overlay.forEach((item: any) => { item.style.display = 'block' })
-                if (!controls.enabled) toggleControls(!controls.enabled)
+                if (!ctx.hide) ctx.overlay.forEach((item: any) => { item.style.display = 'block' })
+                if (!ctx.controls.enabled) toggleControls(!ctx.controls.enabled)
             }    
         })
         .start();
-    globalGroup.rotation.set(0,0,0)
-    velocity.set(0, 0, 0);
-    smokeParticles.geometry.copy(osp);
-    fireParticles.geometry.copy(ofp);
-    smokeParticles.instanceMatrix.needsUpdate = true;
-    fireParticles.instanceMatrix.needsUpdate = true;
-    y_rotation = 0;
+    ctx.globalGroup.rotation.set(0,0,0)
+    ctx.velocity.set(0, 0, 0);
+    ctx.smokeParticles.geometry.copy(ctx.osp);
+    ctx.fireParticles.geometry.copy(ctx.ofp);
+    ctx.smokeParticles.instanceMatrix.needsUpdate = true;
+    ctx.fireParticles.instanceMatrix.needsUpdate = true;
+    ctx.y_rotation = 0;
 }
 
 function onWindowResize() {
@@ -1037,16 +986,16 @@ function onWindowResize() {
     renderResolution.x |= 0
     renderResolution.y |= 0
 
-    camera.left = -aspect;
-    camera.right = aspect;
-    camera.top = 1;
-    camera.bottom = -1;
-    pixelPass.resolution = renderResolution
-    camera.updateProjectionMatrix();
+    ctx.camera.left = -aspect;
+    ctx.camera.right = aspect;
+    ctx.camera.top = 1;
+    ctx.camera.bottom = -1;
+    ctx.pixelPass.resolution = renderResolution
+    ctx.camera.updateProjectionMatrix();
 
-    renderer.setSize( screenResolution.x, screenResolution.y );
+    ctx.renderer.setSize( screenResolution.x, screenResolution.y );
 
-    rendererCss.setSize( screenResolution.x, screenResolution.y );
+    ctx.rendererCss.setSize( screenResolution.x, screenResolution.y );
 }
 // -----------------------------------------------------------------------
 // HTML Render
@@ -1057,86 +1006,86 @@ function renderHTML() {
     iframe.setAttribute('sandbox', 'allow-same-origin allow-scripts allow-popups allow-forms');
     iframe.src = IFRAME_PAGE;
 
-    cssHolder = new CSS3DObject(iframe);
-    cssHolder.frustumCulled = false;
-    cssHolder.position.set(0, 0, 0);
-    cssHolder.rotation.set(0,Math.PI/2, 0);
-    cssHolder.visible = false
-    sceneCss.add(cssHolder);
-    sceneCss.rotateY(Math.PI)
+    ctx.cssHolder = new CSS3DObject(iframe);
+    ctx.cssHolder.frustumCulled = false;
+    ctx.cssHolder.position.set(0, 0, 0);
+    ctx.cssHolder.rotation.set(0,Math.PI/2, 0);
+    ctx.cssHolder.visible = false
+    ctx.sceneCss.add(ctx.cssHolder);
+    ctx.sceneCss.rotateY(Math.PI)
 }
 // -----------------------------------------------------------------------
 animate()
 function animate() {
 
-    time = performance.now();
-    const delta = ( time - prevTime ) / 1000;
+    ctx.time = performance.now();
+    const delta = ( ctx.time - ctx.prevTime ) / 1000;
 
-    updateOcean(time * 0.0001,0.1,0.1);
+    updateOcean(ctx.time * 0.0001,0.1,0.1);
     updateClouds(delta);
 
-    if (controls.enabled || anim) {
-        const newZoom = nnorm(camera.zoom)
+    if (ctx.controls.enabled || ctx.anim) {
+        const newZoom = nnorm(ctx.camera.zoom)
         const coef = nzoom(newZoom, 200, 0.99);
         
 
-        velocity.z -= velocity.z * ndrift(coef) * delta;
-        velocity.x -= velocity.x * ndrift(coef) * delta;
-        if ( moveUp ) velocity.x += nskew(coef, 1.5,10) * delta;
-        if (moveDown )  velocity.x -= nskew(coef, 1.5,10) * delta;
-        if ( moveLeft ) velocity.z -= nskew(coef, 0.75,5) * delta;
-        if (moveRight ) velocity.z += nskew(coef, 0.75,5) * delta;
+        ctx.velocity.z -= ctx.velocity.z * ndrift(coef) * delta;
+        ctx.velocity.x -= ctx.velocity.x * ndrift(coef) * delta;
+        if ( ctx.moveUp ) ctx.velocity.x += nskew(coef, 1.5,10) * delta;
+        if ( ctx.moveDown )  ctx.velocity.x -= nskew(coef, 1.5,10) * delta;
+        if ( ctx.moveLeft ) ctx.velocity.z -= nskew(coef, 0.75,5) * delta;
+        if ( ctx.moveRight ) ctx.velocity.z += nskew(coef, 0.75,5) * delta;
         
-        const new_x = camera.position.x + velocity.x, new_z = camera.position.z + velocity.z;
-        if (new_x > cameraBounds.maxX) velocity.x = 0;
-        if (new_x < cameraBounds.minX) velocity.x = 0;
-        if (new_z > cameraBounds.maxZ) velocity.z = 0;
-        if (new_z < cameraBounds.minZ) velocity.z = 0;
-        if (camera.position.x > cameraBounds.maxX) {
-            controls.target.x = cameraBounds.maxX + 200
-            camera.position.x = cameraBounds.maxX
+        const new_x = ctx.camera.position.x + ctx.velocity.x, new_z = ctx.camera.position.z + ctx.velocity.z;
+        if (new_x > ctx.cameraBounds.maxX) ctx.velocity.x = 0;
+        if (new_x < ctx.cameraBounds.minX) ctx.velocity.x = 0;
+        if (new_z > ctx.cameraBounds.maxZ) ctx.velocity.z = 0;
+        if (new_z < ctx.cameraBounds.minZ) ctx.velocity.z = 0;
+        if (ctx.camera.position.x > ctx.cameraBounds.maxX) {
+            ctx.controls.target.x = ctx.cameraBounds.maxX + 200
+            ctx.camera.position.x = ctx.cameraBounds.maxX
         }
-        if (camera.position.x < cameraBounds.minX) {
-            controls.target.x = cameraBounds.minX + 200
-            camera.position.x = cameraBounds.minX
+        if (ctx.camera.position.x < ctx.cameraBounds.minX) {
+            ctx.controls.target.x = ctx.cameraBounds.minX + 200
+            ctx.camera.position.x = ctx.cameraBounds.minX
         }
-        if (camera.position.z > cameraBounds.maxZ) {
-            controls.target.z = cameraBounds.maxZ
-            camera.position.z = cameraBounds.maxZ
+        if (ctx.camera.position.z > ctx.cameraBounds.maxZ) {
+            ctx.controls.target.z = ctx.cameraBounds.maxZ
+            ctx.camera.position.z = ctx.cameraBounds.maxZ
         }
-        if (camera.position.z < cameraBounds.minZ) {
-            controls.target.z = cameraBounds.minZ
-            camera.position.z = cameraBounds.minZ
+        if (ctx.camera.position.z < ctx.cameraBounds.minZ) {
+            ctx.controls.target.z = ctx.cameraBounds.minZ
+            ctx.camera.position.z = ctx.cameraBounds.minZ
         }
-        camera.position.add(velocity);
-        controls.target.add(velocity);
-        controls.update();
+        ctx.camera.position.add(ctx.velocity);
+        ctx.controls.target.add(ctx.velocity);
+        ctx.controls.update();
 
-        y_rotation -= y_rotation * 10.0 * delta;
-        if ( rotateLeft ) y_rotation += 1.0 * delta;
-        if ( rotateRight ) y_rotation -= 1.0 * delta;
-        globalGroup.rotateY(y_rotation);
+        ctx.y_rotation -= ctx.y_rotation * 10.0 * delta;
+        if ( ctx.rotateLeft ) ctx.y_rotation += 1.0 * delta;
+        if ( ctx.rotateRight ) ctx.y_rotation -= 1.0 * delta;
+        ctx.globalGroup.rotateY(ctx.y_rotation);
 
-        dummyMat = new THREE.Matrix4().makeRotationY(-1.0 * y_rotation);
-        smokeParticles.geometry.applyMatrix4(dummyMat);
-        fireParticles.geometry.applyMatrix4(dummyMat);
-        smokeParticles.geometry.computeVertexNormals();
-        fireParticles.geometry.computeVertexNormals();
+        ctx.dummyMat = new THREE.Matrix4().makeRotationY(-1.0 * ctx.y_rotation);
+        ctx.smokeParticles.geometry.applyMatrix4(ctx.dummyMat);
+        ctx.fireParticles.geometry.applyMatrix4(ctx.dummyMat);
+        ctx.smokeParticles.geometry.computeVertexNormals();
+        ctx.fireParticles.geometry.computeVertexNormals();
 
-        // object controls
-        updateBoat(time);
+        // object ctx.controls
+        updateBoat(ctx.time);
         updateDebris();
-        updateSmoke(pOptions, smokeParticles);
-        updateSmoke(fOptions, fireParticles);
+        updateSmoke(ctx.pOptions, ctx.smokeParticles);
+        updateSmoke(ctx.fOptions, ctx.fireParticles);
         updateKelp();
         mouseUpdate();
 
     }
     stats.update();
     TWEEN.update();
-    composer.render();
-    rendererCss.render( sceneCss, camera );
+    ctx.composer.render();
+    ctx.rendererCss.render( ctx.sceneCss, ctx.camera );
     requestAnimationFrame( animate )
 
-    prevTime = time;
+    ctx.prevTime = ctx.time;
 }
