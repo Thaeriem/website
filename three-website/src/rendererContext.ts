@@ -126,7 +126,6 @@ export interface UtilityState {
   dummyColor: THREE.Color;
   dummyArr: number[];
   funcList: TList;
-  icoList: TList;
   pOptions: ParticleOptions;
   fOptions: ParticleOptions;
   boatv0: THREE.Vector3;
