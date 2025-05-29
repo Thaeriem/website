@@ -11,44 +11,14 @@
     <link href="https://cdn.jsdelivr.net/npm/splitting@1.1.0/dist/splitting.min.css" rel="stylesheet">
 </head>
 <body>
-    <!-- Loading Screen -->
-    <div id="screen">
-      <div id="loading">
-        <div id="borderContainer">
-            <div id="borderdiv">
-              <pre id="border" class="input"></pre>
-              <pre id="grid" class="hvid" data-row="0"></pre>
-            </div>
-            <div id="borderContainer">
-              <div id="borderdiv">
-                <pre id="border2" class="input"></pre>
-                <pre id="start" class="hvid">START</pre>
-              </div>
-            </div>
-        </div>
-      </div>
-    </div>
-   
-
     <!-- Three.js Scene -->
-    <div id="scene">
-       <div id="overlay">
-          <h1 class="animate hvid ov ov-header" data-splitting="chars">Remote Island</h1>
-          <p class ="animate hvid ov ov-child" data-splitting="chars">Movement - WASD or Arrow Keys / Mouse</p>
-          <p class ="animate hvid ov ov-child" data-splitting="chars">Rotate - QE / ,. </p>
-          <p class ="animate hvid ov ov-child" data-splitting="chars">Reset - Esc</p>
-          <p class ="animate hvid ov ov-child" data-splitting="chars">Mute - M</p>
-          <p class ="animate hvid ov ov-child" data-splitting="chars">Hide - H</p>
-        </div>
+    <div id="scene" style="display: block;">
         <script type="module" src="src/index.ts"></script>
     </div>
 
     <audio id="ocean" src="/audio/norwayjohn.wav" autoplay></audio>
     <!-- <audio id="jingle" src="audio/track2.mp3" loop></audio> -->
 
-    <script type="module" src="src/grid.js"></script>
-    <script type="module" src="src/border.js"></script>
-    <script type="module" src="src/overlay.js"></script>
     <script>
         const links = { 
           "resume":"https://thaeriem.github.io/thaeriem/YashKaul_Resume.pdf",
@@ -56,7 +26,6 @@
           "pictoplan": "https://github.com/crizbae/PictoPlan",
           "github": "https://github.com/Thaeriem",
           "linkedin": "https://www.linkedin.com/in/yash-kaul/",
-          "twitter": "https://x.com/thaeriem",
           "email": "mailto:kauly.cs@gmail.com"
         }
 
@@ -77,15 +46,8 @@
         };
 
         document.addEventListener('click', function(event) {
-            const startButton = document.getElementById('border2');
-            if (startButton && startButton.style.display != "" && isMouseInElement(event.clientX, event.clientY, startButton)) {
-              document.getElementById('borderContainer').style.display = 'none';
-              document.getElementById('loading').style.display = 'none';
-              document.getElementById('screen').style.display = 'none';
-              document.getElementById('scene').style.display = 'block';
-              ocean.muted = false;
-              ocean.play();
-            }
+            ocean.muted = false;
+            ocean.play();
             const iframe = document.getElementById('iframeid');
             if (iframe) {
               const rect = iframe.getBoundingClientRect();
