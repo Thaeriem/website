@@ -12,10 +12,10 @@ import { updateBoat, updateClouds, updateDebris, updateKelp, updateOcean } from 
 import { initModels } from "./modules/models";
 
 const stats:Stats = Stats();
-ctx.islandModelURL = '/island.glb?url';
-ctx.cloudModelURL = '/cloud.glb?url';
-ctx.boatModelURL = '/boat.glb?url';
-ctx.debrisModelURL = '/debris.glb?url';
+ctx.islandModelURL = '/island.glb';
+ctx.cloudModelURL = '/cloud.glb';
+ctx.boatModelURL = '/boat.glb';
+ctx.debrisModelURL = '/debris.glb';
 // RENDERING
 ctx.prevTime = performance.now();
 ctx.time = performance.now();
