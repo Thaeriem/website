@@ -1,18 +1,19 @@
 import * as THREE from 'three';
-import { camReset, toggleAnim } from './input';
+import { camReset, camFocus, toggleAnim } from './input';
 import { toggleLighting } from './lighting';
 import { openCatDialog } from './dialog';
 
-export function onClickChest() {
+export function onClickChest(_ele: THREE.Object3D) {
     camReset(0.1, true)
     document.querySelector('html')?.classList.remove('active');
 }
 
-export function onClickCamp() {
+export function onClickCamp(_ele: THREE.Object3D) {
     toggleLighting();
 }
 
-export function onClickCat() {
+export function onClickCat(_ele: THREE.Object3D) {
+    camFocus(_ele);
     toggleAnim(false);
     openCatDialog();
 }

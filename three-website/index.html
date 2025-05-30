@@ -5,15 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Yash Kaul Portfolio</title>
     <link rel="icon" href="/treasure.ico">
-    <link rel="stylesheet" type="text/css" href="http://yui.yahooapis.com/3.18.1/build/cssreset/cssreset-min.css">
     <link rel="stylesheet" href="style.css">
-    <script src="https://cdn.jsdelivr.net/npm/splitting@1.1.0/dist/splitting.min.js"></script>
-    <link href="https://cdn.jsdelivr.net/npm/splitting@1.1.0/dist/splitting.min.css" rel="stylesheet">
 </head>
 <body>
     <!-- Three.js Scene -->
     <div id="scene" style="display: block;">
         <script type="module" src="src/index.ts"></script>
+    </div>
+
+    <!-- Sound Toggle Icon -->
+    <div id="sound-toggle" class="sound-toggle">
+        <img src="/volume-2.svg" id="sound-icon" alt="Sound Toggle" draggable="false">
     </div>
 
     <audio id="ocean" src="/audio/norwayjohn.wav" autoplay></audio>
@@ -46,14 +48,36 @@
         };
 
         document.addEventListener('click', function(event) {
-            ocean.muted = false;
-            ocean.play();
+            if (!soundToggle.classList.contains('muted') && !ocean.muted) {
+              ocean.muted = false;
+              ocean.play();
+            }
             const iframe = document.getElementById('iframeid');
             if (iframe) {
               const rect = iframe.getBoundingClientRect();
               const msgX = (event.clientX - rect.left) / rect.width;
               const msgY = (event.clientY - rect.top) / rect.height;
               iframe.contentWindow.postMessage(msgX + " " + msgY, '*');
+            }
+        });
+
+        // Sound Toggle Functionality
+        const soundToggle = document.getElementById('sound-toggle');
+        const soundIcon = document.getElementById('sound-icon');
+        
+        soundToggle.addEventListener('click', function(event) {
+            event.stopPropagation(); 
+            
+            if (ocean.muted) {
+                ocean.muted = false;
+                ocean.play();
+                soundIcon.src = '/volume-2.svg';
+                soundToggle.classList.remove('muted');
+            } else {
+                ocean.muted = true;
+                ocean.pause();
+                soundIcon.src = '/volume-x.svg';
+                soundToggle.classList.add('muted');
             }
         });
 
@@ -68,7 +92,7 @@
         });
 
         document.addEventListener("visibilitychange", event => {
-          if (document.visibilityState === "visible") {
+          if (document.visibilityState === "visible" && !ocean.muted) {
             ocean.play();
           } else {
             ocean && ocean.pause();

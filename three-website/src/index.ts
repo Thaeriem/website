@@ -12,7 +12,7 @@ import { updateBoat, updateCat, updateClouds, updateDebris, updateKelp, updateOc
 import { initModels } from "./modules/models";
 import { initDialog } from "./modules/dialog";
 
-const stats:Stats = Stats();
+ctx.stats = Stats();
 ctx.islandModelURL = '/island.glb';
 ctx.cloudModelURL = '/cloud.glb';
 ctx.boatModelURL = '/boat.glb';
@@ -28,8 +28,6 @@ ctx.cameraBounds = {
     maxZ: 45
 }
 ctx.animTime = 1200;
-ctx.audOcean = document.getElementById('ocean') as HTMLAudioElement;
-ctx.audOcean.muted = true;
 // const audJingle = document.getElementById('jingle') as HTMLAudioElement;
 ctx.dZoom = 0.3;
 // MOUSE CONTROLS
@@ -101,9 +99,10 @@ init().then(() => {
 });
 
 async function init() {
-    stats.dom.style.width = '80px';
-    stats.dom.style.height = '48px';
-    document.body.appendChild( stats.dom );
+    ctx.stats.dom.style.width = '80px';
+    ctx.stats.dom.style.height = '48px';
+    document.body.appendChild( ctx.stats.dom );
+    ctx.stats.domElement.style.display = 'none';
 
     let screenResolution = new THREE.Vector2( window.innerWidth, window.innerHeight )
     let renderResolution = screenResolution.clone().divideScalar( 4 )
@@ -159,7 +158,7 @@ function animate() {
         updateSmoke(ctx.fOptions, ctx.fireParticles);
         updateKelp();
     }
-    stats.update();
+    ctx.stats.update();
     TWEEN.update();
     ctx.composer.render();
     ctx.rendererCss.render( ctx.sceneCss, ctx.camera );

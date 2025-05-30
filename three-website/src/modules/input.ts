@@ -4,7 +4,7 @@ import { MapControls } from "three/examples/jsm/controls/OrbitControls";
 import { ctx } from "../rendererContext";
 import { onWindowResize } from "./render";
 import { oscillateValue } from "./utilities";
-import { nextDialogLine } from "./dialog";
+import { closeDialog, nextDialogLine } from "./dialog";
 
 export function setupControls() {
     ctx.controls = new MapControls(ctx.camera, ctx.rendererCss.domElement);
@@ -15,7 +15,7 @@ export function setupControls() {
     ctx.controls.mouseButtons = {
         LEFT: THREE.MOUSE.PAN,
         MIDDLE: THREE.MOUSE.DOLLY,
-        RIGHT: THREE.MOUSE.ROTATE
+        RIGHT: THREE.MOUSE.DOLLY
     };
     ctx.controls.update();
 }
@@ -43,13 +43,8 @@ export function toggleControls(enable: boolean) {
 
 export function toggleAnim(enable: boolean) {
     ctx.anim = !enable;
-    if (!enable) {
-        ctx.controls.enabled = false;
-        toggleEvents(false);
-    } else {
-        ctx.controls.enabled = true;
-        toggleEvents(true);
-    }
+    if (!enable)  toggleControls(false);
+    else toggleControls(true);
 }
 
 function onKeyDown(event: any) {
@@ -62,9 +57,14 @@ function onKeyDown(event: any) {
             break;
         case 'KeyZ':
         case 'Escape':
-            if (!ctx.anim) {
+            if (!ctx.anim && !ctx.isDialogOpen) {
                 ctx.moveUp = ctx.moveDown = ctx.moveLeft = ctx.moveRight = false;
                 camReset(ctx.dZoom, false);
+            }
+            if (ctx.isDialogOpen) {
+                event.preventDefault();
+                toggleAnim(true);
+                closeDialog();
             }
             break;
         case 'KeyW':
@@ -91,8 +91,9 @@ function onKeyDown(event: any) {
         case 'Comma':
             if (ctx.controls.enabled) ctx.rotateLeft = true;
             break;
-        case 'KeyM':
-            ctx.audOcean.muted = !ctx.audOcean.muted;
+        case 'F9':
+            if (ctx.stats.domElement.style.display == 'block') ctx.stats.domElement.style.display = 'none';
+            else ctx.stats.domElement.style.display = 'block';
             break;
     }
 }
@@ -201,6 +202,27 @@ export function camReset(zlvl: any, ifAnim: boolean) {
     ctx.fireParticles.geometry.copy(ctx.ofp);
     ctx.smokeParticles.instanceMatrix.needsUpdate = true;
     ctx.fireParticles.instanceMatrix.needsUpdate = true;
+    ctx.y_rotation = 0;
+}
+
+export function camFocus(target: THREE.Object3D) {
+    ctx.dummyVec.copy(target.position);
+    ctx.controls.target.copy(ctx.dummyVec);
+    ctx.controls.update();
+    new TWEEN.Tween(ctx.controls.target)
+        .to(ctx.dummyVec, ctx.animTime)
+        .easing(TWEEN.Easing.Quadratic.Out)
+        .start();
+    new TWEEN.Tween({ zoom: ctx.camera.zoom })
+        .to({ zoom: 1.5 }, ctx.animTime)
+        .easing(TWEEN.Easing.Quadratic.InOut)
+        .onUpdate(function (object) {
+            ctx.camera.zoom = object.zoom;
+            ctx.camera.updateProjectionMatrix();
+        })
+        .start();
+    ctx.globalGroup.rotation.set(0, 0, 0);
+    ctx.velocity.set(0, 0, 0);
     ctx.y_rotation = 0;
 }
 

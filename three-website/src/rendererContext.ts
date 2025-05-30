@@ -4,6 +4,7 @@ import { CSS3DRenderer, CSS3DObject } from "three/examples/jsm/renderers/CSS3DRe
 import { MapControls } from "three/examples/jsm/controls/OrbitControls";
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer';
 import RenderPixelatedPass from "./shaders/pix-pass";
+import Stats from "three/examples/jsm/libs/stats.module";
 
 export interface CameraBounds {
   minX: number;
@@ -44,7 +45,7 @@ export interface RenderState {
   velocity: THREE.Vector3;
   y_rotation: number;
   globalGroup: THREE.Group;
-  audOcean: HTMLAudioElement;
+  stats: Stats;
 }
 
 // Input state for mouse and keyboard
@@ -118,12 +119,23 @@ export interface OverlayState {
   hoverColor: THREE.Color;
 }
 
+// Character interface for dialog system
+export interface DialogCharacter {
+  speaker: string;
+  text: string[];
+  speed: number[];  // Speed in milliseconds per character for each line
+  color: string;    // Hex color for speaker name highlighting
+}
+
 // Dialog state
 export interface DialogState {
   isDialogOpen: boolean;
   currentDialogIndex: number;
-  dialogLines: string[];
+  currentLineIndex: number;
+  currentCharacter: DialogCharacter | null;
   dialogElement: HTMLElement | null;
+  isTyping: boolean;
+  currentTypingIndex: number;
 }
 
 // Utility state
