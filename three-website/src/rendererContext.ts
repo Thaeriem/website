@@ -61,7 +61,6 @@ export interface InputState {
   rotateLeft: boolean;
   rotateRight: boolean;
   hide: boolean;
-  overlay: NodeListOf<Element>;
 }
 
 // Lighting state
@@ -81,10 +80,12 @@ export interface ModelState {
   cloudModel: THREE.Object3D;
   boatModel: THREE.Object3D;
   debrisModel: THREE.Object3D;
+  catModel: THREE.Object3D;
   islandModelURL: string;
   cloudModelURL: string;
   boatModelURL: string;
   debrisModelURL: string;
+  catModelURL: string;
 }
 
 // Geometry state
@@ -115,6 +116,14 @@ export interface OverlayState {
   hoverIcon: THREE.Group;
   hoverTarget: THREE.Object3D;
   hoverColor: THREE.Color;
+}
+
+// Dialog state
+export interface DialogState {
+  isDialogOpen: boolean;
+  currentDialogIndex: number;
+  dialogLines: string[];
+  dialogElement: HTMLElement | null;
 }
 
 // Utility state
@@ -149,6 +158,7 @@ export interface RendererContext extends
   ModelState, 
   GeometryState, 
   OverlayState, 
+  DialogState,
   UtilityState {}
 
 // Create the context singleton

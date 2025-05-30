@@ -7,15 +7,17 @@ import { setupCamera, setupRenderers, setupComposer, renderHTML } from "./module
 import { initLighting } from "./modules/lighting";
 import { initInputListeners, processInput, setupControls } from "./modules/input";
 import { setupParticles, updateSmoke } from "./modules/particles";
-import { onClickCamp, onClickChest } from "./modules/utilities";
-import { updateBoat, updateClouds, updateDebris, updateKelp, updateOcean } from "./modules/animations";
+import { onClickCamp, onClickChest, onClickCat } from "./modules/utilities";
+import { updateBoat, updateCat, updateClouds, updateDebris, updateKelp, updateOcean } from "./modules/animations";
 import { initModels } from "./modules/models";
+import { initDialog } from "./modules/dialog";
 
 const stats:Stats = Stats();
 ctx.islandModelURL = '/island.glb';
 ctx.cloudModelURL = '/cloud.glb';
 ctx.boatModelURL = '/boat.glb';
 ctx.debrisModelURL = '/debris.glb';
+ctx.catModelURL = '/cat.glb';
 // RENDERING
 ctx.prevTime = performance.now();
 ctx.time = performance.now();
@@ -26,7 +28,6 @@ ctx.cameraBounds = {
     maxZ: 45
 }
 ctx.animTime = 1200;
-ctx.overlay = document.querySelectorAll('.ov');
 ctx.audOcean = document.getElementById('ocean') as HTMLAudioElement;
 ctx.audOcean.muted = true;
 // const audJingle = document.getElementById('jingle') as HTMLAudioElement;
@@ -55,7 +56,8 @@ ctx.dummyArr = []
 
 ctx.funcList = {
     "Chest": onClickChest,
-    "Camp": onClickCamp
+    "Camp": onClickCamp,
+    "Cat": onClickCat,
     }
 // -----------------------------------------------------------------------
 // SMOKE
@@ -132,6 +134,9 @@ async function init() {
     // LIGHTING
     initLighting();
     
+    // DIALOG SYSTEM
+    initDialog();
+    
     renderHTML();
     initInputListeners();
 }
@@ -148,6 +153,7 @@ function animate() {
     if (ctx.controls.enabled || ctx.anim) {
         processInput(delta);
         updateBoat(ctx.time);
+        updateCat(ctx.time);
         updateDebris();
         updateSmoke(ctx.pOptions, ctx.smokeParticles);
         updateSmoke(ctx.fOptions, ctx.fireParticles);

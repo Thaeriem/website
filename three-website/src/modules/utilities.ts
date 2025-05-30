@@ -1,17 +1,20 @@
 import * as THREE from 'three';
-import { ctx } from '../rendererContext';
-import { camReset } from './input';
+import { camReset, toggleAnim } from './input';
 import { toggleLighting } from './lighting';
+import { openCatDialog } from './dialog';
 
 export function onClickChest() {
-    if (!ctx.anim) {
-        camReset(0.1, true)
-        document.querySelector('html')?.classList.remove('active');
-    }
+    camReset(0.1, true)
+    document.querySelector('html')?.classList.remove('active');
 }
 
 export function onClickCamp() {
     toggleLighting();
+}
+
+export function onClickCat() {
+    toggleAnim(false);
+    openCatDialog();
 }
 
 export function projPlane(point: THREE.Vector3, plane: THREE.Plane) {

@@ -4,6 +4,7 @@ import { MapControls } from "three/examples/jsm/controls/OrbitControls";
 import { ctx } from "../rendererContext";
 import { onWindowResize } from "./render";
 import { oscillateValue } from "./utilities";
+import { nextDialogLine } from "./dialog";
 
 export function setupControls() {
     ctx.controls = new MapControls(ctx.camera, ctx.rendererCss.domElement);
@@ -14,7 +15,7 @@ export function setupControls() {
     ctx.controls.mouseButtons = {
         LEFT: THREE.MOUSE.PAN,
         MIDDLE: THREE.MOUSE.DOLLY,
-        RIGHT: THREE.MOUSE.DOLLY
+        RIGHT: THREE.MOUSE.ROTATE
     };
     ctx.controls.update();
 }
@@ -23,8 +24,7 @@ function preventEvent(event: any) {
     event.stopPropagation();
 }
 
-function toggleControls(enable: boolean) {
-    ctx.controls.enabled = enable;
+export function toggleEvents(enable: boolean) {
     if (!enable) {
         window.addEventListener('touchstart', preventEvent, true);
         window.addEventListener('wheel', preventEvent, true);
@@ -36,8 +36,30 @@ function toggleControls(enable: boolean) {
     }
 }
 
+export function toggleControls(enable: boolean) {
+    ctx.controls.enabled = enable;
+    toggleEvents(enable);
+}
+
+export function toggleAnim(enable: boolean) {
+    ctx.anim = !enable;
+    if (!enable) {
+        ctx.controls.enabled = false;
+        toggleEvents(false);
+    } else {
+        ctx.controls.enabled = true;
+        toggleEvents(true);
+    }
+}
+
 function onKeyDown(event: any) {
     switch (event.code) {
+        case 'Space':
+            if (ctx.isDialogOpen) {
+                event.preventDefault();
+                nextDialogLine();
+            }
+            break;
         case 'KeyZ':
         case 'Escape':
             if (!ctx.anim) {
@@ -68,13 +90,6 @@ function onKeyDown(event: any) {
         case 'KeyQ':
         case 'Comma':
             if (ctx.controls.enabled) ctx.rotateLeft = true;
-            break;
-        case 'KeyH':
-            if (ctx.controls.enabled) {
-                ctx.hide = !ctx.hide;
-                if (!ctx.hide) ctx.overlay.forEach((item: any) => { item.style.display = 'block' });
-                else ctx.overlay.forEach((item: any) => { item.style.display = 'none' });
-            }
             break;
         case 'KeyM':
             ctx.audOcean.muted = !ctx.audOcean.muted;
@@ -121,10 +136,10 @@ function onMouseClick(event: MouseEvent) {
     if (document.getElementById('scene')?.style.display != "") {
         if (ctx.intersects.length > 0) {
             const ele = ctx.intersects[0];
-            ctx.funcList[ele.name](ele);
+            if (!ctx.anim && !ctx.isDialogOpen && ctx.camera.zoom > 0.15) ctx.funcList[ele.name](ele);
         }
 
-        if (!ctx.controls.enabled && iframe) {
+        if (!ctx.controls.enabled && iframe && !ctx.isDialogOpen) {
             const rect = iframe.getBoundingClientRect();
             const mouseX = event.clientX;
             const mouseY = event.clientY;
@@ -146,7 +161,6 @@ export function camReset(zlvl: any, ifAnim: boolean) {
     setTimeout(() => { ctx.controls.saveState(); ctx.anim = false; }, ctx.animTime);
     
     if (ifAnim) {
-        ctx.overlay.forEach((item: any) => { item.style.display = 'none' });
         ctx.dummyVec.set(0, 0, 0);
     } else {
         ctx.cssHolder.visible = false;
@@ -176,7 +190,6 @@ export function camReset(zlvl: any, ifAnim: boolean) {
                 ctx.cssHolder.visible = true;
                 toggleControls(false);
             } else {
-                if (!ctx.hide) ctx.overlay.forEach((item: any) => { item.style.display = 'block' });
                 if (!ctx.controls.enabled) toggleControls(!ctx.controls.enabled);
             }
         })
