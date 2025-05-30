@@ -4,6 +4,7 @@ import { CSS3DRenderer, CSS3DObject } from "three/examples/jsm/renderers/CSS3DRe
 import { MapControls } from "three/examples/jsm/controls/OrbitControls";
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer';
 import RenderPixelatedPass from "./shaders/pix-pass";
+import Stats from "three/examples/jsm/libs/stats.module";
 
 export interface CameraBounds {
   minX: number;
@@ -44,7 +45,7 @@ export interface RenderState {
   velocity: THREE.Vector3;
   y_rotation: number;
   globalGroup: THREE.Group;
-  audOcean: HTMLAudioElement;
+  stats: Stats;
 }
 
 // Input state for mouse and keyboard
@@ -61,7 +62,6 @@ export interface InputState {
   rotateLeft: boolean;
   rotateRight: boolean;
   hide: boolean;
-  overlay: NodeListOf<Element>;
 }
 
 // Lighting state
@@ -81,10 +81,12 @@ export interface ModelState {
   cloudModel: THREE.Object3D;
   boatModel: THREE.Object3D;
   debrisModel: THREE.Object3D;
+  catModel: THREE.Object3D;
   islandModelURL: string;
   cloudModelURL: string;
   boatModelURL: string;
   debrisModelURL: string;
+  catModelURL: string;
 }
 
 // Geometry state
@@ -115,6 +117,25 @@ export interface OverlayState {
   hoverIcon: THREE.Group;
   hoverTarget: THREE.Object3D;
   hoverColor: THREE.Color;
+}
+
+// Character interface for dialog system
+export interface DialogCharacter {
+  speaker: string;
+  text: string[];
+  speed: number[];  // Speed in milliseconds per character for each line
+  color: string;    // Hex color for speaker name highlighting
+}
+
+// Dialog state
+export interface DialogState {
+  isDialogOpen: boolean;
+  currentDialogIndex: number;
+  currentLineIndex: number;
+  currentCharacter: DialogCharacter | null;
+  dialogElement: HTMLElement | null;
+  isTyping: boolean;
+  currentTypingIndex: number;
 }
 
 // Utility state
@@ -149,6 +170,7 @@ export interface RendererContext extends
   ModelState, 
   GeometryState, 
   OverlayState, 
+  DialogState,
   UtilityState {}
 
 // Create the context singleton

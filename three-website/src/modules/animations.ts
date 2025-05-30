@@ -3,6 +3,12 @@ import { ctx } from "../rendererContext";
 import { oscillateValue, projPlane, updatePlane } from "./utilities";
 
 
+export function updateCat(time: number) {
+    if (ctx.catModel) {
+        ctx.catModel.position.y = oscillateValue(1.1, 1.11, 20, time/3000);
+    }
+}
+
 export function updateClouds(delta: number) {
     if (ctx.cloudMesh) {
         if (ctx.camera.zoom > 0.15) {

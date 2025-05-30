@@ -210,6 +210,42 @@ export function loadDebrisModel(): Promise<void> {
     });
 }
 
+export function loadCatModel(): Promise<void> {
+    return new Promise((resolve, reject) => {
+        gltfLoader.load(ctx.catModelURL, (gltf) => {
+            try {
+                ctx.catModel = gltf.scene;
+                ctx.catModel.traverse((child) => {
+                    if (child instanceof THREE.Mesh) {
+                        child.castShadow = true;
+                        child.receiveShadow = true;
+                        if (child.material.map) {
+                            child.material.map = pixelTex(child.material.map);
+                        }
+                    }
+                    child.frustumCulled = false;
+                });
+                
+                // Position the cat on top of the island
+                ctx.catModel.position.set(0, 1.1, -1); // Elevated above the island
+                ctx.catModel.scale.set(0.2, 0.2, 0.2); // Scale it down to appropriate size
+                ctx.catModel.rotation.set(0, 2, -0.1); // Neutral rotation
+                
+                ctx.globalGroup.add(ctx.catModel);
+                ctx.catModel.name = 'Cat';
+                ctx.interact.add(ctx.catModel);
+                
+                resolve();
+            } catch (error) {
+                reject(error);
+            }
+        }, undefined, (error) => {
+            console.error('An error happened while loading the cat model', error);
+            reject(error);
+        });
+    });
+}
+
 export function setupOceanGeometry(): void {
     const width = 400, height = 400;
     const segmentsX = Math.floor(width / 12);
@@ -254,7 +290,8 @@ export async function initModels(): Promise<void> {
             loadIslandModel(),
             loadCloudModel(),
             loadBoatModel(),
-            loadDebrisModel()
+            loadDebrisModel(),
+            loadCatModel()
         ]);
         
         console.log('All models loaded successfully');
@@ -265,7 +302,7 @@ export async function initModels(): Promise<void> {
 }
 
 export function getLoadingProgress(): { loaded: number; total: number } {
-    const models = [ctx.islandModel, ctx.cloudModel, ctx.boatModel, ctx.debrisModel];
+    const models = [ctx.islandModel, ctx.cloudModel, ctx.boatModel, ctx.debrisModel, ctx.catModel];
     const loaded = models.filter(model => model !== undefined).length;
-    return { loaded, total: 4 };
+    return { loaded, total: 5 };
 }

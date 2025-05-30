@@ -44,3 +44,44 @@ html:active, html.active, a, button:active, .button:active, #border2, #start {
 .hvid {
     font-family: 'homevideo', monospace; 
 }
+
+/* Sound Toggle Styling */
+.sound-toggle {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1001;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 6px;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(4px);
+    transition: all 0.3s ease;
+    user-select: none;
+}
+
+.sound-toggle:hover {
+    transform: scale(1.1);
+}
+
+.sound-toggle img {
+    width: 20px;
+    height: 20px;
+    filter: brightness(0) invert(1);
+    transition: filter 0.3s ease;
+    display: block;
+    pointer-events: none;
+    user-select: none;
+    -webkit-user-drag: none;
+    -khtml-user-drag: none;
+    -moz-user-drag: none;
+    -o-user-drag: none;
+}
+
+.sound-toggle.muted img {
+    filter: brightness(0) invert(0.4);
+}
+
+.sound-toggle:active {
+    transform: scale(0.95);
+}

@@ -4,6 +4,7 @@ import { MapControls } from "three/examples/jsm/controls/OrbitControls";
 import { ctx } from "../rendererContext";
 import { onWindowResize } from "./render";
 import { oscillateValue } from "./utilities";
+import { closeDialog, nextDialogLine } from "./dialog";
 
 export function setupControls() {
     ctx.controls = new MapControls(ctx.camera, ctx.rendererCss.domElement);
@@ -23,8 +24,7 @@ function preventEvent(event: any) {
     event.stopPropagation();
 }
 
-function toggleControls(enable: boolean) {
-    ctx.controls.enabled = enable;
+export function toggleEvents(enable: boolean) {
     if (!enable) {
         window.addEventListener('touchstart', preventEvent, true);
         window.addEventListener('wheel', preventEvent, true);
@@ -36,13 +36,35 @@ function toggleControls(enable: boolean) {
     }
 }
 
+export function toggleControls(enable: boolean) {
+    ctx.controls.enabled = enable;
+    toggleEvents(enable);
+}
+
+export function toggleAnim(enable: boolean) {
+    ctx.anim = !enable;
+    if (!enable)  toggleControls(false);
+    else toggleControls(true);
+}
+
 function onKeyDown(event: any) {
     switch (event.code) {
+        case 'Space':
+            if (ctx.isDialogOpen) {
+                event.preventDefault();
+                nextDialogLine();
+            }
+            break;
         case 'KeyZ':
         case 'Escape':
-            if (!ctx.anim) {
+            if (!ctx.anim && !ctx.isDialogOpen) {
                 ctx.moveUp = ctx.moveDown = ctx.moveLeft = ctx.moveRight = false;
                 camReset(ctx.dZoom, false);
+            }
+            if (ctx.isDialogOpen) {
+                event.preventDefault();
+                toggleAnim(true);
+                closeDialog();
             }
             break;
         case 'KeyW':
@@ -69,15 +91,9 @@ function onKeyDown(event: any) {
         case 'Comma':
             if (ctx.controls.enabled) ctx.rotateLeft = true;
             break;
-        case 'KeyH':
-            if (ctx.controls.enabled) {
-                ctx.hide = !ctx.hide;
-                if (!ctx.hide) ctx.overlay.forEach((item: any) => { item.style.display = 'block' });
-                else ctx.overlay.forEach((item: any) => { item.style.display = 'none' });
-            }
-            break;
-        case 'KeyM':
-            ctx.audOcean.muted = !ctx.audOcean.muted;
+        case 'F9':
+            if (ctx.stats.domElement.style.display == 'block') ctx.stats.domElement.style.display = 'none';
+            else ctx.stats.domElement.style.display = 'block';
             break;
     }
 }
@@ -121,10 +137,10 @@ function onMouseClick(event: MouseEvent) {
     if (document.getElementById('scene')?.style.display != "") {
         if (ctx.intersects.length > 0) {
             const ele = ctx.intersects[0];
-            ctx.funcList[ele.name](ele);
+            if (!ctx.anim && !ctx.isDialogOpen && ctx.camera.zoom > 0.15) ctx.funcList[ele.name](ele);
         }
 
-        if (!ctx.controls.enabled && iframe) {
+        if (!ctx.controls.enabled && iframe && !ctx.isDialogOpen) {
             const rect = iframe.getBoundingClientRect();
             const mouseX = event.clientX;
             const mouseY = event.clientY;
@@ -146,7 +162,6 @@ export function camReset(zlvl: any, ifAnim: boolean) {
     setTimeout(() => { ctx.controls.saveState(); ctx.anim = false; }, ctx.animTime);
     
     if (ifAnim) {
-        ctx.overlay.forEach((item: any) => { item.style.display = 'none' });
         ctx.dummyVec.set(0, 0, 0);
     } else {
         ctx.cssHolder.visible = false;
@@ -176,7 +191,6 @@ export function camReset(zlvl: any, ifAnim: boolean) {
                 ctx.cssHolder.visible = true;
                 toggleControls(false);
             } else {
-                if (!ctx.hide) ctx.overlay.forEach((item: any) => { item.style.display = 'block' });
                 if (!ctx.controls.enabled) toggleControls(!ctx.controls.enabled);
             }
         })
@@ -188,6 +202,27 @@ export function camReset(zlvl: any, ifAnim: boolean) {
     ctx.fireParticles.geometry.copy(ctx.ofp);
     ctx.smokeParticles.instanceMatrix.needsUpdate = true;
     ctx.fireParticles.instanceMatrix.needsUpdate = true;
+    ctx.y_rotation = 0;
+}
+
+export function camFocus(target: THREE.Object3D) {
+    ctx.dummyVec.copy(target.position);
+    ctx.controls.target.copy(ctx.dummyVec);
+    ctx.controls.update();
+    new TWEEN.Tween(ctx.controls.target)
+        .to(ctx.dummyVec, ctx.animTime)
+        .easing(TWEEN.Easing.Quadratic.Out)
+        .start();
+    new TWEEN.Tween({ zoom: ctx.camera.zoom })
+        .to({ zoom: 1.5 }, ctx.animTime)
+        .easing(TWEEN.Easing.Quadratic.InOut)
+        .onUpdate(function (object) {
+            ctx.camera.zoom = object.zoom;
+            ctx.camera.updateProjectionMatrix();
+        })
+        .start();
+    ctx.globalGroup.rotation.set(0, 0, 0);
+    ctx.velocity.set(0, 0, 0);
     ctx.y_rotation = 0;
 }
 
