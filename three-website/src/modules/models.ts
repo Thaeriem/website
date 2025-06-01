@@ -49,25 +49,15 @@ export function loadIslandModel(): Promise<void> {
                         
                         if (child.name.slice(0, 5) === "Chest" && !ctx.interact.has(child.parent)) {
                             ctx.interact.add(child.parent);
-                            ctx.hoverTarget = child.parent as THREE.Object3D;
-                            ctx.hoverColor = (child.material as THREE.MeshStandardMaterial).color.clone();
+                            child.name = child.parent?.name as string;
+                            ctx.hoverTarget.push(child as THREE.Mesh);
+                            ctx.hoverColor.push((child.material as THREE.MeshStandardMaterial).color.clone());
+                            if (child.name === "Chest-Top") ctx.chestModel = child.parent as THREE.Object3D;
                         }
                         
                         if (child.name.slice(0, 4) === "Camp" && !ctx.interact.has(child.parent)) {
                             ctx.interact.add(child.parent);
                         }
-                    }
-                    
-                    if (child.name === "Icon") {
-                        if (child instanceof THREE.Group) {
-                            ctx.hoverIcon = child;
-                        } else {
-                            ctx.hoverIcon = new THREE.Group();
-                            ctx.hoverIcon.add(child);
-                        }
-                        ctx.hoverIcon.scale.set(1.2, 1.2, 1.2);
-                        ctx.globalGroup.add(ctx.hoverIcon);
-                        toRem.push(child);
                     }
                     
                     if (child) child.frustumCulled = false;

@@ -3,8 +3,8 @@ import TWEEN from '@tweenjs/tween.js';
 import { MapControls } from "three/examples/jsm/controls/OrbitControls";
 import { ctx } from "../rendererContext";
 import { onWindowResize } from "./render";
-import { oscillateValue } from "./utilities";
 import { closeDialog, nextDialogLine } from "./dialog";
+import { updateChest } from "./animations";
 
 export function setupControls() {
     ctx.controls = new MapControls(ctx.camera, ctx.rendererCss.domElement);
@@ -226,34 +226,28 @@ export function camFocus(target: THREE.Object3D) {
     ctx.y_rotation = 0;
 }
 
-function placeIcon() {
+function mouseHover() {
     if (ctx.islandModel) {
-        if (document.getElementById('scene')?.style.display != "") {
-            if (ctx.hoverIcon) {
-                ctx.hoverIcon.position.copy(ctx.hoverTarget.position);
-                const height = oscillateValue(-0.025, 0.025, 3, ctx.time/3000);
-                ctx.hoverIcon.position.y += height + 0.6;
-                ctx.hoverIcon.rotation.y += 0.01;
-                ctx.hoverIcon.visible = true;
+        const amp = 1.5;
+        
+        if (ctx.intersects.length > 0) {
+            const ele = ctx.intersects[0];
+            if (ctx.hoverTarget.some(child => child.name === ele.name) && !ctx.isDialogOpen) {
+                ctx.hoverColor.forEach((color, index) => {
+                    ctx.dummyColor.setRGB(color.r*amp, color.g*amp, color.b*amp);
+                    const mat = ctx.hoverTarget[index].material as THREE.MeshStandardMaterial;
+                    mat.color.set(ctx.dummyColor);
+                });
+                updateChest(true);
             }
-            
-            const child = ctx.hoverTarget.children[0] as THREE.Mesh;
-            const mat = child.material as THREE.MeshStandardMaterial;
-            const amp = 1.5;
-            
-            if (ctx.intersects.length > 0) {
-                const ele = ctx.intersects[0];
-                if (ele) {
-                    if (ele.name == ctx.hoverTarget.name) {
-                        ctx.dummyColor.setRGB(ctx.hoverColor.r*amp, ctx.hoverColor.g*amp, ctx.hoverColor.b*amp);
-                        mat.color.set(ctx.dummyColor);
-                    }
-                    document.querySelector('html')?.classList.add('active');
-                }
-            } else {
-                if (mat.color.r != ctx.hoverColor.r) mat.color.set(ctx.hoverColor);
-                document.querySelector('html')?.classList.remove('active');
-            }
+            document.querySelector('html')?.classList.add('active');
+        } else {
+            ctx.hoverColor.forEach((color, index) => {
+                const mat = ctx.hoverTarget[index].material as THREE.MeshStandardMaterial;
+                if (mat.color.r != color.r) mat.color.set(color);
+            });
+            document.querySelector('html')?.classList.remove('active');
+            updateChest(false);
         }
     }
 }
@@ -270,7 +264,7 @@ function mouseUpdate() {
         });
     });
     
-    placeIcon();
+    mouseHover();
 }
 
 export function initInputListeners() {

@@ -82,6 +82,7 @@ export interface ModelState {
   boatModel: THREE.Object3D;
   debrisModel: THREE.Object3D;
   catModel: THREE.Object3D;
+  chestModel: THREE.Object3D;
   islandModelURL: string;
   cloudModelURL: string;
   boatModelURL: string;
@@ -114,9 +115,8 @@ export interface GeometryState {
 export interface OverlayState {
   cssHolder: CSS3DObject;
   anim: boolean;
-  hoverIcon: THREE.Group;
-  hoverTarget: THREE.Object3D;
-  hoverColor: THREE.Color;
+  hoverTarget: THREE.Mesh[];
+  hoverColor: THREE.Color[];
 }
 
 // Character interface for dialog system

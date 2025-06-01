@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import TWEEN from '@tweenjs/tween.js';
 import { ctx } from "../rendererContext";
 import { oscillateValue, projPlane, updatePlane } from "./utilities";
 
@@ -98,5 +99,28 @@ export function updateKelp() {
                 ctx.kelpArr[i].instanceMatrix.needsUpdate = true;
             }
         }
+    }
+}
+
+export function updateChest(isOpen: boolean) {
+    if (ctx.chestModel) {
+        new TWEEN.Tween({ 
+            y: ctx.chestModel.rotation.y,
+            x: ctx.chestModel.rotation.x,
+            dy: ctx.chestModel.position.y,
+        })
+            .to({ 
+                y: isOpen ? 0.65 : 1.1231993658786803,
+                x: isOpen ? 1.2 : 1.0420350453054186,
+                dy: isOpen ? 0.77 : 0.7777319550514221, 
+            }, 1.5) 
+            .easing(TWEEN.Easing.Linear.InOut)
+            .onUpdate((object) => {
+                ctx.chestModel.rotation.y = object.y;
+                ctx.chestModel.rotation.x = object.x;
+                ctx.chestModel.position.y = object.dy;
+                
+            })
+            .start();
     }
 }

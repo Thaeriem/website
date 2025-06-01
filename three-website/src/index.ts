@@ -53,10 +53,13 @@ ctx.dummyColor = new THREE.Color(),
 ctx.dummyArr = []
 
 ctx.funcList = {
-    "Chest": onClickChest,
+    "Chest-Base": onClickChest,
+    "Chest-Top": onClickChest,
     "Camp": onClickCamp,
     "Cat": onClickCat,
-    }
+}
+ctx.hoverTarget = [];
+ctx.hoverColor = [];
 // -----------------------------------------------------------------------
 // SMOKE
 ctx.pOptions = {
@@ -88,7 +91,6 @@ ctx.debrv1 = new THREE.Vector3(0, 0, 0), ctx.debrv2 = new THREE.Vector3(0, 0, 0)
 ctx.bInd = [560, 561, 595], ctx.dInd = [560, 595, 594]
 ctx.noise = SimplexNoise.createNoise2D();
 ctx.colorStart = new THREE.Color("#046997"), ctx.colorEnd = new THREE.Color("#30b1ce");
-
 // -----------------------------------------------------------------------
 // STARTUP
 
