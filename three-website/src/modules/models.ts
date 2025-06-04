@@ -205,6 +205,7 @@ export function loadYashModel(): Promise<void> {
         gltfLoader.load(ctx.yashModelURL, (gltf) => {
             try {
                 ctx.yashModel = gltf.scene;
+                ctx.yashModel.name = "Yash";
                 ctx.yashModel.traverse((child) => {
                     if (child instanceof THREE.Mesh) {
                         child.castShadow = true;
@@ -239,6 +240,7 @@ export function loadSmithModel(): Promise<void> {
         gltfLoader.load(ctx.smithModelURL, (gltf) => {
             try {
                 ctx.smithModel = gltf.scene;
+                ctx.smithModel.name = "Smith";
                 ctx.smithModel.traverse((child) => {
                     if (child instanceof THREE.Mesh) {
                         child.castShadow = true;
@@ -247,16 +249,16 @@ export function loadSmithModel(): Promise<void> {
                             child.material.map = pixelTex(child.material.map);
                         }
                     }
+                    if (child.name.slice(0, 7) === "Raccoon") ctx.interact.add(child);
                     child.frustumCulled = false;
                 });
                 
                 // Position the cat on top of the island
-                ctx.smithModel.position.set(-20, 1, 0); // Elevated above the island
+                ctx.smithModel.position.set(-20, 1, 20); // Elevated above the island
                 ctx.smithModel.scale.set(0.2, 0.2, 0.2); // Scale it down to appropriate size
-                ctx.smithModel.rotation.set(0, 2, -0.1); // Neutral rotation
+                ctx.smithModel.rotation.set(0, -2.5, 0); // Neutral rotation
                 
                 ctx.globalGroup.add(ctx.smithModel);
-                ctx.interact.add(ctx.smithModel);
                 
                 resolve();
             } catch (error) {

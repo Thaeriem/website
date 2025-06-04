@@ -7,7 +7,7 @@ import { setupCamera, setupRenderers, setupComposer, renderHTML } from "./module
 import { initLighting } from "./modules/lighting";
 import { initInputListeners, processInput, setupControls } from "./modules/input";
 import { setupParticles, updateSmoke } from "./modules/particles";
-import { onClickCamp, onClickChest, onClickCat } from "./modules/utilities";
+import { onClickCamp, onClickChest, onClickSmith, onClickYash } from "./modules/utilities";
 import { updateBoat, updateCat, updateClouds, updateDebris, updateKelp, updateOcean } from "./modules/animations";
 import { initModels } from "./modules/models";
 import { initDialog } from "./modules/dialog";
@@ -57,7 +57,8 @@ ctx.funcList = {
     "Chest-Base": onClickChest,
     "Chest-Top": onClickChest,
     "Camp": onClickCamp,
-    "Cat": onClickCat,
+    "Yash": onClickYash,
+    "Smith": onClickSmith,
 }
 ctx.hoverTarget = [];
 ctx.hoverColor = [];

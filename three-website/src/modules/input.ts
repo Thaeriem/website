@@ -207,8 +207,6 @@ export function camReset(zlvl: any, ifAnim: boolean) {
 
 export function camFocus(target: THREE.Object3D) {
     ctx.dummyVec.copy(target.position);
-    ctx.controls.target.copy(ctx.dummyVec);
-    ctx.controls.update();
     new TWEEN.Tween(ctx.controls.target)
         .to(ctx.dummyVec, ctx.animTime)
         .easing(TWEEN.Easing.Quadratic.Out)
@@ -259,7 +257,8 @@ function mouseUpdate() {
     ctx.interact.forEach((val) => {
         const tmp = ctx.raycaster.intersectObject(val);
         tmp.forEach((val) => {
-            if (val.object.parent?.name != "") ctx.intersects.push(val.object.parent);
+            if (val.object.parent?.name != "" && val.object.parent?.name != "Scene") 
+                ctx.intersects.push(val.object.parent);
             else ctx.intersects.push(val.object);
         });
     });
@@ -317,8 +316,8 @@ export function processInput(delta: number) {
     ctx.controls.update();
 
     ctx.y_rotation -= ctx.y_rotation * 10.0 * delta;
-    if ( ctx.rotateLeft ) ctx.y_rotation += 1.0 * delta;
-    if ( ctx.rotateRight ) ctx.y_rotation -= 1.0 * delta;
+    if ( ctx.rotateLeft ) ctx.y_rotation += nskew(coef, 0.75,5) * delta;;
+    if ( ctx.rotateRight ) ctx.y_rotation -= nskew(coef, 0.75,5) * delta;;
     ctx.globalGroup.rotateY(ctx.y_rotation);
 
     ctx.dummyMat = new THREE.Matrix4().makeRotationY(-1.0 * ctx.y_rotation);

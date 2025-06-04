@@ -3,14 +3,24 @@ import { toggleAnim } from "./input";
 import type { DialogCharacter } from "../rendererContext";
 
 // Cat character dialog with new structure
-const catCharacter: DialogCharacter = {
+const yashCharacter: DialogCharacter = {
     speaker: "Yash",
     text: [
         "I've been waiting here for someone to find me...",
         "This island holds many secrets, you know.",
     ],
-    speed: [30], // Speed for each line in milliseconds per character
+    speed: [30, 30], // Speed for each line in milliseconds per character
     color: "#d4af37"
+};
+const smithCharacter: DialogCharacter = {
+    speaker: "Smith",
+    text: [
+        "Smith has not sent me the lines yet.",
+        "...",
+        "...",
+    ],
+    speed: [30, 100, 100],
+    color: "#eb923f"
 };
 
 export function initDialog(): void {
@@ -126,7 +136,7 @@ export function initDialog(): void {
     ctx.currentTypingIndex = 0;
 }
 
-export function openDialog(character: DialogCharacter): void {
+function _openDialog(character: DialogCharacter): void {
     if (ctx.dialogElement && !ctx.isDialogOpen) {
         ctx.isDialogOpen = true;
         ctx.currentDialogIndex = 0;
@@ -142,8 +152,18 @@ export function openDialog(character: DialogCharacter): void {
     }
 }
 
-export function openCatDialog(): void {
-    openDialog(catCharacter);
+export function openDialog(char: string): void {
+    switch(char) {
+        case 'yash':
+            _openDialog(yashCharacter);
+            break;
+        case 'smith':
+            _openDialog(smithCharacter);
+            break;
+        default:
+            console.warn(`Unknown character: ${char}`);
+            return;
+    }
 }
 
 function showCurrentDialogLine(): void {
