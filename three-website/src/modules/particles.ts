@@ -72,24 +72,18 @@ export function updateSmoke(opt: any, particles: any) {
     const cost = Math.cos(ctx.time / 500);
     const xval = sint * opt.scale;
     const zval = cost * opt.scale;
-    const sceneDiv = document.querySelector('body #scene');
-    if (sceneDiv && getComputedStyle(sceneDiv).display === 'block') {
-        for (let i = 0; i < opt.count; i++) {
-            particles.getMatrixAt(i, ctx.dummyMat);
-            ctx.dummyPos.setFromMatrixPosition(ctx.dummyMat);
-            ctx.dummyPos.y += 0.01 * smokeSpeed(ctx.dummyPos.y, opt);
-            ctx.dummyPos.x += xval;
-            ctx.dummyPos.z += zval+smokeDrift(ctx.dummyPos.y, 0.005, opt);
-            ctx.dummyMat.setPosition(ctx.dummyPos);
-            if (ctx.dummyPos.y > (opt.pos.y + opt.maxHeight/3)) {
-                if (Math.random() > opt.p) resetParticle(particles, i, false, opt);
-                else particles.setMatrixAt(i, ctx.dummyMat);
-            }
+    for (let i = 0; i < opt.count; i++) {
+        particles.getMatrixAt(i, ctx.dummyMat);
+        ctx.dummyPos.setFromMatrixPosition(ctx.dummyMat);
+        ctx.dummyPos.y += 0.01 * smokeSpeed(ctx.dummyPos.y, opt);
+        ctx.dummyPos.x += xval;
+        ctx.dummyPos.z += zval+smokeDrift(ctx.dummyPos.y, 0.005, opt);
+        ctx.dummyMat.setPosition(ctx.dummyPos);
+        if (ctx.dummyPos.y > (opt.pos.y + opt.maxHeight/3)) {
+            if (Math.random() > opt.p) resetParticle(particles, i, false, opt);
             else particles.setMatrixAt(i, ctx.dummyMat);
         }
-    }
-    else {
-        for (let i = 0; i < opt.count; i++) resetParticle(particles, i, true, opt);
+        else particles.setMatrixAt(i, ctx.dummyMat);
     }
     particles.instanceMatrix.needsUpdate = true;
 }

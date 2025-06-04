@@ -81,13 +81,15 @@ export interface ModelState {
   cloudModel: THREE.Object3D;
   boatModel: THREE.Object3D;
   debrisModel: THREE.Object3D;
-  catModel: THREE.Object3D;
+  yashModel: THREE.Object3D;
   chestModel: THREE.Object3D;
+  smithModel: THREE.Object3D;
   islandModelURL: string;
   cloudModelURL: string;
   boatModelURL: string;
   debrisModelURL: string;
-  catModelURL: string;
+  yashModelURL: string;
+  smithModelURL: string;
 }
 
 // Geometry state

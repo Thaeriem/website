@@ -17,7 +17,8 @@ ctx.islandModelURL = '/island.glb';
 ctx.cloudModelURL = '/cloud.glb';
 ctx.boatModelURL = '/boat.glb';
 ctx.debrisModelURL = '/debris.glb';
-ctx.catModelURL = '/cat.glb';
+ctx.yashModelURL = '/yash.glb';
+ctx.smithModelURL = '/smith.glb';
 // RENDERING
 ctx.prevTime = performance.now();
 ctx.time = performance.now();

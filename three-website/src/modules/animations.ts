@@ -5,8 +5,8 @@ import { oscillateValue, projPlane, updatePlane } from "./utilities";
 
 
 export function updateCat(time: number) {
-    if (ctx.catModel) {
-        ctx.catModel.position.y = oscillateValue(1.1, 1.11, 20, time/3000);
+    if (ctx.yashModel) {
+        ctx.yashModel.position.y = oscillateValue(1.1, 1.11, 20, time/3000);
     }
 }
 

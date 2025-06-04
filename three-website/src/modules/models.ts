@@ -200,12 +200,12 @@ export function loadDebrisModel(): Promise<void> {
     });
 }
 
-export function loadCatModel(): Promise<void> {
+export function loadYashModel(): Promise<void> {
     return new Promise((resolve, reject) => {
-        gltfLoader.load(ctx.catModelURL, (gltf) => {
+        gltfLoader.load(ctx.yashModelURL, (gltf) => {
             try {
-                ctx.catModel = gltf.scene;
-                ctx.catModel.traverse((child) => {
+                ctx.yashModel = gltf.scene;
+                ctx.yashModel.traverse((child) => {
                     if (child instanceof THREE.Mesh) {
                         child.castShadow = true;
                         child.receiveShadow = true;
@@ -217,13 +217,12 @@ export function loadCatModel(): Promise<void> {
                 });
                 
                 // Position the cat on top of the island
-                ctx.catModel.position.set(0, 1.1, -1); // Elevated above the island
-                ctx.catModel.scale.set(0.2, 0.2, 0.2); // Scale it down to appropriate size
-                ctx.catModel.rotation.set(0, 2, -0.1); // Neutral rotation
+                ctx.yashModel.position.set(0, 1.1, -1); // Elevated above the island
+                ctx.yashModel.scale.set(0.2, 0.2, 0.2); // Scale it down to appropriate size
+                ctx.yashModel.rotation.set(0, 2, -0.1); // Neutral rotation
                 
-                ctx.globalGroup.add(ctx.catModel);
-                ctx.catModel.name = 'Cat';
-                ctx.interact.add(ctx.catModel);
+                ctx.globalGroup.add(ctx.yashModel);
+                ctx.interact.add(ctx.yashModel);
                 
                 resolve();
             } catch (error) {
@@ -235,7 +234,40 @@ export function loadCatModel(): Promise<void> {
         });
     });
 }
-
+export function loadSmithModel(): Promise<void> {
+    return new Promise((resolve, reject) => {
+        gltfLoader.load(ctx.smithModelURL, (gltf) => {
+            try {
+                ctx.smithModel = gltf.scene;
+                ctx.smithModel.traverse((child) => {
+                    if (child instanceof THREE.Mesh) {
+                        child.castShadow = true;
+                        child.receiveShadow = true;
+                        if (child.material.map) {
+                            child.material.map = pixelTex(child.material.map);
+                        }
+                    }
+                    child.frustumCulled = false;
+                });
+                
+                // Position the cat on top of the island
+                ctx.smithModel.position.set(-20, 1, 0); // Elevated above the island
+                ctx.smithModel.scale.set(0.2, 0.2, 0.2); // Scale it down to appropriate size
+                ctx.smithModel.rotation.set(0, 2, -0.1); // Neutral rotation
+                
+                ctx.globalGroup.add(ctx.smithModel);
+                ctx.interact.add(ctx.smithModel);
+                
+                resolve();
+            } catch (error) {
+                reject(error);
+            }
+        }, undefined, (error) => {
+            console.error('An error happened while loading the cat model', error);
+            reject(error);
+        });
+    });
+}
 export function setupOceanGeometry(): void {
     const width = 400, height = 400;
     const segmentsX = Math.floor(width / 12);
@@ -281,7 +313,8 @@ export async function initModels(): Promise<void> {
             loadCloudModel(),
             loadBoatModel(),
             loadDebrisModel(),
-            loadCatModel()
+            loadYashModel(),
+            loadSmithModel()
         ]);
         
         console.log('All models loaded successfully');
@@ -289,10 +322,4 @@ export async function initModels(): Promise<void> {
         console.error('Error loading models:', error);
         throw error;
     }
-}
-
-export function getLoadingProgress(): { loaded: number; total: number } {
-    const models = [ctx.islandModel, ctx.cloudModel, ctx.boatModel, ctx.debrisModel, ctx.catModel];
-    const loaded = models.filter(model => model !== undefined).length;
-    return { loaded, total: 5 };
 }
