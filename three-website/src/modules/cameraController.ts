@@ -12,6 +12,12 @@ type MoveState = {
     rotateRight: boolean;
 };
 
+type DragState = {
+    pointerId: number;
+    x: number;
+    y: number;
+} | null;
+
 const HOME_CAMERA = new THREE.Vector3(-200, 80, 0.000001);
 const HOME_TARGET = new THREE.Vector3(0, 1, 0);
 const IFRAME_TARGET = new THREE.Vector3(0, 0, 0);
@@ -19,6 +25,7 @@ const PAN_PIXELS_PER_SECOND = 1160;
 const PAN_ZOOMED_OUT_MULTIPLIER = 0.78;
 const PAN_ZOOMED_IN_MULTIPLIER = 1.5;
 const PAN_SMOOTHING = 20;
+const DRAG_PAN_MULTIPLIER = 1;
 const ROTATION_RADIANS_PER_SECOND = 1.8;
 const ROTATION_SMOOTHING = 16;
 const WORLD_X_AXIS = new THREE.Vector3(1, 0, 0);
@@ -37,6 +44,7 @@ export class CameraController {
         rotateRight: false
     };
     private rotationVelocity = 0;
+    private dragState: DragState = null;
 
     constructor() {
         this.controls = new MapControls(ctx.camera, ctx.rendererCss.domElement);
@@ -45,6 +53,7 @@ export class CameraController {
         this.controls.minZoom = 0.03;
         this.controls.zoomSpeed = 1.25;
         this.controls.panSpeed = 0.85;
+        this.controls.enablePan = false;
         this.controls.enableDamping = true;
         this.controls.dampingFactor = 0.08;
         this.controls.mouseButtons = {
@@ -53,6 +62,7 @@ export class CameraController {
             RIGHT: THREE.MOUSE.PAN
         };
         this.controls.update();
+        this.setupDragPanning();
     }
 
     handleKeyDown(code: string) {
@@ -240,6 +250,25 @@ export class CameraController {
         }
     }
 
+    private applyDragPan(screenDeltaX: number, screenDeltaY: number) {
+        const xAxisPixels = this.screenPixelsForAxis(WORLD_X_AXIS);
+        const zAxisPixels = this.screenPixelsForAxis(WORLD_Z_AXIS);
+        const determinant = xAxisPixels.x * zAxisPixels.y - zAxisPixels.x * xAxisPixels.y;
+
+        if (Math.abs(determinant) <= 0.0001) return;
+
+        const dragX = -screenDeltaX * DRAG_PAN_MULTIPLIER;
+        const dragY = screenDeltaY * DRAG_PAN_MULTIPLIER;
+        const worldX = (dragX * zAxisPixels.y - zAxisPixels.x * dragY) / determinant;
+        const worldZ = (xAxisPixels.x * dragY - dragX * xAxisPixels.y) / determinant;
+        const pan = new THREE.Vector3(worldX, 0, worldZ);
+
+        ctx.camera.position.add(pan);
+        this.controls.target.add(pan);
+        this.applyBounds();
+        this.controls.update();
+    }
+
     private clearMovement() {
         this.moveState.forward = false;
         this.moveState.backward = false;
@@ -252,16 +281,21 @@ export class CameraController {
     }
 
     private axisWorldUnitsPerSecond(axis: THREE.Vector3, screenPixelsPerSecond: number) {
-        const target = this.controls.target;
-        const projectedStart = target.clone().project(ctx.camera);
-        const projectedEnd = target.clone().add(axis).project(ctx.camera);
-        const pixelsPerWorldUnit = Math.hypot(
-            (projectedEnd.x - projectedStart.x) * window.innerWidth * 0.5,
-            (projectedEnd.y - projectedStart.y) * window.innerHeight * 0.5
-        );
+        const axisPixels = this.screenPixelsForAxis(axis);
+        const pixelsPerWorldUnit = axisPixels.length();
 
         if (pixelsPerWorldUnit <= 0.0001) return 0;
         return (screenPixelsPerSecond * this.panZoomMultiplier()) / pixelsPerWorldUnit;
+    }
+
+    private screenPixelsForAxis(axis: THREE.Vector3) {
+        const target = this.controls.target;
+        const projectedStart = target.clone().project(ctx.camera);
+        const projectedEnd = target.clone().add(axis).project(ctx.camera);
+        return new THREE.Vector2(
+            (projectedEnd.x - projectedStart.x) * window.innerWidth * 0.5,
+            (projectedEnd.y - projectedStart.y) * window.innerHeight * 0.5
+        );
     }
 
     private panZoomMultiplier() {
@@ -285,4 +319,45 @@ export class CameraController {
         ctx.smokeParticles.geometry.computeVertexNormals();
         ctx.fireParticles.geometry.computeVertexNormals();
     }
+
+    private setupDragPanning() {
+        const element = ctx.rendererCss.domElement;
+        element.addEventListener("pointerdown", this.onPointerDown);
+        element.addEventListener("pointermove", this.onPointerMove);
+        element.addEventListener("pointerup", this.onPointerEnd);
+        element.addEventListener("pointercancel", this.onPointerEnd);
+        element.addEventListener("contextmenu", (event) => event.preventDefault());
+    }
+
+    private onPointerDown = (event: PointerEvent) => {
+        if (!this.controls.enabled || event.button !== 0) return;
+        this.dragState = {
+            pointerId: event.pointerId,
+            x: event.clientX,
+            y: event.clientY
+        };
+        ctx.rendererCss.domElement.setPointerCapture(event.pointerId);
+    };
+
+    private onPointerMove = (event: PointerEvent) => {
+        if (!this.dragState || this.dragState.pointerId !== event.pointerId || !this.controls.enabled) return;
+
+        const deltaX = event.clientX - this.dragState.x;
+        const deltaY = event.clientY - this.dragState.y;
+        this.dragState.x = event.clientX;
+        this.dragState.y = event.clientY;
+
+        if (deltaX === 0 && deltaY === 0) return;
+        event.preventDefault();
+        this.clearMovement();
+        this.applyDragPan(deltaX, deltaY);
+    };
+
+    private onPointerEnd = (event: PointerEvent) => {
+        if (!this.dragState || this.dragState.pointerId !== event.pointerId) return;
+        this.dragState = null;
+        if (ctx.rendererCss.domElement.hasPointerCapture(event.pointerId)) {
+            ctx.rendererCss.domElement.releasePointerCapture(event.pointerId);
+        }
+    };
 }
