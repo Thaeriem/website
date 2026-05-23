@@ -31,15 +31,13 @@ ctx.cameraBounds = {
 ctx.animTime = 1200;
 // const audJingle = document.getElementById('jingle') as HTMLAudioElement;
 ctx.dZoom = 0.3;
-// MOUSE CONTROLS
-ctx.velocity = new THREE.Vector3();
-ctx.y_rotation = 0;
 ctx.globalGroup = new THREE.Group();
+// MOUSE CONTROLS
 ctx.raycaster = new THREE.Raycaster();
 ctx.mouse = new THREE.Vector2(1, 1);
 ctx.intersects = [];
 ctx.interact = new Set();
-ctx.moveUp = ctx.moveDown = ctx.moveLeft = ctx.moveRight = ctx.rotateLeft = ctx.rotateRight = ctx.hide = ctx.lightdark = ctx.anim = false; 
+ctx.hide = ctx.lightdark = ctx.anim = false; 
 // LIGHTS
 ctx.trgO = new THREE.Object3D();
 // GEOMETRIES + MESHES
@@ -47,7 +45,6 @@ ctx.cloudAmt = 10;
 ctx.debrisMesh = [], ctx.kelpArr = [];
 // DUMMY
 ctx.dummy = new THREE.Object3D(),
-ctx.dummyVec = new THREE.Vector3(),
 ctx.dummyMat = new THREE.Matrix4(),
 ctx.dummyPos = new THREE.Vector3(),
 ctx.dummyColor = new THREE.Color(),

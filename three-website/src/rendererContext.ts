@@ -42,8 +42,6 @@ export interface RenderState {
   cameraBounds: CameraBounds;
   animTime: number;
   dZoom: number;
-  velocity: THREE.Vector3;
-  y_rotation: number;
   globalGroup: THREE.Group;
   stats: Stats;
 }
@@ -55,12 +53,6 @@ export interface InputState {
   mouse: THREE.Vector2;
   intersects: Array<any>;
   interact: Set<any>;
-  moveUp: boolean;
-  moveDown: boolean;
-  moveLeft: boolean;
-  moveRight: boolean;
-  rotateLeft: boolean;
-  rotateRight: boolean;
   hide: boolean;
 }
 
@@ -143,7 +135,6 @@ export interface DialogState {
 // Utility state
 export interface UtilityState {
   dummy: THREE.Object3D;
-  dummyVec: THREE.Vector3;
   dummyMat: THREE.Matrix4;
   dummyPos: THREE.Vector3;
   dummyColor: THREE.Color;
