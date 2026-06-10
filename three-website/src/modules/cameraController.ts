@@ -8,8 +8,6 @@ type MoveState = {
     backward: boolean;
     left: boolean;
     right: boolean;
-    rotateLeft: boolean;
-    rotateRight: boolean;
 };
 
 type DragState = {
@@ -26,12 +24,11 @@ const PAN_ZOOMED_OUT_MULTIPLIER = 0.78;
 const PAN_ZOOMED_IN_MULTIPLIER = 1.5;
 const PAN_SMOOTHING = 20;
 const DRAG_PAN_MULTIPLIER = 1;
-const ROTATION_RADIANS_PER_SECOND = 1.8;
-const ROTATION_SMOOTHING = 16;
 const CHARACTER_FOCUS_ZOOM = 0.68;
 const CHARACTER_FOCUS_OFFSET = new THREE.Vector3(0, 0.35, 0);
 const WORLD_X_AXIS = new THREE.Vector3(1, 0, 0);
 const WORLD_Z_AXIS = new THREE.Vector3(0, 0, 1);
+const targetWorldPosition = new THREE.Vector3();
 
 export class CameraController {
     readonly controls: MapControls;
@@ -41,11 +38,8 @@ export class CameraController {
         forward: false,
         backward: false,
         left: false,
-        right: false,
-        rotateLeft: false,
-        rotateRight: false
+        right: false
     };
-    private rotationVelocity = 0;
     private dragState: DragState = null;
 
     constructor() {
@@ -92,14 +86,6 @@ export class CameraController {
             case "ArrowRight":
                 this.moveState.right = true;
                 return true;
-            case "KeyQ":
-            case "Comma":
-                this.moveState.rotateLeft = true;
-                return true;
-            case "KeyE":
-            case "Period":
-                this.moveState.rotateRight = true;
-                return true;
             default:
                 return false;
         }
@@ -122,14 +108,6 @@ export class CameraController {
             case "KeyD":
             case "ArrowRight":
                 this.moveState.right = false;
-                return true;
-            case "KeyQ":
-            case "Comma":
-                this.moveState.rotateLeft = false;
-                return true;
-            case "KeyE":
-            case "Period":
-                this.moveState.rotateRight = false;
                 return true;
             default:
                 return false;
@@ -189,7 +167,8 @@ export class CameraController {
     }
 
     focus(target: THREE.Object3D) {
-        const focusTarget = target.position.clone().add(CHARACTER_FOCUS_OFFSET);
+        target.getWorldPosition(targetWorldPosition);
+        const focusTarget = targetWorldPosition.clone().add(CHARACTER_FOCUS_OFFSET);
         const cameraTargetDelta = focusTarget.clone().sub(this.controls.target);
         const focusCameraPosition = ctx.camera.position.clone().add(cameraTargetDelta);
 
@@ -242,14 +221,6 @@ export class CameraController {
         this.controls.target.addScaledVector(this.velocity, delta);
         this.applyBounds();
 
-        const rotationInput = Number(this.moveState.rotateLeft) - Number(this.moveState.rotateRight);
-        const targetRotationVelocity = rotationInput * ROTATION_RADIANS_PER_SECOND;
-        const rotationAlpha = 1 - Math.exp(-ROTATION_SMOOTHING * delta);
-        this.rotationVelocity = THREE.MathUtils.lerp(this.rotationVelocity, targetRotationVelocity, rotationAlpha);
-        const rotationDelta = this.rotationVelocity * delta;
-        ctx.globalGroup.rotateY(rotationDelta);
-        this.rotateParticleGeometry(rotationDelta);
-
         this.controls.update();
     }
 
@@ -295,10 +266,7 @@ export class CameraController {
         this.moveState.backward = false;
         this.moveState.left = false;
         this.moveState.right = false;
-        this.moveState.rotateLeft = false;
-        this.moveState.rotateRight = false;
         this.velocity.set(0, 0, 0);
-        this.rotationVelocity = 0;
     }
 
     private axisWorldUnitsPerSecond(axis: THREE.Vector3, screenPixelsPerSecond: number) {
@@ -331,14 +299,6 @@ export class CameraController {
         ctx.fireParticles.geometry.copy(ctx.ofp);
         ctx.smokeParticles.instanceMatrix.needsUpdate = true;
         ctx.fireParticles.instanceMatrix.needsUpdate = true;
-    }
-
-    private rotateParticleGeometry(rotation: number) {
-        ctx.dummyMat = new THREE.Matrix4().makeRotationY(-rotation);
-        ctx.smokeParticles.geometry.applyMatrix4(ctx.dummyMat);
-        ctx.fireParticles.geometry.applyMatrix4(ctx.dummyMat);
-        ctx.smokeParticles.geometry.computeVertexNormals();
-        ctx.fireParticles.geometry.computeVertexNormals();
     }
 
     private setupDragPanning() {

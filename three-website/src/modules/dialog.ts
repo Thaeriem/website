@@ -53,7 +53,7 @@ export function initDialog(): void {
 
         .dialog-bubble.is-closing {
             opacity: 0;
-            transition: opacity 160ms ease;
+            transition: opacity 80ms ease;
         }
 
         .dialog-speaker {
@@ -193,21 +193,16 @@ export function closeDialog(): void {
     ctx.isTyping = false;
     ctx.dialogElement.classList.remove("is-open", "is-waiting");
     ctx.dialogElement.classList.add("is-closing");
-
-    window.setTimeout(() => {
-        if (ctx.dialogElement) {
-            ctx.dialogElement.style.display = "none";
-            ctx.dialogElement.classList.remove("is-closing");
-        }
-        ctx.isDialogOpen = false;
-        ctx.dialogStatus = "idle";
-        ctx.currentDialogIndex = 0;
-        ctx.currentLineIndex = 0;
-        ctx.currentCharacter = null;
-        ctx.currentTypingIndex = 0;
-        ctx.dialogAdvanceTimer = null;
-        toggleAnim(true);
-    }, 180);
+    ctx.dialogElement.style.display = "none";
+    ctx.dialogElement.classList.remove("is-closing");
+    ctx.isDialogOpen = false;
+    ctx.dialogStatus = "idle";
+    ctx.currentDialogIndex = 0;
+    ctx.currentLineIndex = 0;
+    ctx.currentCharacter = null;
+    ctx.currentTypingIndex = 0;
+    ctx.dialogAdvanceTimer = null;
+    toggleAnim(true);
 }
 
 export function updateDialogPosition(): void {

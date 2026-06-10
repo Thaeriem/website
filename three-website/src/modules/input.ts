@@ -74,10 +74,6 @@ function onKeyDown(event: any) {
         case 'ArrowLeft':
         case 'KeyD':
         case 'ArrowRight':
-        case 'KeyE':
-        case 'Period':
-        case 'KeyQ':
-        case 'Comma':
             cameraController.handleKeyDown(event.code);
             break;
         case 'F9':
@@ -126,6 +122,12 @@ function onPointerUp(event: PointerEvent) {
 }
 
 function onSceneSelect(event: MouseEvent | PointerEvent) {
+    if (ctx.isDialogOpen) {
+        event.preventDefault();
+        nextDialogLine();
+        return;
+    }
+
     updatePointerPosition(event);
     mouseUpdate();
 
@@ -133,10 +135,10 @@ function onSceneSelect(event: MouseEvent | PointerEvent) {
     if (document.getElementById('scene')?.style.display != "") {
         if (ctx.intersects.length > 0) {
             const ele = ctx.intersects[0];
-            if (!ctx.anim && !ctx.isDialogOpen && ctx.camera.zoom > 0.15) ctx.funcList[ele.name](ele);
+            if (!ctx.anim && ctx.camera.zoom > 0.15) ctx.funcList[ele.name](ele);
         }
 
-        if (!ctx.controls.enabled && iframe && !ctx.isDialogOpen) {
+        if (!ctx.controls.enabled && iframe) {
             const rect = iframe.getBoundingClientRect();
             const mouseX = event.clientX;
             const mouseY = event.clientY;
