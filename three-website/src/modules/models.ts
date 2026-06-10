@@ -235,41 +235,6 @@ export function loadYashModel(): Promise<void> {
         });
     });
 }
-export function loadSmithModel(): Promise<void> {
-    return new Promise((resolve, reject) => {
-        gltfLoader.load(ctx.smithModelURL, (gltf) => {
-            try {
-                ctx.smithModel = gltf.scene;
-                ctx.smithModel.name = "Smith";
-                ctx.smithModel.traverse((child) => {
-                    if (child instanceof THREE.Mesh) {
-                        child.castShadow = true;
-                        child.receiveShadow = true;
-                        if (child.material.map) {
-                            child.material.map = pixelTex(child.material.map);
-                        }
-                    }
-                    if (child.name.slice(0, 7) === "Raccoon") ctx.interact.add(child);
-                    child.frustumCulled = false;
-                });
-                
-                // Position the cat on top of the island
-                ctx.smithModel.position.set(-20, 1, 20); // Elevated above the island
-                ctx.smithModel.scale.set(0.2, 0.2, 0.2); // Scale it down to appropriate size
-                ctx.smithModel.rotation.set(0, -2.5, 0); // Neutral rotation
-                
-                ctx.globalGroup.add(ctx.smithModel);
-                
-                resolve();
-            } catch (error) {
-                reject(error);
-            }
-        }, undefined, (error) => {
-            console.error('An error happened while loading the cat model', error);
-            reject(error);
-        });
-    });
-}
 export function setupOceanGeometry(): void {
     const width = 400, height = 400;
     const segmentsX = Math.floor(width / 12);
@@ -315,8 +280,7 @@ export async function initModels(): Promise<void> {
             loadCloudModel(),
             loadBoatModel(),
             loadDebrisModel(),
-            loadYashModel(),
-            loadSmithModel()
+            loadYashModel()
         ]);
         
         console.log('All models loaded successfully');

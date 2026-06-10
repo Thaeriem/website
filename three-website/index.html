@@ -47,19 +47,35 @@
           }
         };
 
+        function postIframeInput(type, event, extra = {}) {
+            const iframe = document.getElementById('iframeid');
+            if (!iframe) return false;
+
+            const rect = iframe.getBoundingClientRect();
+            const x = (event.clientX - rect.left) / rect.width;
+            const y = (event.clientY - rect.top) / rect.height;
+            if (x < 0 || x > 1 || y < 0 || y > 1) return false;
+
+            iframe.contentWindow.postMessage({ type, x, y, ...extra }, '*');
+            return true;
+        }
+
         document.addEventListener('click', function(event) {
             if (!soundToggle.classList.contains('muted') && !ocean.muted) {
               ocean.muted = false;
               ocean.play();
             }
-            const iframe = document.getElementById('iframeid');
-            if (iframe) {
-              const rect = iframe.getBoundingClientRect();
-              const msgX = (event.clientX - rect.left) / rect.width;
-              const msgY = (event.clientY - rect.top) / rect.height;
-              iframe.contentWindow.postMessage(msgX + " " + msgY, '*');
-            }
+            postIframeInput('pointer', event);
         });
+
+        window.addEventListener('wheel', function(event) {
+            const handled = postIframeInput('wheel', event, {
+              deltaX: event.deltaX,
+              deltaY: event.deltaY,
+              deltaMode: event.deltaMode
+            });
+            if (handled) event.preventDefault();
+        }, { capture: true, passive: false });
 
         // Sound Toggle Functionality
         const soundToggle = document.getElementById('sound-toggle');

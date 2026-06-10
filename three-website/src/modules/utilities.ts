@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { camReset, camFocus, toggleAnim } from './input';
+import { camReset, camFocus, toggleControls } from './input';
 import { toggleLighting } from './lighting';
 import { openDialog } from './dialog';
 
@@ -14,14 +14,8 @@ export function onClickCamp(_ele: THREE.Object3D) {
 
 export function onClickYash(_ele: THREE.Object3D) {
     camFocus(_ele);
-    toggleAnim(false);
+    toggleControls(false);
     openDialog('yash');
-}
-
-export function onClickSmith(_ele: THREE.Object3D) {
-    camFocus(_ele);
-    toggleAnim(false);
-    openDialog('smith');
 }
 
 export function projPlane(point: THREE.Vector3, plane: THREE.Plane) {

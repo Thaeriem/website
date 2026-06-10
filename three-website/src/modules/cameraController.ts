@@ -28,6 +28,8 @@ const PAN_SMOOTHING = 20;
 const DRAG_PAN_MULTIPLIER = 1;
 const ROTATION_RADIANS_PER_SECOND = 1.8;
 const ROTATION_SMOOTHING = 16;
+const CHARACTER_FOCUS_ZOOM = 0.68;
+const CHARACTER_FOCUS_OFFSET = new THREE.Vector3(0, 0.35, 0);
 const WORLD_X_AXIS = new THREE.Vector3(1, 0, 0);
 const WORLD_Z_AXIS = new THREE.Vector3(0, 0, 1);
 
@@ -51,15 +53,20 @@ export class CameraController {
         this.controls.target.copy(HOME_TARGET);
         this.controls.maxZoom = 1;
         this.controls.minZoom = 0.03;
-        this.controls.zoomSpeed = 1.25;
+        this.controls.zoomSpeed = 1.45;
         this.controls.panSpeed = 0.85;
         this.controls.enablePan = false;
+        this.controls.enableRotate = false;
         this.controls.enableDamping = true;
         this.controls.dampingFactor = 0.08;
         this.controls.mouseButtons = {
             LEFT: THREE.MOUSE.PAN,
             MIDDLE: THREE.MOUSE.DOLLY,
             RIGHT: THREE.MOUSE.PAN
+        };
+        this.controls.touches = {
+            ONE: THREE.TOUCH.PAN,
+            TWO: THREE.TOUCH.DOLLY_PAN
         };
         this.controls.update();
         this.setupDragPanning();
@@ -182,13 +189,27 @@ export class CameraController {
     }
 
     focus(target: THREE.Object3D) {
+        const focusTarget = target.position.clone().add(CHARACTER_FOCUS_OFFSET);
+        const cameraTargetDelta = focusTarget.clone().sub(this.controls.target);
+        const focusCameraPosition = ctx.camera.position.clone().add(cameraTargetDelta);
+
+        ctx.anim = true;
+        window.setTimeout(() => {
+            ctx.anim = false;
+        }, ctx.animTime);
+
         new TWEEN.Tween(this.controls.target)
-            .to(target.position, ctx.animTime)
+            .to(focusTarget, ctx.animTime)
+            .easing(TWEEN.Easing.Quadratic.Out)
+            .start();
+
+        new TWEEN.Tween(ctx.camera.position)
+            .to(focusCameraPosition, ctx.animTime)
             .easing(TWEEN.Easing.Quadratic.Out)
             .start();
 
         new TWEEN.Tween({ zoom: ctx.camera.zoom })
-            .to({ zoom: 1.5 }, ctx.animTime)
+            .to({ zoom: CHARACTER_FOCUS_ZOOM }, ctx.animTime)
             .easing(TWEEN.Easing.Quadratic.InOut)
             .onUpdate(({ zoom }) => {
                 ctx.camera.zoom = zoom;

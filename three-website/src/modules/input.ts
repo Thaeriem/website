@@ -7,6 +7,15 @@ import { CameraController } from "./cameraController";
 
 let cameraController: CameraController;
 
+type PointerTapState = {
+    pointerId: number;
+    x: number;
+    y: number;
+} | null;
+
+const TAP_MOVE_THRESHOLD = 8;
+let pointerTapState: PointerTapState = null;
+
 export function setupControls() {
     cameraController = new CameraController();
     ctx.controls = cameraController.controls;
@@ -54,7 +63,6 @@ function onKeyDown(event: any) {
             }
             if (ctx.isDialogOpen) {
                 event.preventDefault();
-                toggleAnim(true);
                 closeDialog();
             }
             break;
@@ -83,12 +91,44 @@ function onKeyUp(event: any) {
     cameraController.handleKeyUp(event.code);
 }
 
-function onMouseMove(event: any) {
+function updatePointerPosition(event: MouseEvent | PointerEvent) {
     ctx.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
     ctx.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
 }
 
-function onMouseClick(event: MouseEvent) {
+function onPointerMove(event: PointerEvent) {
+    updatePointerPosition(event);
+}
+
+function onMouseMove(event: MouseEvent) {
+    updatePointerPosition(event);
+}
+
+function onPointerDown(event: PointerEvent) {
+    if (!event.isPrimary || event.button !== 0) return;
+    updatePointerPosition(event);
+    pointerTapState = {
+        pointerId: event.pointerId,
+        x: event.clientX,
+        y: event.clientY
+    };
+}
+
+function onPointerUp(event: PointerEvent) {
+    if (!pointerTapState || pointerTapState.pointerId !== event.pointerId) return;
+
+    const deltaX = event.clientX - pointerTapState.x;
+    const deltaY = event.clientY - pointerTapState.y;
+    pointerTapState = null;
+
+    if (Math.hypot(deltaX, deltaY) > TAP_MOVE_THRESHOLD) return;
+    onSceneSelect(event);
+}
+
+function onSceneSelect(event: MouseEvent | PointerEvent) {
+    updatePointerPosition(event);
+    mouseUpdate();
+
     const iframe = document.getElementById('iframeid');
     if (document.getElementById('scene')?.style.display != "") {
         if (ctx.intersects.length > 0) {
@@ -167,7 +207,10 @@ export function initInputListeners() {
     document.addEventListener("keydown", onKeyDown, false);
     document.addEventListener("keyup", onKeyUp, false);
     window.addEventListener('mousemove', onMouseMove, false);
-    window.addEventListener('mousedown', onMouseClick, false);
+    window.addEventListener('pointerdown', onPointerDown, false);
+    window.addEventListener('pointermove', onPointerMove, false);
+    window.addEventListener('pointerup', onPointerUp, false);
+    window.addEventListener('pointercancel', () => { pointerTapState = null; }, false);
 }
 
 export function processInput(delta: number) {

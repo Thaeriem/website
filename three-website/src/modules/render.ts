@@ -6,6 +6,10 @@ import { CSS3DObject, CSS3DRenderer } from "three/examples/jsm/renderers/CSS3DRe
 import { ctx } from "../rendererContext";
 import RenderPixelatedPass from "../shaders/pix-pass";
 const IFRAME_PAGE = import.meta.env.VITE_IFRAME_PAGE;
+const IFRAME_VIEWPORT_WIDTH = 720;
+const IFRAME_VIEWPORT_HEIGHT = 780;
+const IFRAME_VISUAL_WIDTH = 384;
+const IFRAME_VISUAL_HEIGHT = 416;
 
 export function setupCamera(screenResolution: THREE.Vector2) {
     let aspectRatio = screenResolution.x / screenResolution.y
@@ -29,6 +33,7 @@ export function setupRenderers(screenResolution: THREE.Vector2) {
     ctx.rendererCss.setSize( screenResolution.x, screenResolution.y )
     ctx.rendererCss.domElement.style.position = 'absolute';
     ctx.rendererCss.domElement.style.top = "0";
+    ctx.rendererCss.domElement.style.touchAction = "none";
     document.getElementById("scene")?.appendChild( ctx.rendererCss.domElement );
 }
 
@@ -62,11 +67,16 @@ export function onWindowResize() {
 export function renderHTML() {
     const iframe = document.createElement( 'iframe' );
     iframe.id = 'iframeid';
-    iframe.style.cssText = 'width: 24em; height: 26em; border: 0; objectFit: cover';
+    iframe.style.cssText = `width: ${IFRAME_VIEWPORT_WIDTH}px; height: ${IFRAME_VIEWPORT_HEIGHT}px; border: 0; object-fit: cover`;
     iframe.setAttribute('sandbox', 'allow-same-origin allow-scripts allow-popups allow-forms');
     iframe.src = IFRAME_PAGE;
 
     ctx.cssHolder = new CSS3DObject(iframe);
+    ctx.cssHolder.scale.set(
+        IFRAME_VISUAL_WIDTH / IFRAME_VIEWPORT_WIDTH,
+        IFRAME_VISUAL_HEIGHT / IFRAME_VIEWPORT_HEIGHT,
+        1
+    );
     ctx.cssHolder.frustumCulled = false;
     ctx.cssHolder.position.set(0, 0, 0);
     ctx.cssHolder.rotation.set(0,Math.PI/2, 0);

@@ -8,11 +8,10 @@ document.addEventListener("DOMContentLoaded", function () {
     elements.forEach((element) => text.push(element.textContent.replace(/\s+/g, '')))
     
     const transitionChars = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '!', '@', '#', '$', '&', '*', '(', ')', '-', '_', '+', '=', '/', '[', ']', '{', '}', ';', ':', '<', '>', ',', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
-    const amph = 30;
-    const elen = 200;
+    const amph = 42;
+    const elen = 32;
     const div = 6;
-    const off = 1.9;
-    const yoff = -150;
+    const off = 1.45;
     let elementTop;
 
     function updateTextOnScroll() {
@@ -21,8 +20,7 @@ document.addEventListener("DOMContentLoaded", function () {
         const offset = windowHeight / off; 
         elements.forEach((element, i) => {
             const chars = element.querySelectorAll(".char");
-            if (i < 3) elementTop = element.getBoundingClientRect().top + scrollY;
-            else elementTop = element.getBoundingClientRect().top + scrollY + yoff;
+            elementTop = element.getBoundingClientRect().top + scrollY;
             const elementHeight = element.offsetHeight;
             const length = text[i].length;
 

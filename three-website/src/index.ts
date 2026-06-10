@@ -7,10 +7,10 @@ import { setupCamera, setupRenderers, setupComposer, renderHTML } from "./module
 import { initLighting } from "./modules/lighting";
 import { initInputListeners, processInput, setupControls } from "./modules/input";
 import { setupParticles, updateSmoke } from "./modules/particles";
-import { onClickCamp, onClickChest, onClickSmith, onClickYash } from "./modules/utilities";
+import { onClickCamp, onClickChest, onClickYash } from "./modules/utilities";
 import { updateBoat, updateCat, updateClouds, updateDebris, updateKelp, updateOcean } from "./modules/animations";
 import { initModels } from "./modules/models";
-import { initDialog } from "./modules/dialog";
+import { initDialog, updateDialogPosition } from "./modules/dialog";
 
 ctx.stats = Stats();
 ctx.islandModelURL = '/island.glb';
@@ -18,7 +18,6 @@ ctx.cloudModelURL = '/cloud.glb';
 ctx.boatModelURL = '/boat.glb';
 ctx.debrisModelURL = '/debris.glb';
 ctx.yashModelURL = '/yash.glb';
-ctx.smithModelURL = '/smith.glb';
 // RENDERING
 ctx.prevTime = performance.now();
 ctx.time = performance.now();
@@ -55,7 +54,6 @@ ctx.funcList = {
     "Chest-Top": onClickChest,
     "Camp": onClickCamp,
     "Yash": onClickYash,
-    "Smith": onClickSmith,
 }
 ctx.hoverTarget = [];
 ctx.hoverColor = [];
@@ -133,8 +131,7 @@ async function init() {
     setupParticles();
     // LIGHTING
     initLighting();
-    
-    // DIALOG SYSTEM
+
     initDialog();
     
     renderHTML();
@@ -150,7 +147,9 @@ function animate() {
     updateOcean(ctx.time * 0.0001,0.1,0.1);
     updateClouds(delta);
 
-    if (ctx.controls.enabled || ctx.anim) {
+    const shouldUpdateWorld = ctx.controls.enabled || ctx.anim;
+
+    if (shouldUpdateWorld) {
         processInput(delta);
         updateBoat(ctx.time);
         updateCat(ctx.time);
@@ -158,8 +157,11 @@ function animate() {
         updateSmoke(ctx.pOptions, ctx.smokeParticles);
         updateSmoke(ctx.fOptions, ctx.fireParticles);
         updateKelp();
+    } else if (ctx.isDialogOpen) {
+        updateCat(ctx.time);
     }
     ctx.stats.update();
+    updateDialogPosition();
     TWEEN.update();
     ctx.composer.render();
     ctx.rendererCss.render( ctx.sceneCss, ctx.camera );

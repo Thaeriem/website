@@ -75,13 +75,11 @@ export interface ModelState {
   debrisModel: THREE.Object3D;
   yashModel: THREE.Object3D;
   chestModel: THREE.Object3D;
-  smithModel: THREE.Object3D;
   islandModelURL: string;
   cloudModelURL: string;
   boatModelURL: string;
   debrisModelURL: string;
   yashModelURL: string;
-  smithModelURL: string;
 }
 
 // Geometry state
@@ -113,23 +111,25 @@ export interface OverlayState {
   hoverColor: THREE.Color[];
 }
 
-// Character interface for dialog system
 export interface DialogCharacter {
   speaker: string;
   text: string[];
-  speed: number[];  // Speed in milliseconds per character for each line
-  color: string;    // Hex color for speaker name highlighting
+  speed: number[];
+  color: string;
 }
 
-// Dialog state
+export type DialogStatus = "idle" | "opening" | "typing" | "waiting" | "closing";
+
 export interface DialogState {
   isDialogOpen: boolean;
+  dialogStatus: DialogStatus;
   currentDialogIndex: number;
   currentLineIndex: number;
   currentCharacter: DialogCharacter | null;
   dialogElement: HTMLElement | null;
   isTyping: boolean;
   currentTypingIndex: number;
+  dialogAdvanceTimer: number | null;
 }
 
 // Utility state
