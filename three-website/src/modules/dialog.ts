@@ -75,9 +75,8 @@ export function initDialog(): void {
             box-shadow: none;
             font-size: 18px;
             line-height: 1.35;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            white-space: normal;
+            overflow-wrap: anywhere;
             word-spacing: 0.18em;
             text-shadow: 0 2px 0 rgba(0, 0, 0, 0.82), 0 0 8px rgba(0, 0, 0, 0.7);
         }
