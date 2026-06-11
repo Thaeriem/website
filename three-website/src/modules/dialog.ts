@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { ctx } from "../rendererContext";
 import { toggleAnim } from "./input";
+import { playDialogBlip } from "./dialogAudio";
 import type { DialogCharacter } from "../rendererContext";
 
 const DIALOG_DATA: Record<string, DialogCharacter> = {
@@ -10,7 +11,7 @@ const DIALOG_DATA: Record<string, DialogCharacter> = {
             "I've been waiting here for someone to find me...",
             "This island holds many secrets, you know."
         ],
-        speed: [24, 24],
+        speed: [4, 4],
         color: "#d4af37"
     }
 };
@@ -87,7 +88,6 @@ export function initDialog(): void {
             transform: translateY(10px) scale(0.96);
             filter: blur(5px);
             animation: dialogCharIn 420ms cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
-            animation-delay: calc(var(--char-index) * var(--char-speed));
             will-change: opacity, transform, filter;
         }
 
@@ -239,33 +239,50 @@ function showCurrentDialogLine(): void {
     if (!textElement) return;
 
     textElement.classList.remove("is-complete");
-    textElement.style.setProperty("--char-speed", `${speed}ms`);
     textElement.innerHTML = "";
-
-    Array.from(text).forEach((char, index) => {
-        const span = document.createElement("span");
-        span.className = "dialog-char";
-        span.style.setProperty("--char-index", String(index));
-        span.textContent = char === " " ? "\u00a0" : char;
-        textElement.appendChild(span);
-    });
-
     textElement.appendChild(createCursorElement());
 
-    ctx.dialogAdvanceTimer = window.setTimeout(finishCurrentLine, text.length * speed + 430);
+    const chars = Array.from(text);
+    const appendNextChar = () => {
+        if (!ctx.isTyping || !ctx.dialogElement || !ctx.currentCharacter) return;
+
+        if (ctx.currentTypingIndex >= chars.length - 1) {
+            removeDialogCursor(textElement);
+        }
+        const char = chars[ctx.currentTypingIndex];
+        appendDialogChar(textElement, char);
+        playDialogBlip(char, ctx.currentCharacter.speaker.toLowerCase());
+        ctx.currentTypingIndex++;
+
+        if (ctx.currentTypingIndex >= chars.length) {
+            if (ctx.dialogAdvanceTimer !== null) {
+                window.clearInterval(ctx.dialogAdvanceTimer);
+            }
+            ctx.dialogAdvanceTimer = window.setTimeout(finishCurrentLine, 430);
+        }
+    };
+
+    appendNextChar();
+    ctx.dialogAdvanceTimer = window.setInterval(appendNextChar, speed);
 }
 
 function finishCurrentLine(): void {
     if (!ctx.dialogElement || !ctx.currentCharacter) return;
 
     clearDialogTimer();
+    const text = ctx.currentCharacter.text[ctx.currentLineIndex];
+    const textElement = ctx.dialogElement.querySelector("#dialog-text") as HTMLElement | null;
+
+    if (textElement) {
+        textElement.innerHTML = "";
+        Array.from(text).forEach((char) => appendDialogChar(textElement, char));
+        textElement.classList.add("is-complete");
+    }
+
     ctx.isTyping = false;
     ctx.dialogStatus = "waiting";
-    ctx.currentTypingIndex = ctx.currentCharacter.text[ctx.currentLineIndex].length;
+    ctx.currentTypingIndex = text.length;
     ctx.dialogElement.classList.add("is-waiting");
-
-    const textElement = ctx.dialogElement.querySelector("#dialog-text") as HTMLElement | null;
-    textElement?.classList.add("is-complete");
 }
 
 function createCursorElement(): HTMLElement {
@@ -275,9 +292,21 @@ function createCursorElement(): HTMLElement {
     return cursor;
 }
 
+function appendDialogChar(textElement: HTMLElement, char: string): void {
+    const span = document.createElement("span");
+    span.className = "dialog-char";
+    span.textContent = char === " " ? "\u00a0" : char;
+    textElement.insertBefore(span, textElement.querySelector(".dialog-cursor"));
+}
+
+function removeDialogCursor(textElement: HTMLElement): void {
+    textElement.querySelector(".dialog-cursor")?.remove();
+}
+
 function clearDialogTimer(): void {
     if (ctx.dialogAdvanceTimer !== null) {
         window.clearTimeout(ctx.dialogAdvanceTimer);
+        window.clearInterval(ctx.dialogAdvanceTimer);
         ctx.dialogAdvanceTimer = null;
     }
 }

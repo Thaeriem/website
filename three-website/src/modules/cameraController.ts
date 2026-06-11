@@ -161,9 +161,7 @@ export class CameraController {
             })
             .start();
 
-        ctx.globalGroup.rotation.set(0, 0, 0);
         this.clearMovement();
-        this.resetParticleGeometry();
     }
 
     focus(target: THREE.Object3D) {
@@ -196,7 +194,6 @@ export class CameraController {
             })
             .start();
 
-        ctx.globalGroup.rotation.set(0, 0, 0);
         this.clearMovement();
     }
 
@@ -292,13 +289,6 @@ export class CameraController {
         const normalizedZoom = THREE.MathUtils.clamp((ctx.camera.zoom - this.controls.minZoom) / range, 0, 1);
         const curvedZoom = THREE.MathUtils.smoothstep(normalizedZoom, 0, 1) ** 1.35;
         return THREE.MathUtils.lerp(PAN_ZOOMED_OUT_MULTIPLIER, PAN_ZOOMED_IN_MULTIPLIER, curvedZoom);
-    }
-
-    private resetParticleGeometry() {
-        ctx.smokeParticles.geometry.copy(ctx.osp);
-        ctx.fireParticles.geometry.copy(ctx.ofp);
-        ctx.smokeParticles.instanceMatrix.needsUpdate = true;
-        ctx.fireParticles.instanceMatrix.needsUpdate = true;
     }
 
     private setupDragPanning() {

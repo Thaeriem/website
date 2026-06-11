@@ -2,6 +2,7 @@ import * as THREE from "three";
 import { ctx } from "../rendererContext";
 import { onWindowResize } from "./render";
 import { closeDialog, nextDialogLine } from "./dialog";
+import { unlockDialogAudio } from "./dialogAudio";
 import { updateChest } from "./animations";
 import { CameraController } from "./cameraController";
 
@@ -49,6 +50,8 @@ export function toggleAnim(enable: boolean) {
 }
 
 function onKeyDown(event: any) {
+    unlockDialogAudio();
+
     switch (event.code) {
         case 'Space':
             if (ctx.isDialogOpen) {
@@ -102,6 +105,7 @@ function onMouseMove(event: MouseEvent) {
 
 function onPointerDown(event: PointerEvent) {
     if (!event.isPrimary || event.button !== 0) return;
+    unlockDialogAudio();
     updatePointerPosition(event);
     pointerTapState = {
         pointerId: event.pointerId,
