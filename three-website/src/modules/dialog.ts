@@ -17,6 +17,7 @@ const DIALOG_DATA: Record<string, DialogCharacter> = {
 };
 
 const ANCHOR_OFFSET = new THREE.Vector3(0, 0.62, 0);
+const TOUCH_CHAR_INTERVAL_MS = 14;
 const anchorWorldPosition = new THREE.Vector3();
 const anchorScreenPosition = new THREE.Vector3();
 
@@ -228,7 +229,7 @@ function showCurrentDialogLine(): void {
     ctx.dialogElement.classList.remove("is-waiting");
 
     const text = ctx.currentCharacter.text[ctx.currentLineIndex];
-    const speed = ctx.currentCharacter.speed[ctx.currentLineIndex] ?? 24;
+    const speed = dialogCharInterval(ctx.currentCharacter.speed[ctx.currentLineIndex] ?? 24);
     const speakerElement = ctx.dialogElement.querySelector("#dialog-speaker") as HTMLElement | null;
     const textElement = ctx.dialogElement.querySelector("#dialog-text") as HTMLElement | null;
 
@@ -264,6 +265,13 @@ function showCurrentDialogLine(): void {
 
     appendNextChar();
     ctx.dialogAdvanceTimer = window.setInterval(appendNextChar, speed);
+}
+
+function dialogCharInterval(speed: number): number {
+    if (window.matchMedia("(pointer: coarse)").matches) {
+        return Math.max(speed, TOUCH_CHAR_INTERVAL_MS);
+    }
+    return speed;
 }
 
 function finishCurrentLine(): void {

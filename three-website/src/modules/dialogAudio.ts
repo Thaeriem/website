@@ -29,10 +29,14 @@ const VOICES: Record<string, DialogVoice> = {
 
 let audioContext: AudioContext | null = null;
 let lastBlipTime = 0;
+let isAudioPrimed = false;
 
 export function unlockDialogAudio(): void {
     const context = getAudioContext();
-    context?.resume();
+    if (!context || context.state === "closed") return;
+
+    context.resume();
+    primeAudioContext(context);
 }
 
 export function playDialogBlip(char: string, voiceKey: string): void {
@@ -43,6 +47,7 @@ export function playDialogBlip(char: string, voiceKey: string): void {
     if (context.state === "suspended") {
         context.resume();
     }
+    primeAudioContext(context);
 
     const voice = VOICES[voiceKey] ?? DEFAULT_VOICE;
     const now = context.currentTime;
@@ -64,7 +69,7 @@ export function playDialogBlip(char: string, voiceKey: string): void {
     filter.Q.setValueAtTime(6, now);
 
     gain.gain.setValueAtTime(0.0001, now);
-    gain.gain.exponentialRampToValueAtTime(voice.volume, now + 0.006);
+    gain.gain.exponentialRampToValueAtTime(voice.volume, now + 0.004);
     gain.gain.exponentialRampToValueAtTime(0.0001, now + voice.duration);
 
     oscillator.connect(filter);
@@ -73,6 +78,21 @@ export function playDialogBlip(char: string, voiceKey: string): void {
 
     oscillator.start(now);
     oscillator.stop(now + voice.duration + 0.01);
+}
+
+function primeAudioContext(context: AudioContext): void {
+    if (isAudioPrimed) return;
+
+    const oscillator = context.createOscillator();
+    const gain = context.createGain();
+    const now = context.currentTime;
+
+    gain.gain.setValueAtTime(0.0001, now);
+    oscillator.connect(gain);
+    gain.connect(context.destination);
+    oscillator.start(now);
+    oscillator.stop(now + 0.01);
+    isAudioPrimed = true;
 }
 
 function getAudioContext(): AudioContext | null {
@@ -99,8 +119,7 @@ function shouldPlayChar(char: string): boolean {
 
 function isSoundMuted(): boolean {
     const soundToggle = document.getElementById("sound-toggle");
-    const ocean = document.getElementById("ocean") as HTMLAudioElement | null;
-    return soundToggle?.classList.contains("muted") || ocean?.muted === true;
+    return soundToggle?.classList.contains("muted") === true;
 }
 
 declare global {
