@@ -125,6 +125,10 @@ function onPointerUp(event: PointerEvent) {
     onSceneSelect(event);
 }
 
+function onTouchStart() {
+    unlockDialogAudio();
+}
+
 function onSceneSelect(event: MouseEvent | PointerEvent) {
     if (ctx.isDialogOpen) {
         event.preventDefault();
@@ -213,6 +217,7 @@ export function initInputListeners() {
     document.addEventListener("keydown", onKeyDown, false);
     document.addEventListener("keyup", onKeyUp, false);
     window.addEventListener('mousemove', onMouseMove, false);
+    window.addEventListener('touchstart', onTouchStart, { capture: true, passive: true });
     window.addEventListener('pointerdown', onPointerDown, false);
     window.addEventListener('pointermove', onPointerMove, false);
     window.addEventListener('pointerup', onPointerUp, false);

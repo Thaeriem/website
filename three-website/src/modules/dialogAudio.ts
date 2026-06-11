@@ -30,13 +30,31 @@ const VOICES: Record<string, DialogVoice> = {
 let audioContext: AudioContext | null = null;
 let lastBlipTime = 0;
 let isAudioPrimed = false;
+let isAudioUnlocked = false;
+let resumeAttempt: Promise<void> | null = null;
 
 export function unlockDialogAudio(): void {
     const context = getAudioContext();
     if (!context || context.state === "closed") return;
 
-    context.resume();
-    primeAudioContext(context);
+    if (context.state === "running") {
+        isAudioUnlocked = true;
+        primeAudioContext(context);
+        return;
+    }
+
+    if (!resumeAttempt) {
+        resumeAttempt = context.resume()
+            .then(() => {
+                isAudioUnlocked = context.state === "running";
+                if (isAudioUnlocked) {
+                    primeAudioContext(context);
+                }
+            })
+            .catch(() => {
+                resumeAttempt = null;
+            });
+    }
 }
 
 export function playDialogBlip(char: string, voiceKey: string): void {
@@ -44,9 +62,11 @@ export function playDialogBlip(char: string, voiceKey: string): void {
 
     const context = getAudioContext();
     if (!context || context.state === "closed") return;
-    if (context.state === "suspended") {
-        context.resume();
+    if (context.state !== "running" || !isAudioUnlocked) {
+        unlockDialogAudio();
+        return;
     }
+
     primeAudioContext(context);
 
     const voice = VOICES[voiceKey] ?? DEFAULT_VOICE;
