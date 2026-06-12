@@ -204,39 +204,46 @@ function initPerfDebugControls() {
         "pointer-events:auto"
     ].join(";");
 
-    addPerfButton(panel, "FX", () => {
+    addPerfButton(panel, "FX", () => ctx.usePostProcessing, () => {
         ctx.usePostProcessing = !ctx.usePostProcessing;
     });
-    addPerfButton(panel, "Ocean", () => {
+    addPerfButton(panel, "Ocean", () => ctx.animateOcean, () => {
         ctx.animateOcean = !ctx.animateOcean;
     });
-    addPerfButton(panel, "Shadow", () => {
+    addPerfButton(panel, "Shadow", () => ctx.shadowsEnabled, () => {
         ctx.shadowsEnabled = !ctx.shadowsEnabled;
         ctx.renderer.shadowMap.enabled = ctx.shadowsEnabled;
         setSceneShadows(ctx.shadowsEnabled);
     });
-    addPerfButton(panel, "CSS", () => {
+    addPerfButton(panel, "CSS", () => ctx.renderCss, () => {
         ctx.renderCss = !ctx.renderCss;
     });
 
     document.body.appendChild(panel);
 }
 
-function addPerfButton(panel: HTMLElement, label: string, onClick: () => void) {
+function addPerfButton(panel: HTMLElement, label: string, isEnabled: () => boolean, onClick: () => void) {
     const button = document.createElement("button");
-    button.textContent = label;
-    button.style.cssText = [
-        "height:24px",
-        "padding:0 6px",
-        "border:1px solid rgba(255,255,255,0.45)",
-        "background:rgba(20,20,20,0.8)",
-        "color:#fff",
-        "font:10px monospace"
-    ].join(";");
+    const syncButtonState = () => {
+        const enabled = isEnabled();
+        button.textContent = `${label}: ${enabled ? "ON" : "OFF"}`;
+        button.style.cssText = [
+            "height:24px",
+            "padding:0 6px",
+            "border:1px solid rgba(255,255,255,0.45)",
+            `background:${enabled ? "rgba(212,175,55,0.92)" : "rgba(20,20,20,0.8)"}`,
+            `color:${enabled ? "#18130a" : "#fff"}`,
+            "font:10px monospace",
+            "font-weight:700"
+        ].join(";");
+    };
+
     button.addEventListener("click", (event) => {
         event.stopPropagation();
         onClick();
+        syncButtonState();
     });
+    syncButtonState();
     panel.appendChild(button);
 }
 
