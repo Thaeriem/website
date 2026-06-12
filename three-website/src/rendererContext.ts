@@ -29,7 +29,7 @@ export interface TList {
   [key: string]: any;
 }
 
-export type VisualMode = "direct" | "pixel" | "edge" | "bloom";
+export type VisualMode = "direct" | "pixel" | "edge" | "bloom-low" | "bloom-mid" | "bloom-high";
 
 // Renderer and scene state
 export interface RenderState {

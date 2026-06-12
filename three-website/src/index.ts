@@ -5,13 +5,41 @@ import Stats from 'three/examples/jsm/libs/stats.module.js';
 import { ctx } from "./rendererContext";
 import { setupCamera, setupRenderers, setupComposer, renderHTML } from "./modules/render";
 import { initLighting } from "./modules/lighting";
-import { initInputListeners, processInput, setupControls } from "./modules/input";
+import { initInputListeners, processInput, setupControls, setVisualModeApplier } from "./modules/input";
 import { setupParticles, updateSmoke } from "./modules/particles";
 import { onClickCamp, onClickChest, onClickYash } from "./modules/utilities";
 import { updateBoat, updateCat, updateClouds, updateDebris, updateKelp, updateOcean } from "./modules/animations";
 import { initModels } from "./modules/models";
 import { initDialog, updateDialogPosition } from "./modules/dialog";
 import type { VisualMode } from "./rendererContext";
+
+type BloomModeSettings = {
+    scale: number;
+    strength: number;
+    radius: number;
+    threshold: number;
+};
+
+const BLOOM_MODE_SETTINGS: Record<Extract<VisualMode, "bloom-low" | "bloom-mid" | "bloom-high">, BloomModeSettings> = {
+    "bloom-low": {
+        scale: 0.25,
+        strength: 0.22,
+        radius: 0.04,
+        threshold: 0.92
+    },
+    "bloom-mid": {
+        scale: 0.5,
+        strength: 0.38,
+        radius: 0.08,
+        threshold: 0.86
+    },
+    "bloom-high": {
+        scale: 1,
+        strength: 0.55,
+        radius: 0.14,
+        threshold: 0.78
+    }
+};
 
 ctx.stats = Stats();
 ctx.islandModelURL = '/island.glb';
@@ -127,6 +155,7 @@ async function init() {
     setupRenderers(screenResolution);
     setupComposer(screenResolution, renderResolution);
     applyVisualMode(ctx.visualMode);
+    setVisualModeApplier(() => applyVisualMode(ctx.visualMode));
     ctx.renderer.shadowMap.enabled = ctx.shadowsEnabled;
 
     setupControls();
@@ -199,6 +228,7 @@ function initPerfDebugControls() {
         "top:52px",
         "z-index:2000",
         "display:flex",
+        "flex-wrap:wrap",
         "gap:4px",
         "padding:4px",
         "font:10px monospace",
@@ -210,7 +240,9 @@ function initPerfDebugControls() {
     addVisualModeButton(panel, buttons, "Direct", "direct");
     addVisualModeButton(panel, buttons, "Pixel", "pixel");
     addVisualModeButton(panel, buttons, "Edge", "edge");
-    addVisualModeButton(panel, buttons, "Bloom", "bloom");
+    addVisualModeButton(panel, buttons, "Bloom L", "bloom-low");
+    addVisualModeButton(panel, buttons, "Bloom M", "bloom-mid");
+    addVisualModeButton(panel, buttons, "Bloom H", "bloom-high");
 
     document.body.appendChild(panel);
     syncVisualModeButtons(buttons);
@@ -246,8 +278,23 @@ function syncVisualModeButtons(buttons: HTMLButtonElement[]) {
 
 function applyVisualMode(mode: VisualMode) {
     ctx.visualMode = mode;
-    ctx.pixelPass.edgeStrength = mode === "edge" || mode === "bloom" ? 0.05 : 0;
-    ctx.bloomPass.enabled = mode === "bloom";
+    ctx.pixelPass.edgeStrength = mode === "edge" || isBloomMode(mode) ? 0.05 : 0;
+    ctx.bloomPass.enabled = isBloomMode(mode);
+
+    if (isBloomMode(mode)) {
+        const settings = BLOOM_MODE_SETTINGS[mode];
+        ctx.bloomPass.strength = settings.strength;
+        ctx.bloomPass.radius = settings.radius;
+        ctx.bloomPass.threshold = settings.threshold;
+        ctx.bloomPass.setSize(
+            Math.max(1, Math.floor(window.innerWidth * settings.scale)),
+            Math.max(1, Math.floor(window.innerHeight * settings.scale))
+        );
+    }
+}
+
+function isBloomMode(mode: VisualMode): mode is Extract<VisualMode, "bloom-low" | "bloom-mid" | "bloom-high"> {
+    return mode === "bloom-low" || mode === "bloom-mid" || mode === "bloom-high";
 }
 
 function setSceneShadows(enabled: boolean) {
