@@ -1,6 +1,5 @@
 import * as THREE from "three";
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer';
-import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass';
 import { CSS3DObject, CSS3DRenderer } from "three/examples/jsm/renderers/CSS3DRenderer.js";
 import { ctx } from "../rendererContext";
@@ -40,7 +39,6 @@ export function setupRenderers(screenResolution: THREE.Vector2) {
 
 export function setupComposer(screenResolution: THREE.Vector2, renderResolution: THREE.Vector2) {
     ctx.composer = new EffectComposer( ctx.renderer )
-    ctx.composer.addPass( new RenderPass( ctx.scene, ctx.camera ) )
     ctx.pixelPass = new RenderPixelatedPass( renderResolution, ctx.scene, ctx.camera );
     ctx.composer.addPass( ctx.pixelPass )
     if (!isCoarsePointer()) {
