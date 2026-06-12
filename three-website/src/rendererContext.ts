@@ -3,6 +3,7 @@ import * as THREE from "three";
 import { CSS3DRenderer, CSS3DObject } from "three/examples/jsm/renderers/CSS3DRenderer.js";
 import { MapControls } from "three/examples/jsm/controls/OrbitControls";
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer';
+import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass';
 import RenderPixelatedPass from "./shaders/pix-pass";
 import Stats from "three/examples/jsm/libs/stats.module";
 
@@ -28,6 +29,8 @@ export interface TList {
   [key: string]: any;
 }
 
+export type VisualMode = "direct" | "pixel" | "edge" | "bloom";
+
 // Renderer and scene state
 export interface RenderState {
   prevTime: number;
@@ -39,14 +42,15 @@ export interface RenderState {
   rendererCss: CSS3DRenderer;
   composer: EffectComposer;
   pixelPass: RenderPixelatedPass;
+  bloomPass: UnrealBloomPass;
   cameraBounds: CameraBounds;
   animTime: number;
   dZoom: number;
   globalGroup: THREE.Group;
   stats: Stats;
+  visualMode: VisualMode;
   animateOcean: boolean;
   renderCss: boolean;
-  usePostProcessing: boolean;
   shadowsEnabled: boolean;
 }
 

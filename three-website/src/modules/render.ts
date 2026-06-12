@@ -41,10 +41,9 @@ export function setupComposer(screenResolution: THREE.Vector2, renderResolution:
     ctx.composer = new EffectComposer( ctx.renderer )
     ctx.pixelPass = new RenderPixelatedPass( renderResolution, ctx.scene, ctx.camera );
     ctx.composer.addPass( ctx.pixelPass )
-    if (!isCoarsePointer()) {
-        const bloomPass = new UnrealBloomPass( screenResolution, .4, .1, .9 )
-        ctx.composer.addPass(bloomPass)
-    }
+    ctx.bloomPass = new UnrealBloomPass( screenResolution, .4, .1, .9 )
+    ctx.bloomPass.enabled = false
+    ctx.composer.addPass(ctx.bloomPass)
 }
 
 export function onWindowResize() {
@@ -68,10 +67,6 @@ export function onWindowResize() {
 
 function getRenderPixelRatio(): number {
     return Math.min(window.devicePixelRatio || 1, MAX_DEVICE_PIXEL_RATIO);
-}
-
-function isCoarsePointer(): boolean {
-    return window.matchMedia("(pointer: coarse)").matches;
 }
 
 export function renderHTML() {

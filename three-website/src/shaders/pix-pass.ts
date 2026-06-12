@@ -9,6 +9,7 @@ export default class RenderPixelatedPass extends Pass {
     scene: THREE.Scene
     camera: THREE.Camera
     rgbRenderTarget: WebGLRenderTarget
+    edgeStrength: number
 
     constructor( resolution: THREE.Vector2, scene: THREE.Scene, camera: THREE.Camera ) {
         super()
@@ -16,6 +17,7 @@ export default class RenderPixelatedPass extends Pass {
         this.fsQuad = new FullScreenQuad( this.material() )
         this.scene = scene
         this.camera = camera
+        this.edgeStrength = 0.05
 
         this.rgbRenderTarget = pixelRenderTarget( resolution, THREE.RGBAFormat, true )
     }
@@ -31,6 +33,7 @@ export default class RenderPixelatedPass extends Pass {
         const uniforms = this.fsQuad.material.uniforms
         uniforms.tDiffuse.value = this.rgbRenderTarget.texture
         uniforms.tDepth.value = this.rgbRenderTarget.depthTexture
+        uniforms.edgeStrength.value = this.edgeStrength
 
         if ( this.renderToScreen ) {
             renderer.setRenderTarget( null )
@@ -46,6 +49,7 @@ export default class RenderPixelatedPass extends Pass {
             uniforms: {
                 tDiffuse: { value: null },
                 tDepth: { value: null },
+                edgeStrength: { value: 0.05 },
                 resolution: {
                     value: new THREE.Vector4(
                         this.resolution.x,
@@ -67,6 +71,7 @@ export default class RenderPixelatedPass extends Pass {
                 `
                 uniform sampler2D tDiffuse;
                 uniform sampler2D tDepth;
+                uniform float edgeStrength;
                 uniform vec4 resolution;
                 varying vec2 vUv;
 
@@ -87,11 +92,14 @@ export default class RenderPixelatedPass extends Pass {
                 void main() {
                     vec4 texel = texture2D( tDiffuse, vUv );
 
-                    float depthEdgeCoefficient = .05;
+                    if (edgeStrength <= 0.0) {
+                        gl_FragColor = texel;
+                        return;
+                    }
 
                     float dei = depthEdgeIndicator();
 
-                    float coefficient = 1.0 - depthEdgeCoefficient * dei;
+                    float coefficient = 1.0 - edgeStrength * dei;
                     gl_FragColor = texel * coefficient;
                 }
                 `

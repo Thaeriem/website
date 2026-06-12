@@ -11,6 +11,7 @@ import { onClickCamp, onClickChest, onClickYash } from "./modules/utilities";
 import { updateBoat, updateCat, updateClouds, updateDebris, updateKelp, updateOcean } from "./modules/animations";
 import { initModels } from "./modules/models";
 import { initDialog, updateDialogPosition } from "./modules/dialog";
+import type { VisualMode } from "./rendererContext";
 
 ctx.stats = Stats();
 ctx.islandModelURL = '/island.glb';
@@ -31,9 +32,9 @@ ctx.animTime = 1200;
 // const audJingle = document.getElementById('jingle') as HTMLAudioElement;
 ctx.dZoom = 0.3;
 ctx.globalGroup = new THREE.Group();
+ctx.visualMode = window.matchMedia("(pointer: coarse)").matches ? "direct" : "edge";
 ctx.animateOcean = true;
 ctx.renderCss = true;
-ctx.usePostProcessing = !window.matchMedia("(pointer: coarse)").matches;
 ctx.shadowsEnabled = !window.matchMedia("(pointer: coarse)").matches;
 // MOUSE CONTROLS
 ctx.raycaster = new THREE.Raycaster();
@@ -125,6 +126,7 @@ async function init() {
 
     setupRenderers(screenResolution);
     setupComposer(screenResolution, renderResolution);
+    applyVisualMode(ctx.visualMode);
     ctx.renderer.shadowMap.enabled = ctx.shadowsEnabled;
 
     setupControls();
@@ -175,10 +177,10 @@ function animate() {
     ctx.stats.update();
     updateDialogPosition();
     TWEEN.update();
-    if (ctx.usePostProcessing) {
-        ctx.composer.render();
-    } else {
+    if (ctx.visualMode === "direct") {
         ctx.renderer.render(ctx.scene, ctx.camera);
+    } else {
+        ctx.composer.render();
     }
     if (ctx.renderCss && ctx.cssHolder?.visible) {
         ctx.rendererCss.render( ctx.sceneCss, ctx.camera );
@@ -204,29 +206,32 @@ function initPerfDebugControls() {
         "pointer-events:auto"
     ].join(";");
 
-    addPerfButton(panel, "FX", () => ctx.usePostProcessing, () => {
-        ctx.usePostProcessing = !ctx.usePostProcessing;
-    });
-    addPerfButton(panel, "Ocean", () => ctx.animateOcean, () => {
-        ctx.animateOcean = !ctx.animateOcean;
-    });
-    addPerfButton(panel, "Shadow", () => ctx.shadowsEnabled, () => {
-        ctx.shadowsEnabled = !ctx.shadowsEnabled;
-        ctx.renderer.shadowMap.enabled = ctx.shadowsEnabled;
-        setSceneShadows(ctx.shadowsEnabled);
-    });
-    addPerfButton(panel, "CSS", () => ctx.renderCss, () => {
-        ctx.renderCss = !ctx.renderCss;
-    });
+    const buttons: HTMLButtonElement[] = [];
+    addVisualModeButton(panel, buttons, "Direct", "direct");
+    addVisualModeButton(panel, buttons, "Pixel", "pixel");
+    addVisualModeButton(panel, buttons, "Edge", "edge");
+    addVisualModeButton(panel, buttons, "Bloom", "bloom");
 
     document.body.appendChild(panel);
+    syncVisualModeButtons(buttons);
 }
 
-function addPerfButton(panel: HTMLElement, label: string, isEnabled: () => boolean, onClick: () => void) {
+function addVisualModeButton(panel: HTMLElement, buttons: HTMLButtonElement[], label: string, mode: VisualMode) {
     const button = document.createElement("button");
-    const syncButtonState = () => {
-        const enabled = isEnabled();
-        button.textContent = `${label}: ${enabled ? "ON" : "OFF"}`;
+    button.dataset.mode = mode;
+    button.textContent = label;
+    button.addEventListener("click", (event) => {
+        event.stopPropagation();
+        applyVisualMode(mode);
+        syncVisualModeButtons(buttons);
+    });
+    buttons.push(button);
+    panel.appendChild(button);
+}
+
+function syncVisualModeButtons(buttons: HTMLButtonElement[]) {
+    buttons.forEach((button) => {
+        const enabled = button.dataset.mode === ctx.visualMode;
         button.style.cssText = [
             "height:24px",
             "padding:0 6px",
@@ -236,15 +241,13 @@ function addPerfButton(panel: HTMLElement, label: string, isEnabled: () => boole
             "font:10px monospace",
             "font-weight:700"
         ].join(";");
-    };
-
-    button.addEventListener("click", (event) => {
-        event.stopPropagation();
-        onClick();
-        syncButtonState();
     });
-    syncButtonState();
-    panel.appendChild(button);
+}
+
+function applyVisualMode(mode: VisualMode) {
+    ctx.visualMode = mode;
+    ctx.pixelPass.edgeStrength = mode === "edge" || mode === "bloom" ? 0.05 : 0;
+    ctx.bloomPass.enabled = mode === "bloom";
 }
 
 function setSceneShadows(enabled: boolean) {
