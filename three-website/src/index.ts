@@ -31,6 +31,10 @@ ctx.animTime = 1200;
 // const audJingle = document.getElementById('jingle') as HTMLAudioElement;
 ctx.dZoom = 0.3;
 ctx.globalGroup = new THREE.Group();
+ctx.animateOcean = true;
+ctx.renderCss = true;
+ctx.usePostProcessing = !window.matchMedia("(pointer: coarse)").matches;
+ctx.shadowsEnabled = !window.matchMedia("(pointer: coarse)").matches;
 // MOUSE CONTROLS
 ctx.raycaster = new THREE.Raycaster();
 ctx.mouse = new THREE.Vector2(1, 1);
@@ -121,6 +125,7 @@ async function init() {
 
     setupRenderers(screenResolution);
     setupComposer(screenResolution, renderResolution);
+    ctx.renderer.shadowMap.enabled = ctx.shadowsEnabled;
 
     setupControls();
 
@@ -134,10 +139,12 @@ async function init() {
     setupParticles();
     // LIGHTING
     initLighting();
+    setSceneShadows(ctx.shadowsEnabled);
 
     initDialog();
     
     renderHTML();
+    initPerfDebugControls();
     initInputListeners();
 }
 
@@ -147,7 +154,9 @@ function animate() {
     ctx.time = performance.now();
     const delta = ( ctx.time - ctx.prevTime ) / 1000;
 
-    updateOcean(ctx.time * 0.0001,0.1,0.1);
+    if (ctx.animateOcean) {
+        updateOcean(ctx.time * 0.0001,0.1,0.1);
+    }
     updateClouds(delta);
 
     const shouldUpdateWorld = ctx.controls.enabled || ctx.anim;
@@ -166,11 +175,78 @@ function animate() {
     ctx.stats.update();
     updateDialogPosition();
     TWEEN.update();
-    ctx.composer.render();
-    if (ctx.cssHolder?.visible) {
+    if (ctx.usePostProcessing) {
+        ctx.composer.render();
+    } else {
+        ctx.renderer.render(ctx.scene, ctx.camera);
+    }
+    if (ctx.renderCss && ctx.cssHolder?.visible) {
         ctx.rendererCss.render( ctx.sceneCss, ctx.camera );
     }
     requestAnimationFrame( animate )
 
     ctx.prevTime = ctx.time;
+}
+
+function initPerfDebugControls() {
+    const panel = document.createElement("div");
+    panel.id = "perf-debug-controls";
+    panel.style.cssText = [
+        "position:fixed",
+        "left:0",
+        "top:52px",
+        "z-index:2000",
+        "display:flex",
+        "gap:4px",
+        "padding:4px",
+        "font:10px monospace",
+        "background:rgba(0,0,0,0.45)",
+        "pointer-events:auto"
+    ].join(";");
+
+    addPerfButton(panel, "FX", () => {
+        ctx.usePostProcessing = !ctx.usePostProcessing;
+    });
+    addPerfButton(panel, "Ocean", () => {
+        ctx.animateOcean = !ctx.animateOcean;
+    });
+    addPerfButton(panel, "Shadow", () => {
+        ctx.shadowsEnabled = !ctx.shadowsEnabled;
+        ctx.renderer.shadowMap.enabled = ctx.shadowsEnabled;
+        setSceneShadows(ctx.shadowsEnabled);
+    });
+    addPerfButton(panel, "CSS", () => {
+        ctx.renderCss = !ctx.renderCss;
+    });
+
+    document.body.appendChild(panel);
+}
+
+function addPerfButton(panel: HTMLElement, label: string, onClick: () => void) {
+    const button = document.createElement("button");
+    button.textContent = label;
+    button.style.cssText = [
+        "height:24px",
+        "padding:0 6px",
+        "border:1px solid rgba(255,255,255,0.45)",
+        "background:rgba(20,20,20,0.8)",
+        "color:#fff",
+        "font:10px monospace"
+    ].join(";");
+    button.addEventListener("click", (event) => {
+        event.stopPropagation();
+        onClick();
+    });
+    panel.appendChild(button);
+}
+
+function setSceneShadows(enabled: boolean) {
+    ctx.globalGroup.traverse((child) => {
+        if (child instanceof THREE.Mesh) {
+            child.castShadow = enabled;
+            child.receiveShadow = enabled;
+        }
+    });
+    if (ctx.dirL) ctx.dirL.castShadow = enabled;
+    if (ctx.sptL) ctx.sptL.castShadow = enabled;
 }

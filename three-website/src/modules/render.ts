@@ -10,7 +10,7 @@ const IFRAME_VIEWPORT_WIDTH = 720;
 const IFRAME_VIEWPORT_HEIGHT = 780;
 const IFRAME_VISUAL_WIDTH = 384;
 const IFRAME_VISUAL_HEIGHT = 416;
-const MAX_DEVICE_PIXEL_RATIO = 1.5;
+const MAX_DEVICE_PIXEL_RATIO = 1;
 
 export function setupCamera(screenResolution: THREE.Vector2) {
     let aspectRatio = screenResolution.x / screenResolution.y

@@ -44,6 +44,10 @@ export interface RenderState {
   dZoom: number;
   globalGroup: THREE.Group;
   stats: Stats;
+  animateOcean: boolean;
+  renderCss: boolean;
+  usePostProcessing: boolean;
+  shadowsEnabled: boolean;
 }
 
 // Input state for mouse and keyboard
