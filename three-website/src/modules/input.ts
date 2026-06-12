@@ -7,7 +7,6 @@ import { toggleKelp, updateChest } from "./animations";
 import { CameraController } from "./cameraController";
 
 let cameraController: CameraController;
-let visualModeApplier: (() => void) | null = null;
 
 type PointerTapState = {
     pointerId: number;
@@ -21,10 +20,6 @@ let pointerTapState: PointerTapState = null;
 export function setupControls() {
     cameraController = new CameraController();
     ctx.controls = cameraController.controls;
-}
-
-export function setVisualModeApplier(callback: () => void) {
-    visualModeApplier = callback;
 }
 
 function preventEvent(event: any) {
@@ -221,10 +216,7 @@ function mouseUpdate() {
 }
 
 export function initInputListeners() {
-    window.addEventListener('resize', () => {
-        onWindowResize();
-        visualModeApplier?.();
-    });
+    window.addEventListener('resize', onWindowResize);
     document.addEventListener("keydown", onKeyDown, false);
     document.addEventListener("keyup", onKeyUp, false);
     window.addEventListener('mousemove', onMouseMove, false);

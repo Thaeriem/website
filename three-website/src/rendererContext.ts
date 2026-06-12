@@ -29,8 +29,6 @@ export interface TList {
   [key: string]: any;
 }
 
-export type VisualMode = "direct" | "pixel" | "edge" | "bloom-low" | "bloom-mid" | "bloom-high";
-
 // Renderer and scene state
 export interface RenderState {
   prevTime: number;
@@ -48,7 +46,6 @@ export interface RenderState {
   dZoom: number;
   globalGroup: THREE.Group;
   stats: Stats;
-  visualMode: VisualMode;
   animateOcean: boolean;
   renderCss: boolean;
   shadowsEnabled: boolean;
