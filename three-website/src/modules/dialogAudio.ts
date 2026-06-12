@@ -12,7 +12,7 @@ const DEFAULT_VOICE: DialogVoice = {
     baseFrequency: 420,
     variance: 110,
     duration: 0.032,
-    volume: 0.16,
+    volume: 0.32,
     minInterval: 0.028
 };
 
@@ -22,7 +22,7 @@ const VOICES: Record<string, DialogVoice> = {
         baseFrequency: 360,
         variance: 85,
         duration: 0.034,
-        volume: 0.18,
+        volume: 0.36,
         minInterval: 0.03
     }
 };
