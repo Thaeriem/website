@@ -101,6 +101,7 @@ export interface GeometryState {
   fireParticles: THREE.InstancedMesh;
   ofp: THREE.BufferGeometry;
   kelpArr: THREE.InstancedMesh[];
+  kelpVisible: boolean;
 }
 
 // CSS and overlay state

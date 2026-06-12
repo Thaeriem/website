@@ -38,7 +38,7 @@ export function initDialog(): void {
             top: 0;
             z-index: 1000;
             display: none;
-            width: max-content;
+            width: min(360px, calc(100vw - 32px));
             max-width: calc(100vw - 32px);
             color: #fff6dc;
             text-align: left;
@@ -68,8 +68,9 @@ export function initDialog(): void {
         }
 
         .dialog-text {
-            display: inline-block;
-            max-width: calc(100vw - 32px);
+            display: block;
+            width: 100%;
+            max-width: 100%;
             padding: 0;
             border: 0;
             border-radius: 0;
@@ -77,6 +78,7 @@ export function initDialog(): void {
             box-shadow: none;
             font-size: 18px;
             line-height: 1.35;
+            text-align: left;
             white-space: normal;
             overflow-wrap: anywhere;
             word-spacing: 0.18em;
@@ -216,7 +218,7 @@ export function updateDialogPosition(): void {
     const y = (-anchorScreenPosition.y * 0.5 + 0.5) * window.innerHeight;
     const zoomScale = THREE.MathUtils.clamp(ctx.camera.zoom / 0.72, 0.82, 1.12);
 
-    ctx.dialogElement.style.transform = `translate3d(${x}px, ${y}px, 0) translate(-50%, -100%) translateY(-2px) scale(${zoomScale})`;
+    ctx.dialogElement.style.transform = `translate3d(${x}px, ${y}px, 0) translate(-50%, 0) translateY(-2px) scale(${zoomScale})`;
 }
 
 function showCurrentDialogLine(): void {
@@ -301,9 +303,14 @@ function createCursorElement(): HTMLElement {
 }
 
 function appendDialogChar(textElement: HTMLElement, char: string): void {
+    if (char === " ") {
+        textElement.insertBefore(document.createTextNode(" "), textElement.querySelector(".dialog-cursor"));
+        return;
+    }
+
     const span = document.createElement("span");
     span.className = "dialog-char";
-    span.textContent = char === " " ? "\u00a0" : char;
+    span.textContent = char;
     textElement.insertBefore(span, textElement.querySelector(".dialog-cursor"));
 }
 

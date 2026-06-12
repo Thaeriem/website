@@ -3,7 +3,7 @@ import { ctx } from "../rendererContext";
 import { onWindowResize } from "./render";
 import { closeDialog, nextDialogLine } from "./dialog";
 import { unlockDialogAudio } from "./dialogAudio";
-import { updateChest } from "./animations";
+import { toggleKelp, updateChest } from "./animations";
 import { CameraController } from "./cameraController";
 
 let cameraController: CameraController;
@@ -82,6 +82,9 @@ function onKeyDown(event: any) {
         case 'F9':
             if (ctx.stats.domElement.style.display == 'block') ctx.stats.domElement.style.display = 'none';
             else ctx.stats.domElement.style.display = 'block';
+            break;
+        case 'KeyK':
+            toggleKelp();
             break;
     }
 }

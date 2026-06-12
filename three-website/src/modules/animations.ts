@@ -85,7 +85,7 @@ export function updateDebris() {
 
 
 export function updateKelp() {
-    if (ctx.islandModel) {
+    if (ctx.islandModel && ctx.kelpVisible) {
         const height = (ctx.debrv0.y + ctx.debrv1.y + ctx.debrv2.y)/3
         const hnorm = (((height - 0.25) / (0.55 - 0.25)) - 0.5)
         for (let i = 0; i < ctx.kelpArr.length; i++) {
@@ -100,6 +100,13 @@ export function updateKelp() {
             }
         }
     }
+}
+
+export function toggleKelp() {
+    ctx.kelpVisible = !ctx.kelpVisible;
+    ctx.kelpArr.forEach((kelp) => {
+        kelp.visible = ctx.kelpVisible;
+    });
 }
 
 export function updateChest(isOpen: boolean) {

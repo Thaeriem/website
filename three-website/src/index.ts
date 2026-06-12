@@ -42,6 +42,7 @@ ctx.trgO = new THREE.Object3D();
 // GEOMETRIES + MESHES
 ctx.cloudAmt = 10;
 ctx.debrisMesh = [], ctx.kelpArr = [];
+ctx.kelpVisible = false;
 // DUMMY
 ctx.dummy = new THREE.Object3D(),
 ctx.dummyMat = new THREE.Matrix4(),
@@ -100,8 +101,10 @@ init().then(() => {
 async function init() {
     ctx.stats.dom.style.width = '80px';
     ctx.stats.dom.style.height = '48px';
+    ctx.stats.dom.style.zIndex = '2000';
+    ctx.stats.dom.style.pointerEvents = 'none';
     document.body.appendChild( ctx.stats.dom );
-    ctx.stats.domElement.style.display = 'none';
+    ctx.stats.domElement.style.display = 'block';
 
     let screenResolution = new THREE.Vector2( window.innerWidth, window.innerHeight )
     let renderResolution = screenResolution.clone().divideScalar( 4 )
