@@ -167,7 +167,9 @@ function animate() {
     updateDialogPosition();
     TWEEN.update();
     ctx.composer.render();
-    ctx.rendererCss.render( ctx.sceneCss, ctx.camera );
+    if (ctx.cssHolder?.visible) {
+        ctx.rendererCss.render( ctx.sceneCss, ctx.camera );
+    }
     requestAnimationFrame( animate )
 
     ctx.prevTime = ctx.time;

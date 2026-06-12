@@ -34,7 +34,11 @@ export function updateClouds(delta: number) {
 
 export function updateOcean(time: number, scale: number, amplitude: number) {
     const positionAttribute = ctx.oceanGeo.attributes.position;
-    ctx.dummyArr = [];
+    let colorAttribute = ctx.oceanGeo.getAttribute('color') as THREE.BufferAttribute | undefined;
+    if (!colorAttribute) {
+        colorAttribute = new THREE.BufferAttribute(new Float32Array(positionAttribute.count * 3), 3);
+        ctx.oceanGeo.setAttribute('color', colorAttribute);
+    }
     let z = 0, zNorm = 0;
 
     for (let i = 0; i < positionAttribute.count; i++) {
@@ -46,10 +50,10 @@ export function updateOcean(time: number, scale: number, amplitude: number) {
         zNorm = (z + 0.2) / 0.4;
 
         ctx.dummyColor.lerpColors(ctx.colorStart, ctx.colorEnd, zNorm);
-        ctx.dummyArr.push(ctx.dummyColor.r, ctx.dummyColor.g, ctx.dummyColor.b)
+        colorAttribute.setXYZ(i, ctx.dummyColor.r, ctx.dummyColor.g, ctx.dummyColor.b);
     }
     positionAttribute.needsUpdate = true;
-    ctx.outlineGeo.setAttribute('color', new THREE.Float32BufferAttribute(ctx.dummyArr, 3));
+    colorAttribute.needsUpdate = true;
 
 }
 

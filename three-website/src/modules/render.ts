@@ -10,6 +10,7 @@ const IFRAME_VIEWPORT_WIDTH = 720;
 const IFRAME_VIEWPORT_HEIGHT = 780;
 const IFRAME_VISUAL_WIDTH = 384;
 const IFRAME_VISUAL_HEIGHT = 416;
+const MAX_DEVICE_PIXEL_RATIO = 1.5;
 
 export function setupCamera(screenResolution: THREE.Vector2) {
     let aspectRatio = screenResolution.x / screenResolution.y
@@ -26,7 +27,7 @@ export function setupRenderers(screenResolution: THREE.Vector2) {
     ctx.renderer.shadowMap.enabled = true
     ctx.renderer.setSize( screenResolution.x, screenResolution.y )
     ctx.renderer.debug.checkShaderErrors = false;
-    ctx.renderer.setPixelRatio(window.devicePixelRatio);
+    ctx.renderer.setPixelRatio(getRenderPixelRatio());
     document.getElementById("scene")?.appendChild( ctx.renderer.domElement );
 
     ctx.rendererCss = new CSS3DRenderer();
@@ -42,8 +43,10 @@ export function setupComposer(screenResolution: THREE.Vector2, renderResolution:
     ctx.composer.addPass( new RenderPass( ctx.scene, ctx.camera ) )
     ctx.pixelPass = new RenderPixelatedPass( renderResolution, ctx.scene, ctx.camera );
     ctx.composer.addPass( ctx.pixelPass )
-    const bloomPass = new UnrealBloomPass( screenResolution, .4, .1, .9 )
-    ctx.composer.addPass(bloomPass)
+    if (!isCoarsePointer()) {
+        const bloomPass = new UnrealBloomPass( screenResolution, .4, .1, .9 )
+        ctx.composer.addPass(bloomPass)
+    }
 }
 
 export function onWindowResize() {
@@ -61,7 +64,16 @@ export function onWindowResize() {
     ctx.camera.updateProjectionMatrix();
 
     ctx.renderer.setSize( screenResolution.x, screenResolution.y );
+    ctx.renderer.setPixelRatio(getRenderPixelRatio());
     ctx.rendererCss.setSize( screenResolution.x, screenResolution.y );
+}
+
+function getRenderPixelRatio(): number {
+    return Math.min(window.devicePixelRatio || 1, MAX_DEVICE_PIXEL_RATIO);
+}
+
+function isCoarsePointer(): boolean {
+    return window.matchMedia("(pointer: coarse)").matches;
 }
 
 export function renderHTML() {
