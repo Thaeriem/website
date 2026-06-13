@@ -72,7 +72,14 @@ function getRenderPixelRatio(): number {
 export function renderHTML() {
     const iframe = document.createElement( 'iframe' );
     iframe.id = 'iframeid';
-    iframe.style.cssText = `width: ${IFRAME_VIEWPORT_WIDTH}px; height: ${IFRAME_VIEWPORT_HEIGHT}px; border: 0; object-fit: cover`;
+    iframe.style.cssText = [
+        `width: ${IFRAME_VIEWPORT_WIDTH}px`,
+        `height: ${IFRAME_VIEWPORT_HEIGHT}px`,
+        "border: 0",
+        "object-fit: cover",
+        "pointer-events: auto",
+        "touch-action: auto"
+    ].join(";");
     iframe.setAttribute('sandbox', 'allow-same-origin allow-scripts allow-popups allow-forms');
     iframe.src = IFRAME_PAGE;
 

@@ -16,6 +16,17 @@ type DragState = {
     y: number;
 } | null;
 
+type CameraFocusState = {
+    cameraPosition: THREE.Vector3;
+    target: THREE.Vector3;
+    zoom: number;
+    controlsEnabled: boolean;
+} | null;
+
+type TrackedTween = {
+    stop: () => unknown;
+};
+
 const HOME_CAMERA = new THREE.Vector3(-200, 80, 0.000001);
 const HOME_TARGET = new THREE.Vector3(0, 1, 0);
 const IFRAME_TARGET = new THREE.Vector3(0, 0, 0);
@@ -41,6 +52,8 @@ export class CameraController {
         right: false
     };
     private dragState: DragState = null;
+    private savedFocusState: CameraFocusState = null;
+    private readonly activeTweens: TrackedTween[] = [];
 
     constructor() {
         this.controls = new MapControls(ctx.camera, ctx.rendererCss.domElement);
@@ -120,7 +133,15 @@ export class CameraController {
     }
 
     reset(zoomLevel: number, focusIframe: boolean) {
+        this.stopActiveTweens();
+        this.savedFocusState = null;
         const target = focusIframe ? IFRAME_TARGET : HOME_TARGET;
+
+        ctx.isIframeOpen = focusIframe;
+
+        if (focusIframe) {
+            this.setEnabled(false);
+        }
 
         ctx.anim = true;
         setTimeout(() => {
@@ -130,21 +151,22 @@ export class CameraController {
 
         if (!focusIframe) {
             ctx.cssHolder.visible = false;
+            ctx.isIframeOpen = false;
             this.controls.target.copy(HOME_TARGET);
             this.controls.update();
         }
 
-        new TWEEN.Tween(this.controls.target)
+        this.trackTween(new TWEEN.Tween(this.controls.target)
             .to(target, ctx.animTime)
             .easing(TWEEN.Easing.Quadratic.Out)
-            .start();
+            .start());
 
-        new TWEEN.Tween(ctx.camera.position)
+        this.trackTween(new TWEEN.Tween(ctx.camera.position)
             .to(HOME_CAMERA, ctx.animTime)
             .easing(TWEEN.Easing.Quadratic.Out)
-            .start();
+            .start());
 
-        new TWEEN.Tween({ zoom: ctx.camera.zoom })
+        this.trackTween(new TWEEN.Tween({ zoom: ctx.camera.zoom })
             .to({ zoom: zoomLevel }, ctx.animTime)
             .easing(TWEEN.Easing.Quadratic.InOut)
             .onUpdate(({ zoom }) => {
@@ -154,17 +176,26 @@ export class CameraController {
             .onComplete(() => {
                 if (focusIframe) {
                     ctx.cssHolder.visible = true;
+                    ctx.isIframeOpen = true;
                     this.setEnabled(false);
                 } else if (!this.controls.enabled) {
                     this.setEnabled(true);
                 }
             })
-            .start();
+            .start());
 
         this.clearMovement();
     }
 
     focus(target: THREE.Object3D) {
+        this.stopActiveTweens();
+        this.savedFocusState = {
+            cameraPosition: ctx.camera.position.clone(),
+            target: this.controls.target.clone(),
+            zoom: ctx.camera.zoom,
+            controlsEnabled: this.controls.enabled
+        };
+
         target.getWorldPosition(targetWorldPosition);
         const focusTarget = targetWorldPosition.clone().add(CHARACTER_FOCUS_OFFSET);
         const cameraTargetDelta = focusTarget.clone().sub(this.controls.target);
@@ -175,24 +206,70 @@ export class CameraController {
             ctx.anim = false;
         }, ctx.animTime);
 
-        new TWEEN.Tween(this.controls.target)
+        this.trackTween(new TWEEN.Tween(this.controls.target)
             .to(focusTarget, ctx.animTime)
             .easing(TWEEN.Easing.Quadratic.Out)
-            .start();
+            .start());
 
-        new TWEEN.Tween(ctx.camera.position)
+        this.trackTween(new TWEEN.Tween(ctx.camera.position)
             .to(focusCameraPosition, ctx.animTime)
             .easing(TWEEN.Easing.Quadratic.Out)
-            .start();
+            .start());
 
-        new TWEEN.Tween({ zoom: ctx.camera.zoom })
+        this.trackTween(new TWEEN.Tween({ zoom: ctx.camera.zoom })
             .to({ zoom: CHARACTER_FOCUS_ZOOM }, ctx.animTime)
             .easing(TWEEN.Easing.Quadratic.InOut)
             .onUpdate(({ zoom }) => {
                 ctx.camera.zoom = zoom;
                 ctx.camera.updateProjectionMatrix();
             })
-            .start();
+            .start());
+
+        this.clearMovement();
+    }
+
+    returnFromFocus() {
+        if (!this.savedFocusState) {
+            this.setEnabled(true);
+            return;
+        }
+
+        this.stopActiveTweens();
+        const savedState = this.savedFocusState;
+        this.savedFocusState = null;
+        this.setEnabled(false);
+        ctx.anim = true;
+
+        window.setTimeout(() => {
+            ctx.anim = false;
+        }, ctx.animTime);
+
+        this.trackTween(new TWEEN.Tween(this.controls.target)
+            .to(savedState.target, ctx.animTime)
+            .easing(TWEEN.Easing.Quadratic.Out)
+            .start());
+
+        this.trackTween(new TWEEN.Tween(ctx.camera.position)
+            .to(savedState.cameraPosition, ctx.animTime)
+            .easing(TWEEN.Easing.Quadratic.Out)
+            .start());
+
+        this.trackTween(new TWEEN.Tween({ zoom: ctx.camera.zoom })
+            .to({ zoom: savedState.zoom }, ctx.animTime)
+            .easing(TWEEN.Easing.Quadratic.InOut)
+            .onUpdate(({ zoom }) => {
+                ctx.camera.zoom = zoom;
+                ctx.camera.updateProjectionMatrix();
+            })
+            .onComplete(() => {
+                this.controls.target.copy(savedState.target);
+                ctx.camera.position.copy(savedState.cameraPosition);
+                ctx.camera.zoom = savedState.zoom;
+                ctx.camera.updateProjectionMatrix();
+                this.setEnabled(savedState.controlsEnabled);
+                ctx.anim = false;
+            })
+            .start());
 
         this.clearMovement();
     }
@@ -266,6 +343,17 @@ export class CameraController {
         this.velocity.set(0, 0, 0);
     }
 
+    private trackTween<T extends TrackedTween>(tween: T) {
+        this.activeTweens.push(tween);
+        return tween;
+    }
+
+    private stopActiveTweens() {
+        while (this.activeTweens.length > 0) {
+            this.activeTweens.pop()?.stop();
+        }
+    }
+
     private axisWorldUnitsPerSecond(axis: THREE.Vector3, screenPixelsPerSecond: number) {
         const axisPixels = this.screenPixelsForAxis(axis);
         const pixelsPerWorldUnit = axisPixels.length();
@@ -301,7 +389,7 @@ export class CameraController {
     }
 
     private onPointerDown = (event: PointerEvent) => {
-        if (!this.controls.enabled || event.button !== 0) return;
+        if (ctx.isIframeOpen || !this.controls.enabled || event.button !== 0) return;
         this.dragState = {
             pointerId: event.pointerId,
             x: event.clientX,
@@ -311,7 +399,7 @@ export class CameraController {
     };
 
     private onPointerMove = (event: PointerEvent) => {
-        if (!this.dragState || this.dragState.pointerId !== event.pointerId || !this.controls.enabled) return;
+        if (ctx.isIframeOpen || !this.dragState || this.dragState.pointerId !== event.pointerId || !this.controls.enabled) return;
 
         const deltaX = event.clientX - this.dragState.x;
         const deltaY = event.clientY - this.dragState.y;

@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { ctx } from "../rendererContext";
-import { toggleAnim } from "./input";
+import { returnCameraFromFocus } from "./input";
 import { playDialogBlip } from "./dialogAudio";
 import type { DialogCharacter } from "../rendererContext";
 
@@ -204,7 +204,7 @@ export function closeDialog(): void {
     ctx.currentCharacter = null;
     ctx.currentTypingIndex = 0;
     ctx.dialogAdvanceTimer = null;
-    toggleAnim(true);
+    returnCameraFromFocus();
 }
 
 export function updateDialogPosition(): void {

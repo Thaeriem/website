@@ -54,12 +54,12 @@ ctx.mouse = new THREE.Vector2(1, 1);
 ctx.intersects = [];
 ctx.interact = new Set();
 ctx.hide = ctx.lightdark = ctx.anim = false; 
+ctx.isIframeOpen = false;
 // LIGHTS
 ctx.trgO = new THREE.Object3D();
 // GEOMETRIES + MESHES
 ctx.cloudAmt = 10;
 ctx.debrisMesh = [], ctx.kelpArr = [];
-ctx.kelpVisible = false;
 // DUMMY
 ctx.dummy = new THREE.Object3D(),
 ctx.dummyMat = new THREE.Matrix4(),
@@ -191,7 +191,7 @@ function animate() {
     updateDialogPosition();
     TWEEN.update();
     ctx.composer.render();
-    if (ctx.renderCss && ctx.cssHolder?.visible) {
+    if (ctx.renderCss) {
         ctx.rendererCss.render( ctx.sceneCss, ctx.camera );
     }
     requestAnimationFrame( animate )

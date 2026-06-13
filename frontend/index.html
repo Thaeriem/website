@@ -1,96 +1,78 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
   <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Yash Kaul</title>
+    <title>Iframe Map</title>
     <link href="style.css" rel="stylesheet" />
     <script src="https://cdn.jsdelivr.net/npm/splitting@1.1.0/dist/splitting.min.js"></script>
     <link href="https://cdn.jsdelivr.net/npm/splitting@1.1.0/dist/splitting.min.css" rel="stylesheet">
   </head>
   <body>
-    <div class="scroll-roll top-roll" aria-hidden="true"></div>
-    <div class="scroll-roll bottom-roll" aria-hidden="true"></div>
-
-    <main class="scroll-map" aria-label="Yash Kaul portfolio">
-      <svg style="visibility: hidden;" fill="none" xmlns="http://www.w3.org/2000/svg" class="squiggle">
-        <path stroke="#CD3C2F" stroke-linejoin="round" stroke-linecap="round" />
-      </svg>
-
-      <section class="map-panel hero-panel path-node" data-path-x="22">
-        <p class="eyebrow" data-splitting="chars">Island field notes</p>
+    
+    <section class="grid-container">
+      <div class="grid-item text-pos1">
         <h1 class="animate hidden title" data-splitting="chars">Hello, I'm Yash</h1>
-        <p data-splitting="chars">
-          Full-stack software engineer interested in complex systems, playful interfaces,
-          and software that feels made by a person.
-        </p>
-      </section>
+      </div>
 
-      <section class="map-panel about-panel path-node" data-path-x="74">
-        <p class="eyebrow" data-splitting="chars">Entry 01</p>
-        <h2 data-splitting="chars">About Me</h2>
-        <p data-splitting="chars">
-          I am currently completing my M.S. in Computer Science at Rensselaer Polytechnic Institute.
-          I like building tools, tiny interactions, and systems that are clear enough to keep growing.
-        </p>
-      </section>
+      <div class="grid-item text-pos2">
+        <h1 data-splitting="chars">About Me</h1>
+        <p class="grid-c" data-splitting="chars">
+        I'm a full-stack software engineer interested in solving complex problems, making cool software, and continuously learning. 
+        <br>I am currently completing my M.S. in computer science at Rensselaer Polytechnic Institute.</p>
+      </div>
 
-      <section class="map-panel experience-panel path-node" data-path-x="18">
-        <p class="eyebrow" data-splitting="chars">Entry 02</p>
-        <h2 data-splitting="chars">Experience</h2>
-        <p data-splitting="chars">
-          I have interned at two startups where I gained experience designing systems at scale,
-          iterating quickly, and testing and deploying microservices on AWS.
+      <div class="grid-item text-pos3">
+        <h1 data-splitting="chars">Experience</h1>
+        <p class="grid-c" data-splitting="chars">
+          I have interned at two startups where I gained experience designing systems at scale, iterating and delivering solutions quickly, and testing / deploying microservices on AWS.
         </p>
-        <p class="link text-link" data-splitting="chars" data-link="resume">resume</p>
-      </section>
+        <p class="grid-c link" data-splitting="chars" data-link="resume">resume</p>
+      </div>
 
-      <section class="map-panel projects-panel path-node" data-path-x="76">
-        <div class="section-copy">
-          <p class="eyebrow" data-splitting="chars">Entry 03</p>
-          <h2 data-splitting="chars">Projects</h2>
-          <article>
-            <h3 data-splitting="chars">art2ascii</h3>
-            <p data-splitting="chars">
-              VS Code extension to play ASCII GIFs in the explorer panel.
-            </p>
-            <p class="link text-link" data-splitting="chars" data-link="art2ascii">github</p>
-          </article>
-          <article>
-            <h3 data-splitting="chars">PictoPlan</h3>
-            <p data-splitting="chars">
-              HackRPI Best First Hack winner. A web platform for turning images into lessons.
-            </p>
-            <p class="link text-link" data-splitting="chars" data-link="pictoplan">github</p>
-          </article>
+      <div class="grid-item text-pos4">
+        <h1 data-splitting="chars">Projects</h1>
+        <h3 class="grid-c" data-splitting="chars">art2ascii</h3>
+        <p class="grid-c" data-splitting="chars">
+          VSCode extension to play ASCII GIF's in the explorer panel. You can find it on VScode Marketplace with 80+ users!
+        </p>
+        <p class="grid-c link" data-splitting="chars" data-link="art2ascii">github</p>
+        <h3 class="grid-c" data-splitting="chars">PictoPlan</h3>
+        <p class="grid-c" data-splitting="chars">
+          HackRPI Best First Hack Winner. <br>
+          Web-platform for educators to turn images into lessons. <br> Finished in 24 hrs!
+        </p>
+        <p class="grid-c link" data-splitting="chars" data-link="pictoplan">github</p>
+      </div>
+        
+      <div class="img-container img-pos1">
+        <img src="/art2ascii.png" alt="art2ascii png">
+      </div>
+      <div class="img-container img-pos2">
+        <img src="/picto.png" alt="pictoplan png" style="width: 100%;">
+      </div>
+
+
+      <div class="grid-item text-pos5">
+        <h1 data-splitting="chars">Contact</h1>
+        <div>
+          <p class="link" data-splitting="chars" data-link="email">email</p>
         </div>
-        <div class="project-art">
-          <img class="art-main" src="/art2ascii.png" alt="art2ascii preview">
-          <img class="art-secondary" src="/picto.png" alt="PictoPlan preview">
-        </div>
-      </section>
-
-      <section class="map-panel contact-panel path-node" data-path-x="20">
-        <p class="eyebrow" data-splitting="chars">Entry 04</p>
-        <h2 data-splitting="chars">Contact</h2>
-        <p data-splitting="chars">If something here sparked a thread, I am easy to find.</p>
-        <div class="contact-links">
-          <p class="link text-link" data-splitting="chars" data-link="email">email</p>
-          <p class="link text-link" data-splitting="chars" data-link="github">github</p>
-          <p class="link text-link" data-splitting="chars" data-link="linkedin">linkedin</p>
-        </div>
-        <p class="credits" data-splitting="chars">
-          Models, scripting, music, and animations made from scratch.
-        </p>
-      </section>
-    </main>
-
-    <div class="arrow">
-      <p>&#8595;</p>
-    </div>
-
+        
+        <p class="link" data-splitting="chars" data-link="github">github</p>
+        <p class="link" data-splitting="chars" data-link="linkedin">linkedin</p>
+        <h1 style="padding-top: 0.5em;" data-splitting="chars">Credits</h1>
+        <p data-splitting="chars">Models, scripting, music, and animations made from scratch, ocean wav from norwayjohn</p>
+      </div>
+    </section>
+      <div class="arrow">
+        <p>&#8595;</p>
+      </div>
+    <svg style="visibility: hidden;" viewBox="0 0 1000 2000" fill="none" xmlns="http://www.w3.org/2000/svg" class="squiggle">
+      <path
+      d="M823 -184C823 -118 823 432 823 419C491 419 188.941 419 20.5 419C20.5 496 20.5 920 20.5 1108C134.584 1108 271.614 1108 411 1108C553.163 1108 697.777 1108 823 1108C823 1284 823 1512 823 1746C581 1746 278.941 1746 20.5 1746C20.5 1836 20.5 1730 20.5 1936C20.5 2076 20.5 1918 20.5 2100V2270V2474V2644V2882V2994H415H823V3690H437V3894H385V3990H437H485V3894H419"
+      stroke="#CD3C2F" stroke-width="30" stroke-linejoin="round" stroke-linecap="round" />
+    </svg>
     <script type="module" src="src/scroll.js"></script>
-    <script type="module" src="src/text.js"></script>
+    <script type="module" src="src/text.js"></script> 
     <script>
       function getBoundingBox(element) {
           const rect = element.getBoundingClientRect();
@@ -101,51 +83,57 @@
           const box = getBoundingBox(element);
           return mouseX >= box.left && mouseX <= box.left + box.width && mouseY >= box.top + window.scrollY && mouseY <= box.top + window.scrollY + box.height;
       }
-
       function normalizeWheelDelta(delta, deltaMode) {
-        if (deltaMode === 1) return delta * 16;
-        if (deltaMode === 2) return delta * window.innerHeight;
-        return delta;
+          if (deltaMode === 1) return delta * 16;
+          if (deltaMode === 2) return delta * window.innerHeight;
+          return delta;
       }
-
-      function handleMessagePoint(message) {
-        if (typeof message === "string") {
-          const tmp = message.toString().split(" ");
-          return {
-            type: "pointer",
-            mouseX: parseFloat(tmp[0]) * window.innerWidth,
-            mouseY: parseFloat(tmp[1]) * window.innerHeight + window.scrollY
-          };
-        }
-
-        if (!message || typeof message !== "object") return null;
-        return {
-          type: message.type,
-          mouseX: Number(message.x) * window.innerWidth,
-          mouseY: Number(message.y) * window.innerHeight + window.scrollY,
-          deltaX: normalizeWheelDelta(Number(message.deltaX) || 0, Number(message.deltaMode) || 0),
-          deltaY: normalizeWheelDelta(Number(message.deltaY) || 0, Number(message.deltaMode) || 0)
-        };
+      function openLink(linkKey) {
+          if (linkKey) window.top.postMessage(linkKey, '*');
       }
+      document.addEventListener('click', function(event) {
+          const link = event.target.closest?.('.link');
+          if (!link) return;
 
+          event.preventDefault();
+          openLink(link.getAttribute('data-link'));
+      });
+      document.addEventListener('keydown', function(event) {
+          if (event.key !== 'Escape') return;
+
+          event.preventDefault();
+          window.top.postMessage('close-iframe', '*');
+      });
       window.onmessage = function(e) {
-          const point = handleMessagePoint(e.data);
-          if (!point) return;
+          let mouseX;
+          let mouseY;
 
-          if (point.type === "wheel") {
-            window.scrollBy(point.deltaX, point.deltaY);
-            return;
+          if (e.data && typeof e.data === "object") {
+              if (e.data.type === "wheel") {
+                  window.scrollBy(
+                      normalizeWheelDelta(Number(e.data.deltaX) || 0, Number(e.data.deltaMode) || 0),
+                      normalizeWheelDelta(Number(e.data.deltaY) || 0, Number(e.data.deltaMode) || 0)
+                  );
+                  return;
+              }
+              if (e.data.type !== "pointer") return;
+              mouseX = Number(e.data.x) * window.innerWidth;
+              mouseY = Number(e.data.y) * window.innerHeight + window.scrollY;
+          } else {
+              const tmp = e.data.toString().split(" ");
+              mouseX = parseFloat(tmp[0]) * window.innerWidth
+              mouseY = parseFloat(tmp[1]) * window.innerHeight + window.scrollY
           }
-
           const links = document.querySelectorAll('.link');
-          links.forEach(link => {
-            const word = link.querySelector('.word');
-            if (word && isMouseInElement(point.mouseX, point.mouseY, word)) {
-              const linkUrl = link.getAttribute('data-link');
-              if (linkUrl) window.top.postMessage(linkUrl, '*')
-            }
-          });
-      };
+            links.forEach(link => {
+              const word = link.querySelector('.word');
+              if (word && isMouseInElement(mouseX, mouseY, word)) {
+                const linkUrl = link.getAttribute('data-link');
+                openLink(linkUrl);
+              }
+            });
+          };
+
     </script>
   </body>
 </html>

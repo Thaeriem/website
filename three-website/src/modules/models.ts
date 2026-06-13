@@ -33,7 +33,6 @@ export function loadIslandModel(): Promise<void> {
                             const ind = parseInt(child.name.slice(4)) - 1;
                             const kelp = ctx.islandModel.getObjectByName(child.name) as THREE.Mesh;
                             const instMesh = new THREE.InstancedMesh(kelp.geometry, kelp.material, kelpPos[ind].length);
-                            instMesh.visible = ctx.kelpVisible;
                             ctx.globalGroup.add(instMesh);
                             
                             for (let i = 0; i < kelpPos[ind].length * 3; i += 3) {

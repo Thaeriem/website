@@ -106,12 +106,12 @@ export interface GeometryState {
   fireParticles: THREE.InstancedMesh;
   ofp: THREE.BufferGeometry;
   kelpArr: THREE.InstancedMesh[];
-  kelpVisible: boolean;
 }
 
 // CSS and overlay state
 export interface OverlayState {
   cssHolder: CSS3DObject;
+  isIframeOpen: boolean;
   anim: boolean;
   hoverTarget: THREE.Mesh[];
   hoverColor: THREE.Color[];

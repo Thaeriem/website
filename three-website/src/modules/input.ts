@@ -3,7 +3,7 @@ import { ctx } from "../rendererContext";
 import { onWindowResize } from "./render";
 import { closeDialog, nextDialogLine } from "./dialog";
 import { unlockDialogAudio } from "./dialogAudio";
-import { toggleKelp, updateChest } from "./animations";
+import { updateChest } from "./animations";
 import { CameraController } from "./cameraController";
 
 let cameraController: CameraController;
@@ -12,10 +12,50 @@ type PointerTapState = {
     pointerId: number;
     x: number;
     y: number;
+    lastX: number;
+    lastY: number;
+    scrolled: boolean;
 } | null;
 
 const TAP_MOVE_THRESHOLD = 8;
 let pointerTapState: PointerTapState = null;
+
+function getIframe(): HTMLIFrameElement | null {
+    return document.getElementById('iframeid') as HTMLIFrameElement | null;
+}
+
+function isIframeFocused() {
+    return Boolean(ctx.isIframeOpen);
+}
+
+function getIframePoint(event: MouseEvent | PointerEvent | WheelEvent) {
+    const iframe = getIframe();
+    if (!iframe || !isIframeFocused()) return null;
+
+    const rect = iframe.getBoundingClientRect();
+    if (rect.width <= 0 || rect.height <= 0) return null;
+
+    const x = (event.clientX - rect.left) / rect.width;
+    const y = (event.clientY - rect.top) / rect.height;
+    if (x < 0 || x > 1 || y < 0 || y > 1) return null;
+
+    return { iframe, x, y };
+}
+
+function postIframeInput(type: "pointer" | "wheel", event: MouseEvent | PointerEvent | WheelEvent, extra = {}) {
+    const point = getIframePoint(event);
+    if (!point) return false;
+
+    point.iframe.contentWindow?.postMessage({ type, x: point.x, y: point.y, ...extra }, '*');
+    return true;
+}
+
+function resetFromIframeMode(event?: Event) {
+    event?.preventDefault();
+    event?.stopPropagation();
+    pointerTapState = null;
+    camReset(ctx.dZoom, false);
+}
 
 export function setupControls() {
     cameraController = new CameraController();
@@ -23,16 +63,15 @@ export function setupControls() {
 }
 
 function preventEvent(event: any) {
+    if (getIframePoint(event)) return;
     event.stopPropagation();
 }
 
 export function toggleEvents(enable: boolean) {
     if (!enable) {
-        window.addEventListener('touchstart', preventEvent, true);
         window.addEventListener('wheel', preventEvent, true);
     } else {
         setTimeout(() => {
-            window.removeEventListener('touchstart', preventEvent, true);
             window.removeEventListener('wheel', preventEvent, true);
         }, 100);
     }
@@ -61,6 +100,10 @@ function onKeyDown(event: any) {
             break;
         case 'KeyZ':
         case 'Escape':
+            if (isIframeFocused() && !ctx.isDialogOpen) {
+                resetFromIframeMode(event);
+                return;
+            }
             if (!ctx.anim && !ctx.isDialogOpen) {
                 camReset(ctx.dZoom, false);
             }
@@ -83,9 +126,6 @@ function onKeyDown(event: any) {
             if (ctx.stats.domElement.style.display == 'block') ctx.stats.domElement.style.display = 'none';
             else ctx.stats.domElement.style.display = 'block';
             break;
-        case 'KeyK':
-            toggleKelp();
-            break;
     }
 }
 
@@ -99,21 +139,65 @@ function updatePointerPosition(event: MouseEvent | PointerEvent) {
 }
 
 function onPointerMove(event: PointerEvent) {
+    if (getIframePoint(event)) {
+        if (pointerTapState?.pointerId === event.pointerId) {
+            const totalX = event.clientX - pointerTapState.x;
+            const totalY = event.clientY - pointerTapState.y;
+            const deltaX = pointerTapState.lastX - event.clientX;
+            const deltaY = pointerTapState.lastY - event.clientY;
+            pointerTapState.lastX = event.clientX;
+            pointerTapState.lastY = event.clientY;
+
+            if (Math.hypot(totalX, totalY) > TAP_MOVE_THRESHOLD) {
+                pointerTapState.scrolled = true;
+                postIframeInput("wheel", event, {
+                    deltaX,
+                    deltaY,
+                    deltaMode: 0
+                });
+            }
+        }
+        event.preventDefault();
+        event.stopPropagation();
+        return;
+    }
+    if (isIframeFocused()) {
+        event.preventDefault();
+        event.stopPropagation();
+        return;
+    }
     updatePointerPosition(event);
 }
 
 function onMouseMove(event: MouseEvent) {
+    if (isIframeFocused()) return;
     updatePointerPosition(event);
 }
 
 function onPointerDown(event: PointerEvent) {
     if (!event.isPrimary || event.button !== 0) return;
     unlockDialogAudio();
+    if (isIframeFocused()) {
+        event.preventDefault();
+        event.stopPropagation();
+        pointerTapState = {
+            pointerId: event.pointerId,
+            x: event.clientX,
+            y: event.clientY,
+            lastX: event.clientX,
+            lastY: event.clientY,
+            scrolled: false
+        };
+        return;
+    }
     updatePointerPosition(event);
     pointerTapState = {
         pointerId: event.pointerId,
         x: event.clientX,
-        y: event.clientY
+        y: event.clientY,
+        lastX: event.clientX,
+        lastY: event.clientY,
+        scrolled: false
     };
 }
 
@@ -122,9 +206,17 @@ function onPointerUp(event: PointerEvent) {
 
     const deltaX = event.clientX - pointerTapState.x;
     const deltaY = event.clientY - pointerTapState.y;
+    const hasScrolledIframe = pointerTapState.scrolled;
     pointerTapState = null;
 
+    if (hasScrolledIframe) return;
     if (Math.hypot(deltaX, deltaY) > TAP_MOVE_THRESHOLD) return;
+    if (isIframeFocused()) {
+        event.preventDefault();
+        event.stopPropagation();
+        if (!postIframeInput("pointer", event)) resetFromIframeMode(event);
+        return;
+    }
     onSceneSelect(event);
 }
 
@@ -139,17 +231,9 @@ function onSceneSelect(event: MouseEvent | PointerEvent) {
         return;
     }
 
-    updatePointerPosition(event);
-    mouseUpdate();
-
     const iframe = document.getElementById('iframeid');
     if (document.getElementById('scene')?.style.display != "") {
-        if (ctx.intersects.length > 0) {
-            const ele = ctx.intersects[0];
-            if (!ctx.anim && ctx.camera.zoom > 0.15) ctx.funcList[ele.name](ele);
-        }
-
-        if (!ctx.controls.enabled && iframe) {
+        if (isIframeFocused() && iframe) {
             const rect = iframe.getBoundingClientRect();
             const mouseX = event.clientX;
             const mouseY = event.clientY;
@@ -159,9 +243,37 @@ function onSceneSelect(event: MouseEvent | PointerEvent) {
                 mouseY <= rect.top ||
                 mouseY >= rect.bottom
             ) {
-                camReset(ctx.dZoom, false);
+                resetFromIframeMode(event);
             }
+            return;
         }
+
+        updatePointerPosition(event);
+        mouseUpdate();
+
+        if (ctx.intersects.length > 0) {
+            const ele = ctx.intersects[0];
+            if (!ctx.anim && ctx.camera.zoom > 0.15) ctx.funcList[ele.name](ele);
+        }
+    }
+}
+
+function onWheel(event: WheelEvent) {
+    const handled = postIframeInput("wheel", event, {
+        deltaX: event.deltaX,
+        deltaY: event.deltaY,
+        deltaMode: event.deltaMode
+    });
+
+    if (handled) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
+}
+
+function onIframeMessage(event: MessageEvent) {
+    if (event.data === "close-iframe" && isIframeFocused()) {
+        resetFromIframeMode();
     }
 }
 
@@ -171,6 +283,11 @@ export function camReset(zlvl: any, ifAnim: boolean) {
 
 export function camFocus(target: THREE.Object3D) {
     cameraController.focus(target);
+}
+
+export function returnCameraFromFocus() {
+    toggleEvents(true);
+    cameraController.returnFromFocus();
 }
 
 function mouseHover() {
@@ -225,9 +342,13 @@ export function initInputListeners() {
     window.addEventListener('pointermove', onPointerMove, false);
     window.addEventListener('pointerup', onPointerUp, false);
     window.addEventListener('pointercancel', () => { pointerTapState = null; }, false);
+    window.addEventListener('wheel', onWheel, { capture: true, passive: false });
+    window.addEventListener('message', onIframeMessage);
 }
 
 export function processInput(delta: number) {
+    if (ctx.isIframeOpen) return;
+
     cameraController.update(delta);
     mouseUpdate();
 }
