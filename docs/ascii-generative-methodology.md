@@ -153,7 +153,11 @@ Current rule: keep the renderer as a field system. Each theme samples seeded noi
 
    Back, themes, status, and links are drawn as text cells and hit-tested by grid region. No floating DOM controls.
 
-9. **State Transitions As Fields**
+9. **Viewport-Independent Grid Density**
+
+   The ASCII canvas should target a roughly stable column count across desktop and mobile instead of letting narrow screens collapse the field into a low-resolution version of the art. Mobile can use smaller glyphs, but the generative system should preserve comparable structural resolution.
+
+10. **State Transitions As Fields**
 
    Theme and state changes should use the grid as the transition medium. A transition is not a DOM fade; each cell samples either the previous state or next state based on a deterministic reveal field.
 
@@ -167,13 +171,13 @@ Current rule: keep the renderer as a field system. Each theme samples seeded noi
    These modes should remain ASCII-native: a cell resolves to one glyph/color per frame, never stacked text layers.
    The active mode can be changed from the ASCII chrome or with `Tab`.
 
-10. **Portal Transitions Between Worlds**
+11. **Portal Transitions Between Worlds**
 
    The chest and back actions use a separate transparent ASCII portal canvas above the current world. On entry, black ASCII cells ripple outward from the chest until the island is mostly covered, then the inner experience is opened underneath and the portal dissolves. On exit, the inner renderer quickly transitions itself to black, the portal mounts covered in black cells, the inner experience closes underneath that cover, then the portal clears with a seeded dither field to reveal the island. Both directions keep the transition in the ASCII grid layer instead of clipping the whole DOM/canvas as an image, and timing should stay brisk enough that the final frames do not read as lag.
 
    This layer is deliberately separate from the inner ASCII renderer. It should behave like a curtain between worlds, not like another theme page.
 
-11. **Shared Palette System**
+12. **Shared Palette System**
 
    Color is a global test condition, not a per-theme skin. The bottom ASCII chrome exposes three palettes that every state reads from:
 

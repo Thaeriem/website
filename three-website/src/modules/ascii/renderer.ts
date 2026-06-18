@@ -47,7 +47,7 @@ export class AsciiInstallationRenderer {
     private pressureField = new Float32Array(0);
     private memoryField = new Float32Array(0);
     private hitZones: HitZone[] = [];
-    private statusLine = "hover to lightly disturb the field";
+    private statusLine = "hover to lightly highlight existing cells";
     private seed: number;
     private lastTraceCell = "";
     private averageRenderMs = 0;
@@ -83,9 +83,11 @@ export class AsciiInstallationRenderer {
         this.width = Math.max(1, Math.floor(rect.width || window.innerWidth));
         this.height = Math.max(1, Math.floor(rect.height || window.innerHeight));
         this.pixelRatio = 1;
-        this.cellHeight = this.width < 700 ? 14 : this.width > 1600 ? 19 : 17;
+        const targetColumns = 150;
+        const targetCellWidth = Math.max(3, this.width / targetColumns);
+        this.cellHeight = clamp(Math.round(targetCellWidth / 0.62), 5, 19);
         this.context.font = `${this.cellHeight}px input, monospace`;
-        this.cellWidth = Math.max(Math.ceil(this.context.measureText("0").width), Math.round(this.cellHeight * 0.6));
+        this.cellWidth = Math.max(3, Math.ceil(this.context.measureText("0").width));
         this.cols = Math.max(1, Math.floor(this.width / this.cellWidth));
         this.rows = Math.max(1, Math.floor(this.height / this.cellHeight));
         this.ensureFieldBuffers();
@@ -125,7 +127,6 @@ export class AsciiInstallationRenderer {
         const hoverCell = `${this.pointer.cellX}:${this.pointer.cellY}`;
         if (hoverCell === this.lastTraceCell) return;
         this.lastTraceCell = hoverCell;
-        this.addDeposit("hover", 0.075);
     }
 
     pointerUp(): void {
@@ -191,7 +192,7 @@ export class AsciiInstallationRenderer {
                 const sample = this.sampleCurrentState(fieldContext, time);
                 if (sample.char === " ") continue;
 
-                this.context.fillStyle = sample.color;
+                this.context.fillStyle = this.applyHoverHighlight(sample.color, fieldContext.x, fieldContext.y);
                 this.context.fillText(sample.char, col * this.cellWidth, row * this.cellHeight);
             }
         }
@@ -341,20 +342,6 @@ export class AsciiInstallationRenderer {
 
         const dither = hash3(context.col, context.row, this.seed + 911) * 0.92 + context.y * 0.08;
         return clamp(dither, 0, 1);
-    }
-
-    private addDeposit(mode: Deposit["mode"], strength: number): void {
-        this.deposits.push({
-            x: this.pointer.x,
-            y: this.pointer.y,
-            age: 0,
-            strength,
-            mode
-        });
-
-        if (this.deposits.length > 48) {
-            this.deposits.splice(0, this.deposits.length - 48);
-        }
     }
 
     private updateDeposits(): void {
@@ -512,6 +499,32 @@ export class AsciiInstallationRenderer {
             this.hitZones.push({ id: hitId, row, start: col, end: col + text.length - 1 });
         }
     }
+
+    private applyHoverHighlight(color: string, x: number, y: number): string {
+        const dx = x - this.pointer.x;
+        const dy = y - this.pointer.y;
+        const radius = 0.13;
+        const distanceSq = dx * dx + dy * dy;
+        if (distanceSq >= radius * radius) return color;
+
+        const falloff = 1 - distanceSq / (radius * radius);
+        const amount = clamp(falloff * falloff, 0, 1);
+        return brightenHsla(color, amount);
+    }
+}
+
+function brightenHsla(color: string, amount: number): string {
+    const match = color.match(/^hsla\(([-\d.]+),\s*([-\d.]+)%,\s*([-\d.]+)%,\s*([-\d.]+)\)$/);
+    if (!match) return color;
+
+    const hue = Number(match[1]);
+    const saturation = Number(match[2]);
+    const lightness = Number(match[3]);
+    const alpha = Number(match[4]);
+    const boostedSaturation = clamp(saturation + amount * 16, 0, 100);
+    const boostedLightness = clamp(lightness + amount * 32, 0, 96);
+    const boostedAlpha = clamp(alpha + amount * 0.32, 0, 1);
+    return `hsla(${Math.round(hue)}, ${Math.round(boostedSaturation)}%, ${Math.round(boostedLightness)}%, ${boostedAlpha})`;
 }
 
 function easeInOutCubic(value: number): number {

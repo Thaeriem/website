@@ -61,9 +61,11 @@ export function runAsciiPortalTransition(options: PortalOptions): void {
     const resize = () => {
         width = Math.max(1, window.innerWidth);
         height = Math.max(1, window.innerHeight);
-        cellHeight = width < 700 ? 14 : width > 1600 ? 19 : 17;
+        const targetColumns = 150;
+        const targetCellWidth = Math.max(3, width / targetColumns);
+        cellHeight = clamp(Math.round(targetCellWidth / 0.62), 5, 19);
         context.font = `${cellHeight}px input, monospace`;
-        cellWidth = Math.max(Math.ceil(context.measureText("0").width), Math.round(cellHeight * 0.6));
+        cellWidth = Math.max(3, Math.ceil(context.measureText("0").width));
         cols = Math.max(1, Math.ceil(width / cellWidth));
         rows = Math.max(1, Math.ceil(height / cellHeight));
         canvas.width = width;
