@@ -169,7 +169,7 @@ Current rule: keep the renderer as a field system. Each theme samples seeded noi
 
 10. **Portal Transitions Between Worlds**
 
-   The chest and back actions use a separate transparent ASCII portal canvas above both the island and inner experience. On entry, black ASCII cells ripple outward from the chest until the island is mostly covered, then the inner experience is opened underneath and the portal dissolves. On exit, the inner renderer first transitions itself to an all-black canvas. Only after that blackout completes does the portal mount already filled with black `@` cells; the inner experience closes underneath that fully covered portal, then the black cell field dithers to transparent to reveal the island. Cell opacity ramps around threshold edges so the portal reads smoother than a hard on/off grid.
+   The chest and back actions use a separate transparent ASCII portal canvas above the current world. On entry, black ASCII cells ripple outward from the chest until the island is mostly covered, then the inner experience is opened underneath and the portal dissolves. On exit, the inner renderer quickly transitions itself to black, the portal mounts covered in black cells, the inner experience closes underneath that cover, then the portal clears with a seeded dither field to reveal the island. Both directions keep the transition in the ASCII grid layer instead of clipping the whole DOM/canvas as an image, and timing should stay brisk enough that the final frames do not read as lag.
 
    This layer is deliberately separate from the inner ASCII renderer. It should behave like a curtain between worlds, not like another theme page.
 

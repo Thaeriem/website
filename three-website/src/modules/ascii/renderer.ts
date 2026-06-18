@@ -201,7 +201,6 @@ export class AsciiInstallationRenderer {
     }
 
     renderBlackout(time: number, progress: number): void {
-        this.render(time);
         const easedProgress = clamp(progress, 0, 1);
 
         if (easedProgress >= 0.995) {

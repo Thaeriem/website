@@ -55,8 +55,8 @@ export function runAsciiPortalTransition(options: PortalOptions): void {
     let coveredCalled = false;
     let cancelled = false;
     const startTime = performance.now();
-    const coverMs = options.startCovered ? 0 : options.direction === "enter" ? 1200 : 950;
-    const revealMs = options.direction === "enter" ? 560 : 1050;
+    const coverMs = options.startCovered ? 0 : options.direction === "enter" ? 860 : 700;
+    const revealMs = options.direction === "enter" ? 380 : 720;
 
     const resize = () => {
         width = Math.max(1, window.innerWidth);
@@ -117,7 +117,7 @@ export function runAsciiPortalTransition(options: PortalOptions): void {
             origin: options.origin,
             direction: options.direction,
             coverProgress: easeOutCubic(coverProgress),
-            revealProgress: easeInOutCubic(revealProgress),
+            revealProgress: options.direction === "exit" ? revealProgress : easeInOutCubic(revealProgress),
             time: (now - startTime) / 1000
         });
         if (options.startCovered || coverProgress >= (options.direction === "exit" ? 0.985 : 0.88)) callCovered();
@@ -186,12 +186,15 @@ function drawPortalFrame(
                 direction: options.direction,
                 x,
                 y,
+                origin: options.origin,
+                aspect,
+                maxDistance,
                 noise,
                 flicker,
                 time: options.time
             });
             const coverage = getCellCoverage(options.direction, threshold, revealThreshold, options.coverProgress, options.revealProgress, noise);
-            if (coverage <= 0.01) continue;
+            if (coverage <= 0.025) continue;
 
             const edge = clamp(1 - Math.abs(options.coverProgress - threshold) * 7, 0, 1);
             const density = clamp(options.coverProgress + edge * 0.45 + noise * 0.2, 0, 1);
@@ -226,6 +229,9 @@ function portalRevealThreshold(options: {
     direction: PortalDirection;
     x: number;
     y: number;
+    origin: Vec2;
+    aspect: number;
+    maxDistance: number;
     noise: number;
     flicker: number;
     time: number;
@@ -255,7 +261,10 @@ function getCellCoverage(
         return coverAlpha * revealAlpha;
     }
 
-    return smoothstep(revealThreshold + revealSoftness, revealThreshold - revealSoftness, revealProgress);
+    if (revealProgress >= 0.985) return 0;
+
+    const tailBias = clamp(revealProgress * 1.045, 0, 1);
+    return smoothstep(revealThreshold + revealSoftness, revealThreshold - revealSoftness, tailBias);
 }
 
 function drawBlackPortalCell(
@@ -279,7 +288,7 @@ function drawBlackPortalCell(
     context.fillRect(x, y, options.cellWidth + 0.5, options.cellHeight + 0.5);
 
     const glyphAlpha = clamp(cellAlpha * (0.18 + edge * 0.18 + density * 0.12), 0, 0.48);
-    if (glyphAlpha <= 0.02) return;
+    if (!glyph || glyphAlpha <= 0.02) return;
 
     context.fillStyle = `rgba(22, 22, 22, ${glyphAlpha})`;
     context.fillText(glyph, x, y);

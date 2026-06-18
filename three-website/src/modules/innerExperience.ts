@@ -21,7 +21,7 @@ let animationFrame = 0;
 let startTime = performance.now();
 let closingStartTime = 0;
 let closingOrigin: Vec2 = { x: 0.04, y: 0.04 };
-const closeBlackoutMs = 760;
+const closeBlackoutMs = 420;
 
 export function initInnerExperience(): void {
     if (rootElement) return;
