@@ -89,7 +89,7 @@ Current rule: keep the renderer as a field system. Each theme samples seeded noi
    - `descent0`: spaces, `1`, `2`, `x`
    - `descent2`: spaces, `.`, `*`, `/`
    - `dragonfly-like`: spaces, `.`, `o`, `O`
-   - `tide`: spaces, `.`, `-`, `~`, `/`, `\\`, `|`
+   - `lava`: spaces, `.`, `o`, `O`, `0`, `@`
 
    Avoid long generic brightness ramps unless the theme specifically needs them. A small alphabet with strong material roles is usually more distinctive.
 
@@ -116,7 +116,7 @@ Current rule: keep the renderer as a field system. Each theme samples seeded noi
    Motion should come from the field, not from moving DOM layers.
 
    - `descent`: vertical descent, hatch phase, chamber reveal, accent flicker
-   - `tide`: current waves and pointer swirl
+   - `lava`: rising blob fields, heat cores, and slow cellular splitting
    - `bloom`: seeded clusters pulsing at different rates and merging into regions
    - `veil`: warped ribbons folding through time
 
@@ -157,7 +157,11 @@ Current rule: keep the renderer as a field system. Each theme samples seeded noi
 
    The ASCII canvas should target a roughly stable column count across desktop and mobile instead of letting narrow screens collapse the field into a low-resolution version of the art. Mobile can use smaller glyphs, but the generative system should preserve comparable structural resolution.
 
-10. **State Transitions As Fields**
+10. **Infinite Field Scroll**
+
+   The art layer can scroll independently of the chrome. The current renderer samples the field into a wrapping row buffer and draws it with a slow upward offset, so the installation feels like an infinite generated material passing through the viewport while controls remain stable.
+
+11. **State Transitions As Fields**
 
    Theme and state changes should use the grid as the transition medium. A transition is not a DOM fade; each cell samples either the previous state or next state based on a deterministic reveal field.
 
@@ -171,13 +175,13 @@ Current rule: keep the renderer as a field system. Each theme samples seeded noi
    These modes should remain ASCII-native: a cell resolves to one glyph/color per frame, never stacked text layers.
    The active mode can be changed from the ASCII chrome or with `Tab`.
 
-11. **Portal Transitions Between Worlds**
+12. **Portal Transitions Between Worlds**
 
    The chest and back actions use a separate transparent ASCII portal canvas above the current world. On entry, black ASCII cells ripple outward from the chest until the island is mostly covered, then the inner experience is opened underneath and the portal dissolves. On exit, the inner renderer quickly transitions itself to black, the portal mounts covered in black cells, the inner experience closes underneath that cover, then the portal clears with a seeded dither field to reveal the island. Both directions keep the transition in the ASCII grid layer instead of clipping the whole DOM/canvas as an image, and timing should stay brisk enough that the final frames do not read as lag.
 
    This layer is deliberately separate from the inner ASCII renderer. It should behave like a curtain between worlds, not like another theme page.
 
-12. **Shared Palette System**
+13. **Shared Palette System**
 
    Color is a global test condition, not a per-theme skin. The bottom ASCII chrome exposes three palettes that every state reads from:
 
@@ -217,9 +221,9 @@ Current rules:
 
 Default direction. A falling rope/vine field with sparse dot/o/0 glyph material, dark negative space, seeded curved strands, bead-like downward pulses, diagonal tension lines, and small warm knots. This keeps the free-flowing movement from the current implementation while pointing it back toward the supplied Descent inspiration.
 
-### Tide
+### Lava
 
-Current-field direction. Wave glyphs use `.`, `-`, `~`, `/`, and `|` to form drifting waterlines. Deposits bend density and warm small local cells.
+Lava-lamp direction. Rising blob fields use `.`, `o`, `O`, `0`, and `@` to form soft cellular masses with hotter cores and sparse surrounding filaments.
 
 ### Bloom
 
@@ -251,7 +255,7 @@ If three or more answers are weak, improve the field system before adding copy, 
 
 1. **Theme Field Identity**
 
-   Improve each sampler directly. Descent, tide, bloom, and veil should not be skins over one sampler; each should earn a distinct field grammar.
+   Improve each sampler directly. Descent, lava, bloom, and veil should not be skins over one sampler; each should earn a distinct field grammar.
 
 2. **Density Gates**
 
@@ -262,7 +266,7 @@ If three or more answers are weak, improve the field system before adding copy, 
    Maintain and compare the current theme set:
 
    - `descent`: `. / o / O / 0 / / / \\` falling rope/vine language.
-   - `tide`: `. / - / ~ / / / |` current language.
+   - `lava`: `. / o / O / 0 / @` soft blob and heat-core language.
    - `bloom`: `. / o / O / 0` sparse growth language.
    - `veil`: `. / : / + / * / #` curtain language.
 

@@ -176,15 +176,20 @@ export class AsciiInstallationRenderer {
         fieldContext.seed = this.seed;
         fieldContext.pointer = this.pointer;
         fieldContext.palette = this.palette;
+        const scrollCells = time * 1.15;
+        const scrollRows = Math.floor(scrollCells);
+        const scrollOffset = (scrollCells - scrollRows) * this.cellHeight;
 
-        for (let row = 0; row < this.rows; row += 1) {
-            const rowOffset = row * this.cols;
-            const y = row / rowMax;
+        for (let screenRow = -1; screenRow <= this.rows; screenRow += 1) {
+            const sourceRow = positiveModulo(screenRow + scrollRows, this.rows);
+            const rowOffset = sourceRow * this.cols;
+            const y = sourceRow / rowMax;
+            const drawY = screenRow * this.cellHeight - scrollOffset;
 
             for (let col = 0; col < this.cols; col += 1) {
                 const fieldIndex = rowOffset + col;
                 fieldContext.col = col;
-                fieldContext.row = row;
+                fieldContext.row = sourceRow;
                 fieldContext.x = col / colMax;
                 fieldContext.y = y;
                 fieldContext.pressure = this.pressureField[fieldIndex] ?? 0;
@@ -192,8 +197,8 @@ export class AsciiInstallationRenderer {
                 const sample = this.sampleCurrentState(fieldContext, time);
                 if (sample.char === " ") continue;
 
-                this.context.fillStyle = this.applyHoverHighlight(sample.color, fieldContext.x, fieldContext.y);
-                this.context.fillText(sample.char, col * this.cellWidth, row * this.cellHeight);
+                this.context.fillStyle = this.applyHoverHighlight(sample.color, fieldContext.x, clamp(drawY / Math.max(1, this.height), 0, 1));
+                this.context.fillText(sample.char, col * this.cellWidth, drawY);
             }
         }
 
@@ -525,6 +530,10 @@ function brightenHsla(color: string, amount: number): string {
     const boostedLightness = clamp(lightness + amount * 32, 0, 96);
     const boostedAlpha = clamp(alpha + amount * 0.32, 0, 1);
     return `hsla(${Math.round(hue)}, ${Math.round(boostedSaturation)}%, ${Math.round(boostedLightness)}%, ${boostedAlpha})`;
+}
+
+function positiveModulo(value: number, modulus: number): number {
+    return ((value % modulus) + modulus) % modulus;
 }
 
 function easeInOutCubic(value: number): number {

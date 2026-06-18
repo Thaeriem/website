@@ -61,12 +61,12 @@ export const asciiThemes: AsciiTheme[] = [
         sample: sampleDescent
     },
     {
-        id: "tide",
-        label: "tide",
-        note: "current field / deposits bend the waterline",
-        glyphs: "  ..--~~//||",
-        background: "#010405",
-        sample: sampleTide
+        id: "lava",
+        label: "lava",
+        note: "lava lamp blobs / heat cells rise and split",
+        glyphs: "  ..ooOO00@@",
+        background: "#020101",
+        sample: sampleLava
     },
     {
         id: "bloom",
@@ -237,26 +237,6 @@ function pickDescentColor(context: FieldContext, hot: boolean, density: number, 
     return colorFromPalette(context.palette, role, clamp(0.14 + density * 0.56 + pulse * 0.18, 0.12, 0.88), density * 8);
 }
 
-function sampleTide(context: FieldContext): FieldSample {
-    const drift = context.time * 0.13;
-    const warped = domainWarp(context.x * 2.2 + drift, context.y * 2.8, context.seed * 0.00011, 0.16);
-    const wave = Math.sin(warped.y * 28 + fbm(warped.x * 4, warped.y * 2, context.time * 0.12, 3) * 7 - context.time * 2.6);
-    const cross = Math.cos(warped.x * 18 - warped.y * 12 + context.time * 1.2);
-    const current = ridge(wave, 0.42) * 0.62 + ridge(cross, 0.22) * 0.24;
-    const deposit = context.pressure * 1.25 + context.memory * 0.42;
-    const density = clamp(current + deposit - 0.08, 0, 1.4);
-    const sparse = hash3(context.col, context.row, context.seed + 61);
-
-    if (density < 0.18 + sparse * 0.44) return empty();
-
-    const glyphs = density > 0.95 ? "||//" : density > 0.62 ? "--~~//" : "..--";
-    const warm = context.pressure > 0.34 && sparse > 0.74;
-    return {
-        char: pick(glyphs, density + sparse * 0.2),
-        color: colorFromPalette(context.palette, warm ? "accent" : density > 0.78 ? "bright" : "mid", clamp(0.12 + density * 0.58, 0.08, 0.88), density * 18, warm ? 0 : wave * 8)
-    };
-}
-
 function sampleBloom(context: FieldContext): FieldSample {
     let bloom = 0;
     for (let index = 0; index < 13; index += 1) {
@@ -277,6 +257,47 @@ function sampleBloom(context: FieldContext): FieldSample {
     return {
         char: pick(glyphs, density + sparse * 0.25),
         color: colorFromPalette(context.palette, warm ? "hot" : density > 0.76 ? "bright" : "mid", clamp(0.1 + density * 0.62, 0.08, 0.9), density * 18, warm ? context.pressure * 10 : -density * 16)
+    };
+}
+
+function sampleLava(context: FieldContext): FieldSample {
+    const upwardY = context.y - context.time * 0.045;
+    const warped = domainWarp(
+        context.x * 1.75 + Math.sin(upwardY * 5 + context.time * 0.45) * 0.05,
+        upwardY * 2.35,
+        context.seed * 0.00013 + context.time * 0.045,
+        0.22
+    );
+    let blob = 0;
+
+    for (let index = 0; index < 9; index += 1) {
+        const baseX = 0.08 + hash3(index, context.seed, 12.4) * 0.84;
+        const baseY = fract(hash3(index, context.seed, 31.2) + context.time * (0.025 + index * 0.002));
+        const sway = Math.sin(context.time * (0.45 + index * 0.05) + index * 2.1 + upwardY * 4) * (0.035 + hash3(index, context.seed, 18.8) * 0.055);
+        const radiusX = 0.045 + hash3(index, context.seed, 7.1) * 0.085;
+        const radiusY = 0.075 + hash3(index, context.seed, 9.6) * 0.16;
+        const dx = (warped.x - (baseX + sway)) / radiusX;
+        const dy = shortestWrapDelta(warped.y, baseY) / radiusY;
+        blob += ridge(Math.hypot(dx, dy), 1.2) * (0.42 + hash3(index, context.seed, 22.7) * 0.44);
+    }
+
+    const filament = ridge(Math.sin(warped.x * 9 + warped.y * 13 + context.time * 1.2), 0.22) * 0.22;
+    const density = clamp(blob + filament + context.pressure * 1.1 + context.memory * 0.4, 0, 1.7);
+    const sparse = hash3(context.col * 0.77, context.row * 1.19, context.seed + 167);
+
+    if (density < 0.21 + sparse * 0.5) return empty();
+
+    const hotCore = density > 1.08 || (sparse > 0.93 && density > 0.72);
+    const glyphs = hotCore ? "0O@@00" : density > 0.78 ? "ooOO00" : "...oo";
+    return {
+        char: pick(glyphs, density + sparse * 0.22),
+        color: colorFromPalette(
+            context.palette,
+            hotCore ? "hot" : density > 0.86 ? "accent" : "mid",
+            clamp(0.1 + density * 0.62, 0.08, 0.92),
+            density * 18,
+            hotCore ? 8 : -10
+        )
     };
 }
 

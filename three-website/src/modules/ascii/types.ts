@@ -3,7 +3,7 @@ export type Vec2 = {
     y: number;
 };
 
-export type AsciiThemeId = "descent" | "tide" | "bloom" | "veil";
+export type AsciiThemeId = "descent" | "lava" | "bloom" | "veil";
 
 export type PointerState = Vec2 & {
     cellX: number;
