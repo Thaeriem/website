@@ -1,10 +1,11 @@
 import * as THREE from 'three';
-import { camReset, camFocus, toggleControls } from './input';
+import { camFocus, toggleControls } from './input';
 import { toggleLighting } from './lighting';
 import { openDialog } from './dialog';
+import { openInnerExperience } from './innerExperience';
 
 export function onClickChest(_ele: THREE.Object3D) {
-    camReset(0.1, true)
+    openInnerExperience();
     document.querySelector('html')?.classList.remove('active');
 }
 

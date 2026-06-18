@@ -11,6 +11,7 @@ import { onClickCamp, onClickChest, onClickYash } from "./modules/utilities";
 import { updateBoat, updateCat, updateClouds, updateDebris, updateKelp, updateOcean } from "./modules/animations";
 import { initModels } from "./modules/models";
 import { initDialog, updateDialogPosition } from "./modules/dialog";
+import { initInnerExperience, isInnerExperienceOpen } from "./modules/innerExperience";
 
 type BloomModeSettings = {
     scale: number;
@@ -124,10 +125,6 @@ async function init() {
     ctx.stats.domElement.style.display = 'block';
 
     let screenResolution = new THREE.Vector2( window.innerWidth, window.innerHeight )
-    let renderResolution = screenResolution.clone().divideScalar( 4 )
-    renderResolution.x |= 0
-    renderResolution.y |= 0
-
     setupCamera(screenResolution);
 
     ctx.scene = new THREE.Scene()
@@ -137,7 +134,7 @@ async function init() {
     ctx.sceneCss.scale.set(0.05, 0.05, 0.05);
 
     setupRenderers(screenResolution);
-    setupComposer(screenResolution, renderResolution);
+    setupComposer(screenResolution);
     applyLowBloom();
     window.addEventListener("resize", applyLowBloom);
     ctx.renderer.shadowMap.enabled = ctx.shadowsEnabled;
@@ -157,6 +154,7 @@ async function init() {
     setSceneShadows(ctx.shadowsEnabled);
 
     initDialog();
+    initInnerExperience();
     
     renderHTML();
     initFpsToggle();
@@ -168,6 +166,14 @@ function animate() {
 
     ctx.time = performance.now();
     const delta = ( ctx.time - ctx.prevTime ) / 1000;
+    const innerExperienceOpen = isInnerExperienceOpen();
+
+    if (innerExperienceOpen) {
+        ctx.stats.update();
+        requestAnimationFrame(animate);
+        ctx.prevTime = ctx.time;
+        return;
+    }
 
     if (ctx.animateOcean) {
         updateOcean(ctx.time * 0.0001,0.1,0.1);

@@ -10,16 +10,41 @@ export default class RenderPixelatedPass extends Pass {
     camera: THREE.Camera
     rgbRenderTarget: WebGLRenderTarget
     edgeStrength: number
+    pixelScale: number
 
-    constructor( resolution: THREE.Vector2, scene: THREE.Scene, camera: THREE.Camera ) {
+    constructor( screenResolution: THREE.Vector2, scene: THREE.Scene, camera: THREE.Camera, pixelScale = 4 ) {
         super()
-        this.resolution = resolution
+        this.pixelScale = pixelScale
+        this.resolution = pixelResolution(screenResolution, this.pixelScale)
         this.fsQuad = new FullScreenQuad( this.material() )
         this.scene = scene
         this.camera = camera
         this.edgeStrength = 0.05
 
-        this.rgbRenderTarget = pixelRenderTarget( resolution, THREE.RGBAFormat, true )
+        this.rgbRenderTarget = pixelRenderTarget( this.resolution, THREE.RGBAFormat, true )
+    }
+
+    setSize( width: number, height: number ) {
+        const nextResolution = pixelResolution(new THREE.Vector2(width, height), this.pixelScale)
+        const pixelWidth = nextResolution.x
+        const pixelHeight = nextResolution.y
+
+        this.resolution.set(pixelWidth, pixelHeight)
+        this.rgbRenderTarget.setSize(pixelWidth, pixelHeight)
+
+        if (this.rgbRenderTarget.depthTexture) {
+            this.rgbRenderTarget.depthTexture.image.width = pixelWidth
+            this.rgbRenderTarget.depthTexture.image.height = pixelHeight
+        }
+
+        // @ts-ignore
+        const uniforms = this.fsQuad.material.uniforms
+        uniforms.resolution.value.set(
+            pixelWidth,
+            pixelHeight,
+            1 / pixelWidth,
+            1 / pixelHeight
+        )
     }
 
     render(
@@ -105,6 +130,13 @@ export default class RenderPixelatedPass extends Pass {
                 `
         } )
     }
+}
+
+function pixelResolution( screenResolution: THREE.Vector2, pixelScale: number ) {
+    return new THREE.Vector2(
+        Math.max(1, Math.floor(screenResolution.x / pixelScale)),
+        Math.max(1, Math.floor(screenResolution.y / pixelScale))
+    )
 }
 
 function pixelRenderTarget( resolution: THREE.Vector2, pixelFormat: THREE.PixelFormat, depthTexture: boolean ) {

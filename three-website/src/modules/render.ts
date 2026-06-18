@@ -10,6 +10,7 @@ const IFRAME_VIEWPORT_HEIGHT = 780;
 const IFRAME_VISUAL_WIDTH = 384;
 const IFRAME_VISUAL_HEIGHT = 416;
 const MAX_DEVICE_PIXEL_RATIO = 1;
+const PIXEL_RENDER_SCALE = 4;
 
 export function setupCamera(screenResolution: THREE.Vector2) {
     let aspectRatio = screenResolution.x / screenResolution.y
@@ -37,9 +38,9 @@ export function setupRenderers(screenResolution: THREE.Vector2) {
     document.getElementById("scene")?.appendChild( ctx.rendererCss.domElement );
 }
 
-export function setupComposer(screenResolution: THREE.Vector2, renderResolution: THREE.Vector2) {
+export function setupComposer(screenResolution: THREE.Vector2) {
     ctx.composer = new EffectComposer( ctx.renderer )
-    ctx.pixelPass = new RenderPixelatedPass( renderResolution, ctx.scene, ctx.camera );
+    ctx.pixelPass = new RenderPixelatedPass( screenResolution, ctx.scene, ctx.camera, PIXEL_RENDER_SCALE );
     ctx.composer.addPass( ctx.pixelPass )
     ctx.bloomPass = new UnrealBloomPass( screenResolution, .4, .1, .9 )
     ctx.bloomPass.enabled = false
@@ -49,20 +50,24 @@ export function setupComposer(screenResolution: THREE.Vector2, renderResolution:
 export function onWindowResize() {
     let screenResolution = new THREE.Vector2( window.innerWidth, window.innerHeight )
     const aspect = screenResolution.x / screenResolution.y;
-    let renderResolution = screenResolution.clone()
-    renderResolution.x |= 0
-    renderResolution.y |= 0
 
     ctx.camera.left = -aspect;
     ctx.camera.right = aspect;
     ctx.camera.top = 1;
     ctx.camera.bottom = -1;
-    ctx.pixelPass.resolution = renderResolution
+    ctx.pixelPass.setSize(screenResolution.x, screenResolution.y)
     ctx.camera.updateProjectionMatrix();
 
     ctx.renderer.setSize( screenResolution.x, screenResolution.y );
     ctx.renderer.setPixelRatio(getRenderPixelRatio());
     ctx.rendererCss.setSize( screenResolution.x, screenResolution.y );
+}
+
+export function getPixelRenderResolution(screenResolution: THREE.Vector2): THREE.Vector2 {
+    const renderResolution = screenResolution.clone().divideScalar(PIXEL_RENDER_SCALE);
+    renderResolution.x = Math.max(1, Math.floor(renderResolution.x));
+    renderResolution.y = Math.max(1, Math.floor(renderResolution.y));
+    return renderResolution;
 }
 
 function getRenderPixelRatio(): number {
