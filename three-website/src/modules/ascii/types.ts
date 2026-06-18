@@ -14,7 +14,7 @@ export type PointerState = Vec2 & {
 export type Deposit = Vec2 & {
     age: number;
     strength: number;
-    mode: "trace" | "memory";
+    mode: "hover" | "trace" | "memory";
 };
 
 export type FieldSample = {
@@ -34,6 +34,7 @@ export type FieldContext = {
     pointer: PointerState;
     pressure: number;
     memory: number;
+    palette: AsciiPalette;
 };
 
 export type AsciiTheme = {
@@ -55,4 +56,26 @@ export type HitZone = {
 export type LinkTarget = {
     label: string;
     href: string;
+};
+
+export type PaletteColorRole = "ghost" | "dim" | "mid" | "bright" | "accent" | "hot" | "chrome" | "muted";
+
+export type HslColor = {
+    h: number;
+    s: number;
+    l: number;
+};
+
+export type AsciiPalette = {
+    id: string;
+    label: string;
+    background: string;
+    ghost: HslColor;
+    dim: HslColor;
+    mid: HslColor;
+    bright: HslColor;
+    accent: HslColor;
+    hot: HslColor;
+    chrome: HslColor;
+    muted: HslColor;
 };

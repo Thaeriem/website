@@ -1,20 +1,8 @@
 import { clamp, domainWarp, fbm, hash3, seededPoint } from "./random";
+import { colorFromPalette } from "./palettes";
 import type { AsciiTheme, FieldContext, FieldSample } from "./types";
 
-const dark = "hsla(190, 22%, 4%, 1)";
-const emptySample: FieldSample = { char: " ", color: dark };
-const descentCool = [
-    "hsla(190, 18%, 13%, 0.24)",
-    "hsla(188, 18%, 20%, 0.38)",
-    "hsla(184, 18%, 28%, 0.54)",
-    "hsla(176, 16%, 40%, 0.68)",
-    "hsla(170, 14%, 54%, 0.78)"
-];
-const descentHot = [
-    "hsla(22, 92%, 31%, 0.5)",
-    "hsla(20, 94%, 42%, 0.72)",
-    "hsla(18, 96%, 58%, 0.88)"
-];
+const emptySample: FieldSample = { char: " ", color: "transparent" };
 
 type RopeParam = {
     anchor: number;
@@ -120,7 +108,7 @@ function sampleDescent(context: FieldContext): FieldSample {
     const glyphs = hot ? "0O" : connector ? (rope.slope > 0 ? "//" : "\\\\") : density > 1.04 ? "OO0" : density > 0.68 ? "ooO" : "...o";
     return {
         char: pick(glyphs, density + sparse * 0.2 + pulse * 0.28),
-        color: pickDescentColor(hot, density, pulse, context.pressure)
+        color: pickDescentColor(context, hot, density, pulse)
     };
 }
 
@@ -240,12 +228,13 @@ function getRopes(seed: number): RopeParam[] {
     return ropes;
 }
 
-function pickDescentColor(hot: boolean, density: number, pulse: number, pressure: number): string {
+function pickDescentColor(context: FieldContext, hot: boolean, density: number, pulse: number): string {
     if (hot) {
-        return descentHot[clamp(Math.floor((density + pressure) * descentHot.length), 0, descentHot.length - 1)];
+        return colorFromPalette(context.palette, "hot", clamp(0.44 + density * 0.26 + context.pressure * 0.22, 0.44, 0.94), density * 10);
     }
 
-    return descentCool[clamp(Math.floor((density + pulse * 0.45) * descentCool.length), 0, descentCool.length - 1)];
+    const role = density > 0.92 ? "bright" : density > 0.58 ? "mid" : "dim";
+    return colorFromPalette(context.palette, role, clamp(0.14 + density * 0.56 + pulse * 0.18, 0.12, 0.88), density * 8);
 }
 
 function sampleTide(context: FieldContext): FieldSample {
@@ -264,7 +253,7 @@ function sampleTide(context: FieldContext): FieldSample {
     const warm = context.pressure > 0.34 && sparse > 0.74;
     return {
         char: pick(glyphs, density + sparse * 0.2),
-        color: `hsla(${warm ? 24 : 182 + wave * 10}, ${warm ? 88 : 30}%, ${clamp(13 + density * 46, 10, 72)}%, ${clamp(0.12 + density * 0.58, 0.08, 0.88)})`
+        color: colorFromPalette(context.palette, warm ? "accent" : density > 0.78 ? "bright" : "mid", clamp(0.12 + density * 0.58, 0.08, 0.88), density * 18, warm ? 0 : wave * 8)
     };
 }
 
@@ -287,7 +276,7 @@ function sampleBloom(context: FieldContext): FieldSample {
     const glyphs = warm ? "oO00" : density > 0.7 ? ".oOO" : "...o";
     return {
         char: pick(glyphs, density + sparse * 0.25),
-        color: `hsla(${warm ? 26 + context.pressure * 10 : 194 - density * 34}, ${warm ? 82 : 20}%, ${clamp(14 + density * 44, 10, 78)}%, ${clamp(0.1 + density * 0.62, 0.08, 0.9)})`
+        color: colorFromPalette(context.palette, warm ? "hot" : density > 0.76 ? "bright" : "mid", clamp(0.1 + density * 0.62, 0.08, 0.9), density * 18, warm ? context.pressure * 10 : -density * 16)
     };
 }
 
@@ -304,7 +293,7 @@ function sampleVeil(context: FieldContext): FieldSample {
     const glyphs = hot ? "**##" : density > 0.9 ? "++**##" : "..::++";
     return {
         char: pick(glyphs, density + sparse * 0.2),
-        color: `hsla(${hot ? 18 : 150 + density * 54 + Math.sin(context.time + context.y * 8) * 18}, ${hot ? 86 : 56}%, ${clamp(12 + density * 42 + context.memory * 14, 9, 76)}%, ${clamp(0.09 + density * 0.6 + context.memory * 0.2, 0.07, 0.9)})`
+        color: colorFromPalette(context.palette, hot ? "hot" : density > 0.82 ? "accent" : "mid", clamp(0.09 + density * 0.6 + context.memory * 0.2, 0.07, 0.9), density * 16 + context.memory * 14, Math.sin(context.time + context.y * 8) * 12)
     };
 }
 

@@ -153,6 +153,36 @@ Current rule: keep the renderer as a field system. Each theme samples seeded noi
 
    Back, themes, status, and links are drawn as text cells and hit-tested by grid region. No floating DOM controls.
 
+9. **State Transitions As Fields**
+
+   Theme and state changes should use the grid as the transition medium. A transition is not a DOM fade; each cell samples either the previous state or next state based on a deterministic reveal field.
+
+   Current transition fields:
+
+   - `dither`: seeded per-cell threshold.
+   - `radial`: center-out circular fill.
+   - `wipe`: left-to-right field with wave perturbation.
+   - `ripple`: center-out field with oscillating rings.
+
+   These modes should remain ASCII-native: a cell resolves to one glyph/color per frame, never stacked text layers.
+   The active mode can be changed from the ASCII chrome or with `Tab`.
+
+10. **Portal Transitions Between Worlds**
+
+   The chest and back actions use a separate transparent ASCII portal canvas above both the island and inner experience. On entry, black ASCII cells ripple outward from the chest until the island is mostly covered, then the inner experience is opened underneath and the portal dissolves. On exit, the inner renderer first transitions itself to an all-black canvas. Only after that blackout completes does the portal mount already filled with black `@` cells; the inner experience closes underneath that fully covered portal, then the black cell field dithers to transparent to reveal the island. Cell opacity ramps around threshold edges so the portal reads smoother than a hard on/off grid.
+
+   This layer is deliberately separate from the inner ASCII renderer. It should behave like a curtain between worlds, not like another theme page.
+
+11. **Shared Palette System**
+
+   Color is a global test condition, not a per-theme skin. The bottom ASCII chrome exposes three palettes that every state reads from:
+
+   - `black/red`: stark red signal on near-black.
+   - `grey/orange`: the current cool grey/orange baseline.
+   - `ultraviolet`: blue/violet field with cyan and magenta signal colors.
+
+   Themes should ask for semantic color roles like dim, bright, accent, and hot. They should not hard-code one-off hues unless a future test explicitly studies color as the main subject.
+
 ## Current Implementation
 
 The current code is split into:

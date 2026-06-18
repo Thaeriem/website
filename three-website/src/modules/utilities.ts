@@ -1,11 +1,17 @@
 import * as THREE from 'three';
+import { ctx } from '../rendererContext';
+import { runAsciiPortalTransition } from './asciiPortalTransition';
 import { camFocus, toggleControls } from './input';
 import { toggleLighting } from './lighting';
 import { openDialog } from './dialog';
 import { openInnerExperience } from './innerExperience';
 
-export function onClickChest(_ele: THREE.Object3D) {
-    openInnerExperience();
+export function onClickChest(ele: THREE.Object3D) {
+    runAsciiPortalTransition({
+        direction: "enter",
+        origin: projectObjectToScreen(ele),
+        onCovered: openInnerExperience
+    });
     document.querySelector('html')?.classList.remove('active');
 }
 
@@ -52,4 +58,14 @@ export function pixelTex(tex: THREE.Texture): THREE.Texture {
     tex.wrapS = THREE.RepeatWrapping;
     tex.wrapT = THREE.RepeatWrapping;
     return tex;
+}
+
+function projectObjectToScreen(ele: THREE.Object3D): { x: number; y: number } {
+    const position = new THREE.Vector3();
+    ele.getWorldPosition(position);
+    position.project(ctx.camera);
+    return {
+        x: Math.min(1, Math.max(0, position.x * 0.5 + 0.5)),
+        y: Math.min(1, Math.max(0, -position.y * 0.5 + 0.5))
+    };
 }

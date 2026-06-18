@@ -1,6 +1,7 @@
 import { ctx } from "../rendererContext";
 import { AsciiInstallationRenderer } from "./ascii/renderer";
-import type { LinkTarget } from "./ascii/types";
+import type { LinkTarget, Vec2 } from "./ascii/types";
+import { runAsciiPortalTransition } from "./asciiPortalTransition";
 import { toggleControls } from "./input";
 
 const links: LinkTarget[] = [
@@ -14,8 +15,13 @@ let canvasElement: HTMLCanvasElement | null = null;
 let renderer: AsciiInstallationRenderer | null = null;
 let previousControlsEnabled = true;
 let isOpen = false;
+let isClosing = false;
+let exitPortalStarted = false;
 let animationFrame = 0;
 let startTime = performance.now();
+let closingStartTime = 0;
+let closingOrigin: Vec2 = { x: 0.04, y: 0.04 };
+const closeBlackoutMs = 760;
 
 export function initInnerExperience(): void {
     if (rootElement) return;
@@ -36,7 +42,7 @@ export function initInnerExperience(): void {
     if (canvasElement) {
         renderer = new AsciiInstallationRenderer(canvasElement, {
             links,
-            onClose: closeInnerExperience,
+            onClose: requestCloseInnerExperience,
             seedText: "yash-kaul-inner-descent-2026"
         });
     }
@@ -57,6 +63,8 @@ export function openInnerExperience(): void {
     initInnerExperience();
     if (!rootElement || isOpen) return;
 
+    isClosing = false;
+    exitPortalStarted = false;
     previousControlsEnabled = ctx.controls?.enabled ?? true;
     toggleControls(false);
     isOpen = true;
@@ -72,6 +80,8 @@ export function closeInnerExperience(): void {
     if (!rootElement || !isOpen) return;
 
     isOpen = false;
+    isClosing = false;
+    exitPortalStarted = false;
     rootElement.classList.remove("is-open");
     rootElement.setAttribute("aria-hidden", "true");
     toggleControls(previousControlsEnabled);
@@ -82,22 +92,31 @@ export function isInnerExperienceOpen(): boolean {
     return isOpen;
 }
 
+export function requestCloseInnerExperience(origin: Vec2 = { x: 0.04, y: 0.04 }): void {
+    if (!isOpen || isClosing) return;
+
+    isClosing = true;
+    exitPortalStarted = false;
+    closingStartTime = performance.now();
+    closingOrigin = origin;
+}
+
 function onPointerDown(event: PointerEvent): void {
-    if (!rootElement?.classList.contains("is-open")) return;
+    if (!rootElement?.classList.contains("is-open") || isClosing) return;
     stopIslandEvent(event);
     renderer?.setPointer(event, rootElement);
     renderer?.pointerDown();
 }
 
 function onPointerMove(event: PointerEvent): void {
-    if (!rootElement?.classList.contains("is-open")) return;
+    if (!rootElement?.classList.contains("is-open") || isClosing) return;
     stopIslandEvent(event);
     renderer?.setPointer(event, rootElement);
     renderer?.pointerMove();
 }
 
 function onPointerUp(event: PointerEvent): void {
-    if (!rootElement?.classList.contains("is-open")) return;
+    if (!rootElement?.classList.contains("is-open") || isClosing) return;
     stopIslandEvent(event);
     renderer?.setPointer(event, rootElement);
     renderer?.pointerUp();
@@ -109,11 +128,11 @@ function onKeyDown(event: KeyboardEvent): void {
     if (event.code === "Escape") {
         event.preventDefault();
         event.stopImmediatePropagation();
-        closeInnerExperience();
+        requestCloseInnerExperience();
         return;
     }
 
-    if (renderer?.keyDown(event) || isIslandShortcut(event)) {
+    if (!isClosing && (renderer?.keyDown(event) || isIslandShortcut(event))) {
         event.preventDefault();
         event.stopImmediatePropagation();
     }
@@ -122,7 +141,23 @@ function onKeyDown(event: KeyboardEvent): void {
 function animate(): void {
     if (!isOpen) return;
     const time = (performance.now() - startTime) / 1000;
-    renderer?.render(time);
+
+    if (isClosing) {
+        const blackoutProgress = Math.min(1, (performance.now() - closingStartTime) / closeBlackoutMs);
+        renderer?.renderBlackout(time, easeInOutCubic(blackoutProgress));
+        if (blackoutProgress >= 1 && !exitPortalStarted) {
+            exitPortalStarted = true;
+            runAsciiPortalTransition({
+                direction: "exit",
+                origin: closingOrigin,
+                startCovered: true,
+                onCovered: closeInnerExperience
+            });
+        }
+    } else {
+        renderer?.render(time);
+    }
+
     animationFrame = requestAnimationFrame(animate);
 }
 
@@ -150,6 +185,12 @@ function isIslandShortcut(event: KeyboardEvent): boolean {
         "ArrowRight",
         "F9"
     ].includes(event.code);
+}
+
+function easeInOutCubic(value: number): number {
+    return value < 0.5
+        ? 4 * value * value * value
+        : 1 - ((-2 * value + 2) ** 3) / 2;
 }
 
 function injectInnerExperienceStyles(): void {
